@@ -1,0 +1,113 @@
+'use client'
+
+import React, { createContext, useContext, useEffect, useState } from 'react'
+import { User, AuthState, LoginCredentials, RegisterData } from '@/types/auth'
+import { FirebaseAuthService } from '@/lib/auth/firebase'
+
+interface AuthContextType extends AuthState {
+  login: (credentials: LoginCredentials) => Promise<{ success: boolean; message: string }>
+  register: (data: RegisterData) => Promise<{ success: boolean; message: string }>
+  logout: () => Promise<void>
+  updateUser: (userData: Partial<User>) => Promise<void>
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+export function useAuth() {
+  const context = useContext(AuthContext)
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider')
+  }
+  return context
+}
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  // Initialize auth state on mount and listen for auth changes
+  useEffect(() => {
+    const unsubscribe = FirebaseAuthService.onAuthStateChanged((user) => {
+      setUser(user)
+      setIsLoading(false)
+    })
+
+    return () => unsubscribe()
+  }, [])
+
+  const login = async (credentials: LoginCredentials): Promise<{ success: boolean; message: string }> => {
+    setIsLoading(true)
+
+    try {
+      const user = await FirebaseAuthService.signIn(credentials)
+      setUser(user)
+      setIsLoading(false)
+      return { success: true, message: 'Login successful!' }
+    } catch (error: any) {
+      setIsLoading(false)
+      return { success: false, message: error.message || 'An error occurred during login' }
+    }
+  }
+
+  const register = async (data: RegisterData): Promise<{ success: boolean; message: string }> => {
+    setIsLoading(true)
+
+    try {
+      // Validation
+      if (data.password !== data.confirmPassword) {
+        setIsLoading(false)
+        return { success: false, message: 'Passwords do not match' }
+      }
+
+      if (data.password.length < 6) {
+        setIsLoading(false)
+        return { success: false, message: 'Password must be at least 6 characters long' }
+      }
+
+      const user = await FirebaseAuthService.signUp(data)
+      setUser(user)
+      setIsLoading(false)
+      return { success: true, message: 'Account created successfully!' }
+    } catch (error: any) {
+      setIsLoading(false)
+      return { success: false, message: error.message || 'An error occurred during registration' }
+    }
+  }
+
+  const logout = async () => {
+    try {
+      await FirebaseAuthService.signOut()
+      setUser(null)
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
+  }
+
+  const updateUser = async (userData: Partial<User>) => {
+    if (user) {
+      try {
+        await FirebaseAuthService.updateUserProfile(user.id, userData)
+        const updatedUser = { ...user, ...userData }
+        setUser(updatedUser)
+      } catch (error) {
+        console.error('Error updating user profile:', error)
+      }
+    }
+  }
+
+  const value: AuthContextType = {
+    user,
+    isLoading,
+    isAuthenticated: !!user,
+    login,
+    register,
+    logout,
+    updateUser
+  }
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
