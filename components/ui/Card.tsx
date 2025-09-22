@@ -8,9 +8,9 @@ interface CardProps {
 
 export function Card({ children, className = '', padding = 'md' }: CardProps) {
   const paddingClasses = {
-    sm: 'p-4',
-    md: 'p-6',
-    lg: 'p-8'
+    sm: 'p-3 sm:p-4',
+    md: 'p-4 sm:p-6',
+    lg: 'p-6 sm:p-8'
   }
 
   return (
@@ -27,7 +27,7 @@ interface CardHeaderProps {
 
 export function CardHeader({ children, className = '' }: CardHeaderProps) {
   return (
-    <div className={`mb-4 ${className}`}>
+    <div className={`mb-3 sm:mb-4 ${className}`}>
       {children}
     </div>
   )
@@ -40,7 +40,7 @@ interface CardTitleProps {
 
 export function CardTitle({ children, className = '' }: CardTitleProps) {
   return (
-    <h3 className={`text-lg font-semibold text-gray-900 ${className}`}>
+    <h3 className={`text-base sm:text-lg font-semibold text-gray-900 ${className}`}>
       {children}
     </h3>
   )

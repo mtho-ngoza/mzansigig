@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useMessaging } from '@/contexts/MessagingContext'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import { PageHeader } from '@/components/layout/PageHeader'
 import PostGigPage from './gig/PostGigPage'
 import MyApplications from './application/MyApplications'
 import ManageApplications from './application/ManageApplications'
@@ -22,7 +23,7 @@ export default function Dashboard({
   initialMessageConversationId,
   onMessageConversationStart
 }: DashboardProps) {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const { totalUnreadCount } = useMessaging()
   const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'my-applications' | 'manage-applications' | 'profile' | 'messages'>('dashboard')
 
@@ -33,6 +34,43 @@ export default function Dashboard({
     }
   }, [initialMessageConversationId])
 
+  // Generate breadcrumbs for dashboard sub-pages
+  const getDashboardBreadcrumbs = (currentPage: string) => {
+    const breadcrumbs: Array<{label: string; onClick?: () => void; isCurrentPage?: boolean}> = [
+      {
+        label: 'Home',
+        onClick: onBrowseGigs || (() => {})
+      },
+      {
+        label: 'Dashboard',
+        onClick: () => setCurrentView('dashboard')
+      }
+    ]
+
+    switch (currentPage) {
+      case 'my-applications':
+        breadcrumbs.push({
+          label: 'My Applications',
+          isCurrentPage: true
+        })
+        break
+      case 'manage-applications':
+        breadcrumbs.push({
+          label: 'Manage Applications',
+          isCurrentPage: true
+        })
+        break
+      case 'messages':
+        breadcrumbs.push({
+          label: 'Messages',
+          isCurrentPage: true
+        })
+        break
+    }
+
+    return breadcrumbs
+  }
+
   // Show post gig page if user is on that view
   if (currentView === 'post-gig') {
     return <PostGigPage onBack={() => setCurrentView('dashboard')} />
@@ -41,18 +79,62 @@ export default function Dashboard({
   // Show my applications page if user is on that view
   if (currentView === 'my-applications') {
     return (
-      <MyApplications
-        onBack={() => setCurrentView('dashboard')}
-        onBrowseGigs={onBrowseGigs}
-        onMessageConversationStart={onMessageConversationStart}
-        onMessagesClick={() => setCurrentView('messages')}
-      />
+      <>
+        <PageHeader
+          title="My Applications"
+          description="Track your gig applications and their status"
+          breadcrumbs={getDashboardBreadcrumbs('my-applications')}
+          backButton={{
+            label: 'Back to Dashboard',
+            onClick: () => setCurrentView('dashboard')
+          }}
+          actions={onBrowseGigs ? [{
+            label: 'Browse More Gigs',
+            onClick: onBrowseGigs,
+            variant: 'outline' as const,
+            icon: (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            )
+          }] : undefined}
+        />
+        <MyApplications
+          onBack={() => setCurrentView('dashboard')}
+          onBrowseGigs={onBrowseGigs}
+          onMessageConversationStart={onMessageConversationStart}
+          onMessagesClick={() => setCurrentView('messages')}
+        />
+      </>
     )
   }
 
   // Show manage applications page if user is on that view
   if (currentView === 'manage-applications') {
-    return <ManageApplications onBack={() => setCurrentView('dashboard')} />
+    return (
+      <>
+        <PageHeader
+          title="Manage Applications"
+          description="Review and manage applications for your posted gigs"
+          breadcrumbs={getDashboardBreadcrumbs('manage-applications')}
+          backButton={{
+            label: 'Back to Dashboard',
+            onClick: () => setCurrentView('dashboard')
+          }}
+          actions={[{
+            label: 'Post New Gig',
+            onClick: () => setCurrentView('post-gig'),
+            variant: 'primary' as const,
+            icon: (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            )
+          }]}
+        />
+        <ManageApplications onBack={() => setCurrentView('dashboard')} />
+      </>
+    )
   }
 
   // Show profile management page if user is on that view
@@ -64,26 +146,15 @@ export default function Dashboard({
   if (currentView === 'messages') {
     return (
       <div className="min-h-screen bg-gray-50">
-        <header className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex items-center space-x-6">
-                <Button variant="ghost" onClick={() => setCurrentView('dashboard')} className="text-sm">
-                  ← Back to Dashboard
-                </Button>
-                <h1 className="text-xl font-semibold text-gray-900">Messages</h1>
-              </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm text-gray-700">
-                  Welcome, {user?.firstName} {user?.lastName}
-                </span>
-                <Button variant="outline" onClick={logout}>
-                  Sign Out
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
+        <PageHeader
+          title="Messages"
+          description="Communicate with employers and job seekers"
+          breadcrumbs={getDashboardBreadcrumbs('messages')}
+          backButton={{
+            label: 'Back to Dashboard',
+            onClick: () => setCurrentView('dashboard')
+          }}
+        />
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
             <MessagingHub
@@ -98,52 +169,47 @@ export default function Dashboard({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-6">
-              <h1 className="text-xl font-semibold text-gray-900">
-                GigSA Dashboard
-              </h1>
-              {onBrowseGigs && (
-                <Button variant="ghost" onClick={onBrowseGigs} className="text-sm">
-                  Browse All Gigs
-                </Button>
-              )}
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                onClick={() => setCurrentView('messages')}
-                className="relative"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                {totalUnreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-                  </span>
-                )}
-              </Button>
-              <span className="text-sm text-gray-700">
-                Welcome, {user?.firstName} {user?.lastName}
-              </span>
-              <Button variant="outline" onClick={logout}>
-                Sign Out
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      {/* Dashboard Header */}
+      <PageHeader
+        title={`Welcome back, ${user?.firstName}!`}
+        description="Manage your gigs, applications, and communications"
+        breadcrumbs={[{
+          label: 'Home',
+          onClick: onBrowseGigs || (() => {})
+        }, {
+          label: 'Dashboard',
+          isCurrentPage: true
+        }]}
+        actions={[
+          ...(user?.userType === 'employer' ? [{
+            label: 'Post New Gig',
+            onClick: () => setCurrentView('post-gig'),
+            variant: 'primary' as const,
+            icon: (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+            )
+          }] : []),
+          ...(onBrowseGigs ? [{
+            label: 'Browse Gigs',
+            onClick: onBrowseGigs,
+            variant: 'outline' as const,
+            icon: (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            )
+          }] : [])
+        ]}
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Welcome Card */}
-            <Card className="lg:col-span-2">
+            <Card className="sm:col-span-2 lg:col-span-2">
               <CardHeader>
                 <CardTitle>Welcome to GigSA</CardTitle>
               </CardHeader>
@@ -183,12 +249,12 @@ export default function Dashboard({
             </Card>
 
             {/* Quick Actions */}
-            <Card className="lg:col-span-3">
+            <Card className="sm:col-span-2 lg:col-span-3">
               <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                   {user?.userType === 'job-seeker' ? (
                     <>
                       <Button

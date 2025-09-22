@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import ApplicationForm from '@/components/application/ApplicationForm'
 import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
-import { MessageIndicator } from '@/components/messaging/MessageIndicator'
 import { useToast } from '@/contexts/ToastContext'
 import { useMessaging } from '@/contexts/MessagingContext'
 
@@ -266,47 +265,6 @@ export default function PublicGigBrowser({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-primary-600">
-                GigSA
-              </h1>
-              <p className="ml-4 text-gray-600 hidden sm:block">
-                South Africa&apos;s Premier Gig Economy Platform
-              </p>
-            </div>
-            <div className="flex items-center space-x-3">
-              {currentUser ? (
-                <>
-                  <MessageIndicator
-                    onConversationStart={onMessageConversationStart}
-                  />
-                  <span className="text-sm text-gray-600 hidden sm:block">
-                    Welcome, {currentUser.firstName}
-                  </span>
-                  {onDashboardClick && (
-                    <Button variant="outline" onClick={onDashboardClick}>
-                      Dashboard
-                    </Button>
-                  )}
-                </>
-              ) : showAuthButtons ? (
-                <>
-                  <Button variant="outline" onClick={onLoginClick}>
-                    Log In
-                  </Button>
-                  <Button onClick={onSignUpClick}>
-                    Sign Up
-                  </Button>
-                </>
-              ) : null}
-            </div>
-          </div>
-        </div>
-      </header>
 
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-16">
@@ -320,7 +278,7 @@ export default function PublicGigBrowser({
 
           {/* Search Section */}
           <div className="max-w-4xl mx-auto bg-white rounded-lg p-6 shadow-lg">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               <div className="md:col-span-2">
                 <input
                   type="text"
@@ -364,7 +322,7 @@ export default function PublicGigBrowser({
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {[...Array(6)].map((_, i) => (
               <div key={i} className="animate-pulse">
                 <Card>
@@ -392,7 +350,7 @@ export default function PublicGigBrowser({
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {gigs.map((gig) => (
               <Card key={gig.id} className="hover:shadow-lg transition-shadow cursor-pointer">
                 <CardHeader>

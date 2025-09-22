@@ -150,7 +150,7 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
 
   return (
     <div
-      className={`p-4 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 ${
+      className={`p-4 border-b border-gray-100 cursor-pointer transition-colors hover:bg-gray-50 active:bg-gray-100 touch-manipulation ${
         isActive ? 'bg-primary-50 border-primary-200' : ''
       }`}
       onClick={onClick}
@@ -191,7 +191,7 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
               <button
                 onClick={handleArchive}
                 disabled={isArchiving}
-                className="p-1 hover:bg-gray-200 rounded-full transition-colors ml-1"
+                className="p-2 hover:bg-gray-200 active:bg-gray-300 rounded-full transition-colors ml-1 touch-manipulation"
                 title={conversation.status === 'archived' ? 'Unarchive conversation' : 'Archive conversation'}
               >
                 {isArchiving ? (

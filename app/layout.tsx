@@ -5,12 +5,36 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { MessagingProvider } from '@/contexts/MessagingContext'
 import { ToastProvider } from '@/contexts/ToastContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { AppLayout } from '@/components/layout/AppLayout'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'GigSA - South African Gig Economy Platform',
   description: 'Connect with local gig opportunities in South Africa',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'GigSA'
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'default',
+    'apple-mobile-web-app-title': 'GigSA',
+    'application-name': 'GigSA',
+    'msapplication-TileColor': '#2563eb',
+    'msapplication-config': '/browserconfig.xml'
+  }
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  themeColor: '#2563eb'
 }
 
 export default function RootLayout({
@@ -20,16 +44,37 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+      </head>
       <body className={inter.className}>
         <ErrorBoundary>
           <ToastProvider>
             <AuthProvider>
               <MessagingProvider>
-                {children}
+                <AppLayout>
+                  {children}
+                </AppLayout>
               </MessagingProvider>
             </AuthProvider>
           </ToastProvider>
         </ErrorBoundary>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                      console.log('SW registered: ', registration);
+                    })
+                    .catch(function(registrationError) {
+                      console.log('SW registration failed: ', registrationError);
+                    });
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   )
