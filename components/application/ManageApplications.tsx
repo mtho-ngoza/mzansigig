@@ -11,6 +11,7 @@ import { useToast } from '@/contexts/ToastContext'
 
 interface ManageApplicationsProps {
   onBack?: () => void
+  onMessageConversationStart?: (conversationId: string) => void
 }
 
 interface ApplicationWithGig extends GigApplication {
@@ -18,8 +19,8 @@ interface ApplicationWithGig extends GigApplication {
   gigBudget?: number
 }
 
-export default function ManageApplications({ onBack }: ManageApplicationsProps) {
-  const { success, error: showError, warning } = useToast()
+export default function ManageApplications({ onBack, onMessageConversationStart }: ManageApplicationsProps) {
+  const { success, error: showError } = useToast()
   const { user } = useAuth()
   const [applications, setApplications] = useState<ApplicationWithGig[]>([])
   const [gigs, setGigs] = useState<Gig[]>([])
@@ -312,6 +313,7 @@ export default function ManageApplications({ onBack }: ManageApplicationsProps) 
                         gigTitle={application.gigTitle}
                         size="sm"
                         variant="outline"
+                        onConversationStart={onMessageConversationStart}
                       />
                       <Button
                         onClick={() => handleApplicationAction(application.id, 'accepted')}
@@ -350,6 +352,7 @@ export default function ManageApplications({ onBack }: ManageApplicationsProps) 
                           gigId={application.gigId}
                           gigTitle={application.gigTitle}
                           size="sm"
+                          onConversationStart={onMessageConversationStart}
                         >
                           Contact Worker
                         </QuickMessageButton>

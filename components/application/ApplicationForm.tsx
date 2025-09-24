@@ -24,7 +24,7 @@ interface ApplicationFormData {
 }
 
 export default function ApplicationForm({ gig, onSuccess, onCancel }: ApplicationFormProps) {
-  const { success, error: showError, warning } = useToast()
+  const { success, error: showError } = useToast()
   const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<ApplicationFormData>>({})

@@ -69,7 +69,7 @@ const SA_LOCATIONS = [
 ]
 
 export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
-  const { success, error: showError, warning } = useToast()
+  const { success, error: showError } = useToast()
   const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<GigFormData>>({})

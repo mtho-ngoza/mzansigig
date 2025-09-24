@@ -13,7 +13,7 @@ interface ProfilePhotoUploadProps {
 }
 
 export default function ProfilePhotoUpload({ onBack }: ProfilePhotoUploadProps) {
-  const { success, error: showError, warning } = useToast()
+  const { error: showError } = useToast()
   const { user, refreshUser } = useAuth()
   const [isUploading, setIsUploading] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
@@ -31,7 +31,7 @@ export default function ProfilePhotoUpload({ onBack }: ProfilePhotoUploadProps) 
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      warning('Please select an image file.')
+      showError('Please select an image file.')
       return
     }
 

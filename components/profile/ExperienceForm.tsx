@@ -40,7 +40,7 @@ const EDUCATION_LEVELS = [
 ]
 
 export default function ExperienceForm({ onBack }: ExperienceFormProps) {
-  const { success, error: showError, warning } = useToast()
+  const { success, error: showError } = useToast()
   const { user, refreshUser } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formData, setFormData] = useState({

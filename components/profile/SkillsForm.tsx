@@ -47,7 +47,7 @@ const LANGUAGES = [
 ]
 
 export default function SkillsForm({ onBack }: SkillsFormProps) {
-  const { success, error: showError, warning } = useToast()
+  const { success, error: showError } = useToast()
   const { user, refreshUser } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [newSkill, setNewSkill] = useState('')
