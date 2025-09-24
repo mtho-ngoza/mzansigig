@@ -132,7 +132,10 @@ export default function Dashboard({
             )
           }]}
         />
-        <ManageApplications onBack={() => setCurrentView('dashboard')} />
+        <ManageApplications
+          onBack={() => setCurrentView('dashboard')}
+          onMessageConversationStart={onMessageConversationStart}
+        />
       </>
     )
   }

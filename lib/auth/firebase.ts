@@ -7,12 +7,14 @@ import {
   User as FirebaseUser
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { FirebaseError } from 'firebase/app';
 import { auth, db } from '../firebase';
 import { User, LoginCredentials, RegisterData } from '@/types/auth';
 
 export class FirebaseAuthService {
   static async signUp(data: RegisterData): Promise<User> {
     try {
+      // Step 1: Create Firebase Auth user
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         data.email,
@@ -21,11 +23,13 @@ export class FirebaseAuthService {
 
       const firebaseUser = userCredential.user;
 
+      // Step 2: Update Firebase Auth profile
       await updateProfile(firebaseUser, {
         displayName: `${data.firstName} ${data.lastName}`
       });
 
-      const user: User = {
+      // Step 3: Create user document in Firestore
+      const user: Partial<User> = {
         id: firebaseUser.uid,
         email: data.email,
         firstName: data.firstName,
@@ -33,36 +37,76 @@ export class FirebaseAuthService {
         phone: data.phone,
         location: data.location,
         userType: data.userType,
-        workSector: data.workSector,
-        idNumber: data.idNumber,
         createdAt: new Date(),
       };
 
+      // Only add optional fields if they have values (Firestore doesn't allow undefined)
+      if (data.workSector) {
+        user.workSector = data.workSector;
+      }
+      if (data.idNumber) {
+        user.idNumber = data.idNumber;
+      }
+
       await setDoc(doc(db, 'users', firebaseUser.uid), user);
 
-      return user;
+      return user as User;
     } catch (error: unknown) {
-      throw new Error(error instanceof Error ? error.message : 'Registration failed');
+      const firebaseError = error as FirebaseError;
+
+      // More specific error handling
+      if (firebaseError?.code === 'auth/email-already-in-use') {
+        throw new Error('An account with this email already exists. Please try signing in instead.');
+      } else if (firebaseError?.code === 'auth/weak-password') {
+        throw new Error('Password is too weak. Please choose a stronger password.');
+      } else if (firebaseError?.code === 'auth/invalid-email') {
+        throw new Error('Please enter a valid email address.');
+      } else if (firebaseError?.code?.startsWith('auth/')) {
+        throw new Error(`Authentication error: ${firebaseError.message}`);
+      } else if (firebaseError?.code?.startsWith('firestore/')) {
+        throw new Error(`Database error: ${firebaseError.message}`);
+      } else {
+        throw new Error(firebaseError?.message || 'Registration failed. Please try again.');
+      }
     }
   }
 
   static async signIn(credentials: LoginCredentials): Promise<User> {
     try {
+      // Step 1: Sign in with Firebase Auth
       const userCredential = await signInWithEmailAndPassword(
         auth,
         credentials.email,
         credentials.password
       );
 
+      // Step 2: Get user document from Firestore
       const userDoc = await getDoc(doc(db, 'users', userCredential.user.uid));
 
       if (!userDoc.exists()) {
-        throw new Error('User profile not found');
+        throw new Error('User profile not found. Please contact support.');
       }
 
       return userDoc.data() as User;
     } catch (error: unknown) {
-      throw new Error(error instanceof Error ? error.message : 'Sign in failed');
+      const firebaseError = error as FirebaseError;
+
+      // More specific error handling
+      if (firebaseError?.code === 'auth/user-not-found') {
+        throw new Error('No account found with this email. Please check your email or create a new account.');
+      } else if (firebaseError?.code === 'auth/wrong-password') {
+        throw new Error('Incorrect password. Please try again.');
+      } else if (firebaseError?.code === 'auth/invalid-credential') {
+        throw new Error('Invalid email or password. Please check your credentials and try again.');
+      } else if (firebaseError?.code === 'auth/too-many-requests') {
+        throw new Error('Too many failed attempts. Please wait a few minutes before trying again.');
+      } else if (firebaseError?.code?.startsWith('auth/')) {
+        throw new Error(`Authentication error: ${firebaseError.message}`);
+      } else if (firebaseError?.code?.startsWith('firestore/')) {
+        throw new Error(`Database error: ${firebaseError.message}`);
+      } else {
+        throw new Error(firebaseError?.message || 'Sign in failed. Please try again.');
+      }
     }
   }
 

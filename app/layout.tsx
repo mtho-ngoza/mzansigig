@@ -4,6 +4,7 @@ import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { MessagingProvider } from '@/contexts/MessagingContext'
 import { ToastProvider } from '@/contexts/ToastContext'
+import { LocationProvider } from '@/contexts/LocationContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AppLayout } from '@/components/layout/AppLayout'
 
@@ -49,13 +50,15 @@ export default function RootLayout({
       <body className={inter.className}>
         <ErrorBoundary>
           <ToastProvider>
-            <AuthProvider>
-              <MessagingProvider>
-                <AppLayout>
-                  {children}
-                </AppLayout>
-              </MessagingProvider>
-            </AuthProvider>
+            <LocationProvider>
+              <AuthProvider>
+                <MessagingProvider>
+                  <AppLayout>
+                    {children}
+                  </AppLayout>
+                </MessagingProvider>
+              </AuthProvider>
+            </LocationProvider>
           </ToastProvider>
         </ErrorBoundary>
         <script

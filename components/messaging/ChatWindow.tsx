@@ -1,12 +1,12 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
+import Image from 'next/image'
 import { Conversation, MessageInput } from '@/types/messaging'
 import { useMessaging } from '@/contexts/MessagingContext'
 import { useAuth } from '@/contexts/AuthContext'
 import { MessageList } from './MessageList'
 import { MessageInputForm } from './MessageInputForm'
-import { Button } from '@/components/ui/Button'
 
 interface ChatWindowProps {
   conversation: Conversation
@@ -50,9 +50,11 @@ export function ChatWindow({ conversation }: ChatWindowProps) {
         <div className="flex items-center space-x-3">
           {/* Other user's avatar */}
           {otherParticipant.profilePhoto ? (
-            <img
+            <Image
               src={otherParticipant.profilePhoto}
               alt={otherParticipant.userName}
+              width={32}
+              height={32}
               className="w-8 h-8 rounded-full object-cover"
             />
           ) : (

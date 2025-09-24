@@ -9,7 +9,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import ApplicationForm from '@/components/application/ApplicationForm'
 import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
 import { useToast } from '@/contexts/ToastContext'
-import { useMessaging } from '@/contexts/MessagingContext'
+import { useLocation } from '@/contexts/LocationContext'
+import { calculateDistance, formatDistance } from '@/lib/utils/locationUtils'
 
 interface PublicGigBrowserProps {
   onSignUpClick: () => void
@@ -23,21 +24,27 @@ interface PublicGigBrowserProps {
 
 export default function PublicGigBrowser({
   onSignUpClick,
-  onLoginClick,
-  showAuthButtons = true,
   onDashboardClick,
   currentUser,
-  onMessageConversationStart,
-  onMessagesClick
+  onMessageConversationStart
 }: PublicGigBrowserProps) {
   const { success, error } = useToast()
-  const { totalUnreadCount } = useMessaging()
+  const {
+    locationPermissionGranted,
+    requestLocationPermission,
+    isLoadingLocation,
+    currentCoordinates
+  } = useLocation()
+
   const [gigs, setGigs] = useState<Gig[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
   const [selectedGig, setSelectedGig] = useState<Gig | null>(null)
   const [showApplicationForm, setShowApplicationForm] = useState(false)
+  const [showLocationPrompt, setShowLocationPrompt] = useState(true)
+  const [showNearbyOnly, setShowNearbyOnly] = useState(false)
+  const [radiusKm, setRadiusKm] = useState(25)
 
   const categories = [
     'Technology',
@@ -51,9 +58,37 @@ export default function PublicGigBrowser({
     'Other'
   ]
 
-  useEffect(() => {
-    loadGigs()
-  }, [])
+  const filterGigsByLocation = async (allGigs: Gig[]) => {
+    if (!showNearbyOnly || !currentCoordinates) {
+      return allGigs
+    }
+
+    return allGigs.filter(gig => {
+      if (!gig.coordinates) return false
+
+      const distance = calculateDistance(
+        currentCoordinates,
+        gig.coordinates
+      )
+      return distance <= radiusKm
+    }).sort((a, b) => {
+      if (!a.coordinates || !b.coordinates) return 0
+
+      const distA = calculateDistance(
+        currentCoordinates.latitude,
+        currentCoordinates.longitude,
+        a.coordinates.latitude,
+        a.coordinates.longitude
+      )
+      const distB = calculateDistance(
+        currentCoordinates.latitude,
+        currentCoordinates.longitude,
+        b.coordinates.latitude,
+        b.coordinates.longitude
+      )
+      return distA - distB
+    })
+  }
 
   const loadGigs = async () => {
     try {
@@ -69,6 +104,7 @@ export default function PublicGigBrowser({
             description: 'Looking for a skilled web developer to create a modern, responsive website for our local bakery. Need online ordering system and payment integration.',
             category: 'Technology',
             location: 'Cape Town',
+            coordinates: { latitude: -33.9249, longitude: 18.4241 },
             budget: 15000,
             duration: '2-3 weeks',
             skillsRequired: ['React', 'Node.js', 'Payment Integration'],
@@ -85,6 +121,7 @@ export default function PublicGigBrowser({
             description: 'Need a creative logo designer to create a modern, professional logo for our AI startup. Should reflect innovation and trustworthiness.',
             category: 'Design',
             location: 'Johannesburg',
+            coordinates: { latitude: -26.2041, longitude: 28.0473 },
             budget: 3500,
             duration: '1 week',
             skillsRequired: ['Graphic Design', 'Logo Design', 'Adobe Illustrator'],
@@ -101,6 +138,7 @@ export default function PublicGigBrowser({
             description: 'Seeking experienced travel writer to create engaging blog posts about South African destinations. 10 articles needed.',
             category: 'Writing',
             location: 'Durban',
+            coordinates: { latitude: -29.8587, longitude: 31.0218 },
             budget: 8000,
             duration: '3 weeks',
             skillsRequired: ['Content Writing', 'SEO', 'Travel Experience'],
@@ -117,6 +155,7 @@ export default function PublicGigBrowser({
             description: 'Small restaurant needs help with social media presence. Create content calendar, design posts, and manage Instagram/Facebook accounts.',
             category: 'Marketing',
             location: 'Pretoria',
+            coordinates: { latitude: -25.7479, longitude: 28.2293 },
             budget: 5000,
             duration: '1 month',
             skillsRequired: ['Social Media Marketing', 'Content Creation', 'Canva'],
@@ -133,6 +172,7 @@ export default function PublicGigBrowser({
             description: 'Need reliable person for weekly house cleaning in Sandton. 3-bedroom house, must bring own cleaning supplies. Looking for someone trustworthy and thorough.',
             category: 'Cleaning',
             location: 'Johannesburg',
+            coordinates: { latitude: -26.2041, longitude: 28.0473 },
             budget: 600,
             duration: '1 day',
             skillsRequired: ['House Cleaning'],
@@ -149,6 +189,7 @@ export default function PublicGigBrowser({
             description: 'Looking for UI/UX designer to redesign our fitness tracking mobile app. Need modern, intuitive design that encourages user engagement.',
             category: 'Design',
             location: 'Cape Town',
+            coordinates: { latitude: -33.9249, longitude: 18.4241 },
             budget: 12000,
             duration: '4 weeks',
             skillsRequired: ['UI/UX Design', 'Figma', 'Mobile Design', 'User Research'],
@@ -160,9 +201,11 @@ export default function PublicGigBrowser({
             updatedAt: new Date('2024-09-21')
           }
         ]
-        setGigs(demoGigs)
+        const filteredGigs = await filterGigsByLocation(demoGigs)
+        setGigs(filteredGigs)
       } else {
-        setGigs(openGigs.slice(0, 20)) // Show first 20 gigs
+        const filteredGigs = await filterGigsByLocation(openGigs.slice(0, 20))
+        setGigs(filteredGigs)
       }
     } catch (error) {
       console.error('Error loading gigs:', error)
@@ -188,11 +231,40 @@ export default function PublicGigBrowser({
     }
   }
 
+  const handleNearMeToggle = async () => {
+    if (!currentCoordinates) {
+      error('Location not available. Please enable location first.')
+      return
+    }
+
+    setShowNearbyOnly(!showNearbyOnly)
+    // Reload gigs with new filter
+    await loadGigs()
+
+    if (!showNearbyOnly) {
+      success(`Now showing gigs within ${formatDistance(radiusKm)} of your location`)
+    } else {
+      success('Now showing all gigs')
+    }
+  }
+
+  useEffect(() => {
+    loadGigs()
+  }, [])
+
+  useEffect(() => {
+    if (showNearbyOnly) {
+      loadGigs() // Reload when location filter changes
+    }
+  }, [showNearbyOnly, radiusKm, currentCoordinates])
+
   const handleSearch = async () => {
     try {
       setLoading(true)
       const searchResults = await GigService.searchGigs(searchTerm, selectedCategory || undefined)
-      setGigs(searchResults.filter(gig => gig.status === 'open').slice(0, 20))
+      const openGigs = searchResults.filter(gig => gig.status === 'open').slice(0, 20)
+      const filteredGigs = await filterGigsByLocation(openGigs)
+      setGigs(filteredGigs)
     } catch (error) {
       console.error('Error searching gigs:', error)
       setGigs([])
@@ -312,13 +384,124 @@ export default function PublicGigBrowser({
 
       {/* Gigs Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Location Status - Show different content based on permission state */}
+        {!showLocationPrompt || locationPermissionGranted ? null : (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-medium text-blue-900">
+                    Find gigs near you
+                  </p>
+                  <p className="text-sm text-blue-700">
+                    Enable location to see nearby opportunities first - especially useful for cleaning, construction & transport jobs
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={requestLocationPermission}
+                  disabled={isLoadingLocation}
+                  className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                >
+                  {isLoadingLocation ? 'Getting Location...' : 'Enable Location'}
+                </Button>
+                <button
+                  onClick={() => setShowLocationPrompt(false)}
+                  className="text-blue-400 hover:text-blue-600"
+                  aria-label="Dismiss"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Location Enabled Indicator */}
+        {locationPermissionGranted && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-6">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-green-900">
+                  Location enabled! You can now find nearby gigs.
+                </p>
+                <p className="text-sm text-green-700">
+                  Use the &quot;Near Me&quot; button to filter gigs by distance.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Radius Selector */}
+        {showNearbyOnly && currentCoordinates && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+              <div>
+                <p className="text-sm font-medium text-blue-900">
+                  Showing gigs within {formatDistance(radiusKm)} of your location
+                </p>
+                <p className="text-xs text-blue-700">
+                  Adjust the radius to see more or fewer nearby opportunities
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <label className="text-sm text-blue-700">Radius:</label>
+                <select
+                  value={radiusKm}
+                  onChange={(e) => setRadiusKm(Number(e.target.value))}
+                  className="px-3 py-1 border border-blue-300 rounded-md text-sm text-blue-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value={5}>5 km</option>
+                  <option value={10}>10 km</option>
+                  <option value={25}>25 km</option>
+                  <option value={50}>50 km</option>
+                  <option value={100}>100 km</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex justify-between items-center mb-8">
           <h3 className="text-2xl font-bold text-gray-900">
             Available Gigs
           </h3>
-          <p className="text-gray-600">
-            {gigs.length} gigs found
-          </p>
+          <div className="flex items-center space-x-4">
+            <p className="text-gray-600">
+              {gigs.length} gigs found{showNearbyOnly ? ` within ${formatDistance(radiusKm)}` : ''}
+            </p>
+            {locationPermissionGranted && (
+              <Button
+                variant={showNearbyOnly ? "default" : "outline"}
+                size="sm"
+                onClick={handleNearMeToggle}
+                className={showNearbyOnly ? "bg-blue-600 text-white" : "text-blue-700 border-blue-300 hover:bg-blue-100"}
+              >
+                <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                {showNearbyOnly ? `Within ${formatDistance(radiusKm)}` : 'Near Me'}
+              </Button>
+            )}
+          </div>
         </div>
 
         {loading ? (
@@ -357,7 +540,19 @@ export default function PublicGigBrowser({
                   <CardTitle className="text-lg">{gig.title}</CardTitle>
                   <div className="flex items-center justify-between text-sm text-gray-500">
                     <span>{gig.category}</span>
-                    <span>{gig.location}</span>
+                    <div className="flex items-center space-x-2">
+                      <span>{gig.location}</span>
+                      {showNearbyOnly && currentCoordinates && gig.coordinates && (
+                        <span className="text-blue-600 font-medium">
+                          • {formatDistance(calculateDistance(
+                            currentCoordinates.latitude,
+                            currentCoordinates.longitude,
+                            gig.coordinates.latitude,
+                            gig.coordinates.longitude
+                          ))} away
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>

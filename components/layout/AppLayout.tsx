@@ -22,10 +22,11 @@ export function AppLayout({ }: AppLayoutProps) {
   const [messageConversationId, setMessageConversationId] = useState<string | undefined>(undefined)
   const [showPostGig, setShowPostGig] = useState(false)
 
-  // Handle initial page determination
+  // Handle authentication state changes
   useEffect(() => {
-    if (user && currentView === 'browse') {
-      // Don't auto-redirect authenticated users, let them stay on browse
+    if (user && currentView === 'auth') {
+      // Redirect to dashboard after successful authentication
+      setCurrentView('dashboard')
     }
   }, [user, currentView])
 

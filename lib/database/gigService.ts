@@ -1,5 +1,13 @@
 import { FirestoreService } from './firestore';
 import { Gig, GigApplication, Review } from '@/types/gig';
+import { Coordinates, LocationSearchOptions } from '@/types/location';
+import {
+  calculateDistance,
+  isWithinRadius,
+  sortByDistance,
+  filterByRadius,
+  getCityCoordinates
+} from '@/lib/utils/locationUtils';
 
 export class GigService {
   // Gig CRUD operations
@@ -11,6 +19,14 @@ export class GigService {
       applicants: [],
       status: 'open' as const
     };
+
+    // Add coordinates if location is provided
+    if (gigData.location && !gigData.coordinates) {
+      const coordinates = getCityCoordinates(gigData.location);
+      if (coordinates) {
+        gig.coordinates = coordinates;
+      }
+    }
 
     return await FirestoreService.create('gigs', gig);
   }
@@ -62,6 +78,192 @@ export class GigService {
         skill.toLowerCase().includes(searchTermLower)
       )
     );
+  }
+
+  // Location-based search methods
+  static async searchGigsWithLocation(
+    searchTerm: string = '',
+    options: LocationSearchOptions = {}
+  ): Promise<(Gig & { distanceInfo?: { distance: number; unit: string; travelTime?: number } })[]> {
+    let gigs: Gig[] = [];
+
+    // Get base gigs
+    if (options.city) {
+      gigs = await FirestoreService.getWhere<Gig>('gigs', 'location', '==', options.city, 'createdAt');
+    } else {
+      gigs = await this.getGigsByStatus('open');
+    }
+
+    // Apply text search filter if provided
+    if (searchTerm.trim()) {
+      const searchTermLower = searchTerm.toLowerCase();
+      gigs = gigs.filter(gig =>
+        gig.title.toLowerCase().includes(searchTermLower) ||
+        gig.description.toLowerCase().includes(searchTermLower) ||
+        gig.skillsRequired.some(skill =>
+          skill.toLowerCase().includes(searchTermLower)
+        )
+      );
+    }
+
+    // Ensure gigs have coordinates (add them if missing)
+    const gigsWithCoords = await Promise.all(
+      gigs.map(async (gig) => {
+        if (!gig.coordinates && gig.location) {
+          const coords = getCityCoordinates(gig.location);
+          if (coords) {
+            // Update gig with coordinates in database
+            await this.updateGig(gig.id, { coordinates: coords });
+            return { ...gig, coordinates: coords };
+          }
+        }
+        return gig;
+      })
+    );
+
+    // Apply location-based filtering and sorting
+    if (options.coordinates) {
+      let results = gigsWithCoords;
+
+      // Filter by radius if specified
+      if (options.radius && options.radius < 500) { // Don't filter if radius is "Anywhere in SA"
+        results = filterByRadius(
+          results,
+          options.coordinates,
+          options.radius,
+          (gig) => gig.coordinates || null
+        );
+      }
+
+      // Sort by distance if requested
+      if (options.sortByDistance) {
+        const sorted = sortByDistance(
+          results,
+          options.coordinates,
+          (gig) => gig.coordinates || null
+        );
+
+        // Apply max results limit
+        const limited = options.maxResults ? sorted.slice(0, options.maxResults) : sorted;
+        return limited;
+      }
+
+      // Apply max results limit even without sorting
+      return options.maxResults ? results.slice(0, options.maxResults) : results;
+    }
+
+    // No location-based processing, return as-is
+    const limited = options.maxResults ? gigsWithCoords.slice(0, options.maxResults) : gigsWithCoords;
+    return limited.map(gig => ({ ...gig })); // Ensure consistent return type
+  }
+
+  static async getGigsNearLocation(
+    coordinates: Coordinates,
+    radiusKm: number = 25,
+    category?: string
+  ): Promise<(Gig & { distanceInfo: { distance: number; unit: string; travelTime?: number } })[]> {
+    let gigs: Gig[];
+
+    if (category) {
+      gigs = await FirestoreService.getWhere<Gig>('gigs', 'category', '==', category, 'createdAt');
+    } else {
+      gigs = await this.getGigsByStatus('open');
+    }
+
+    // Ensure gigs have coordinates
+    const gigsWithCoords = await Promise.all(
+      gigs.map(async (gig) => {
+        if (!gig.coordinates && gig.location) {
+          const coords = getCityCoordinates(gig.location);
+          if (coords) {
+            await this.updateGig(gig.id, { coordinates: coords });
+            return { ...gig, coordinates: coords };
+          }
+        }
+        return gig;
+      })
+    );
+
+    // Filter by radius and add distance information
+    const gigsInRange = gigsWithCoords
+      .map(gig => {
+        if (!gig.coordinates) return null;
+
+        const distance = calculateDistance(coordinates, gig.coordinates);
+        if (distance <= radiusKm) {
+          return {
+            ...gig,
+            distanceInfo: {
+              distance,
+              unit: 'km' as const,
+              travelTime: Math.round((distance / 50) * 60) // Estimate: 50 km/h average speed
+            }
+          };
+        }
+        return null;
+      })
+      .filter((gig): gig is NonNullable<typeof gig> => gig !== null)
+      .sort((a, b) => a.distanceInfo.distance - b.distanceInfo.distance);
+
+    return gigsInRange;
+  }
+
+  static async getRecommendedGigs(
+    userCoordinates: Coordinates,
+    userSkills: string[] = [],
+    maxDistance: number = 50
+  ): Promise<(Gig & { distanceInfo: { distance: number; unit: string; travelTime?: number }, relevanceScore: number })[]> {
+    const gigs = await this.getGigsByStatus('open');
+
+    // Ensure gigs have coordinates
+    const gigsWithCoords = await Promise.all(
+      gigs.map(async (gig) => {
+        if (!gig.coordinates && gig.location) {
+          const coords = getCityCoordinates(gig.location);
+          if (coords) {
+            await this.updateGig(gig.id, { coordinates: coords });
+            return { ...gig, coordinates: coords };
+          }
+        }
+        return gig;
+      })
+    );
+
+    const recommendations = gigsWithCoords
+      .map(gig => {
+        if (!gig.coordinates) return null;
+
+        const distance = calculateDistance(userCoordinates, gig.coordinates);
+        if (distance > maxDistance) return null;
+
+        // Calculate relevance score based on skills match
+        const skillMatches = gig.skillsRequired.filter(skill =>
+          userSkills.some(userSkill =>
+            skill.toLowerCase().includes(userSkill.toLowerCase()) ||
+            userSkill.toLowerCase().includes(skill.toLowerCase())
+          )
+        ).length;
+
+        const skillScore = gig.skillsRequired.length > 0 ? skillMatches / gig.skillsRequired.length : 0;
+        const distanceScore = Math.max(0, 1 - (distance / maxDistance)); // Closer = better
+
+        // Weighted relevance score: 60% skills, 40% distance
+        const relevanceScore = (skillScore * 0.6) + (distanceScore * 0.4);
+
+        return {
+          ...gig,
+          distanceInfo: {
+            distance,
+            unit: 'km' as const,
+            travelTime: Math.round((distance / 50) * 60)
+          },
+          relevanceScore
+        };
+      })
+      .filter((gig): gig is NonNullable<typeof gig> => gig !== null)
+      .sort((a, b) => b.relevanceScore - a.relevanceScore); // Sort by relevance (highest first)
+
+    return recommendations;
   }
 
   // Application operations

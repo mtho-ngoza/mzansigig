@@ -1,9 +1,12 @@
+import { Coordinates } from './location'
+
 export interface Gig {
   id: string
   title: string
   description: string
   category: string
   location: string
+  coordinates?: Coordinates
   budget: number
   duration: string
   skillsRequired: string[]
@@ -15,6 +18,8 @@ export interface Gig {
   createdAt: Date
   updatedAt: Date
   deadline?: Date
+  isRemote?: boolean
+  maxTravelDistance?: number
 }
 
 export interface GigApplication {

@@ -1,3 +1,5 @@
+import { Coordinates, UserLocation, LocationPreferences } from './location'
+
 export interface User {
   id: string
   email: string
@@ -5,6 +7,9 @@ export interface User {
   lastName: string
   phone: string
   location: string
+  coordinates?: Coordinates
+  locationData?: UserLocation
+  locationPreferences?: LocationPreferences
   userType: 'job-seeker' | 'employer'
   workSector?: 'professional' | 'informal'
   idNumber?: string
@@ -28,6 +33,10 @@ export interface User {
   }
   profileCompleteness?: number
   isVerified?: boolean
+  verificationLevel?: 'basic' | 'enhanced' | 'premium'
+  backgroundCheckStatus?: 'none' | 'pending' | 'verified' | 'failed'
+  trustScore?: number
+  safetyPreferences?: SafetyPreferences
   createdAt: Date
   updatedAt?: Date
 }
@@ -62,6 +71,7 @@ export interface RegisterData {
   confirmPassword: string
   phone: string
   location: string
+  coordinates?: Coordinates
   userType: 'job-seeker' | 'employer'
   workSector?: 'professional' | 'informal'
   idNumber?: string
