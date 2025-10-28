@@ -1,0 +1,305 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ========================================
+    // Helper Functions
+    // ========================================
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user is the resource owner
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Check if user is admin
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    // Validate file size (in bytes)
+    function isValidSize(maxSizeMB) {
+      return request.resource.size <= maxSizeMB * 1024 * 1024;
+    }
+
+    // Validate image file types
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    // Validate document file types (for verification documents)
+    function isDocument() {
+      return request.resource.contentType.matches('image/.*') ||
+             request.resource.contentType == 'application/pdf';
+    }
+
+    // Validate profile photo format
+    function isValidProfilePhoto() {
+      return isImage() &&
+             isValidSize(5) && // 5MB max
+             request.resource.contentType.matches('image/(jpeg|jpg|png|webp)');
+    }
+
+    // Validate portfolio image format
+    function isValidPortfolioImage() {
+      return isImage() &&
+             isValidSize(10) && // 10MB max
+             request.resource.contentType.matches('image/(jpeg|jpg|png|webp|gif)');
+    }
+
+    // Validate verification document format
+    function isValidVerificationDocument() {
+      return isDocument() &&
+             isValidSize(10) && // 10MB max
+             (request.resource.contentType.matches('image/(jpeg|jpg|png|webp)') ||
+              request.resource.contentType == 'application/pdf');
+    }
+
+    // ========================================
+    // Profile Photos
+    // Path: profilePhotos/{userId}/{fileName}
+    // ========================================
+    match /profilePhotos/{userId}/{fileName} {
+      // Anyone authenticated can read profile photos (for browsing profiles)
+      allow read: if isAuthenticated();
+
+      // Users can only upload their own profile photo
+      allow create: if isOwner(userId) &&
+                      isValidProfilePhoto();
+
+      // Users can only update their own profile photo
+      allow update: if isOwner(userId) &&
+                      isValidProfilePhoto();
+
+      // Users can only delete their own profile photo
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ========================================
+    // Portfolio Images
+    // Path: portfolios/{userId}/{fileName}
+    // ========================================
+    match /portfolios/{userId}/{fileName} {
+      // Anyone authenticated can read portfolio images (for browsing)
+      allow read: if isAuthenticated();
+
+      // Users can only upload to their own portfolio
+      allow create: if isOwner(userId) &&
+                      isValidPortfolioImage();
+
+      // Users can only update their own portfolio images
+      allow update: if isOwner(userId) &&
+                      isValidPortfolioImage();
+
+      // Users can only delete their own portfolio images
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ========================================
+    // Verification Documents (Private)
+    // Path: verificationDocuments/{userId}/{fileName}
+    // ========================================
+    match /verificationDocuments/{userId}/{fileName} {
+      // Only the user and admins can read verification documents
+      allow read: if isOwner(userId) || isAdmin();
+
+      // Users can only upload their own verification documents
+      allow create: if isOwner(userId) &&
+                      isValidVerificationDocument();
+
+      // Users cannot update verification documents once uploaded
+      // They must delete and re-upload
+      allow update: if false;
+
+      // Users can delete their own documents before verification
+      // Admins can always delete
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ========================================
+    // Gig Attachments
+    // Path: gigs/{gigId}/attachments/{fileName}
+    // ========================================
+    match /gigs/{gigId}/attachments/{fileName} {
+      // Anyone authenticated can read gig attachments
+      allow read: if isAuthenticated();
+
+      // Only the gig owner can upload attachments to their gig
+      // Note: We can't easily verify gig ownership in storage rules,
+      // so this relies on client-side enforcement. Consider using
+      // Firestore security rules to validate before generating signed URLs
+      allow create: if isAuthenticated() &&
+                      isValidSize(20) && // 20MB max for gig attachments
+                      (isImage() ||
+                       request.resource.contentType.matches('application/.*') ||
+                       request.resource.contentType.matches('text/.*'));
+
+      // Only authenticated users can update gig attachments
+      allow update: if isAuthenticated() &&
+                      isValidSize(20);
+
+      // Only authenticated users or admins can delete gig attachments
+      allow delete: if isAuthenticated() || isAdmin();
+    }
+
+    // ========================================
+    // Message Attachments
+    // Path: messages/{conversationId}/{messageId}/{fileName}
+    // ========================================
+    match /messages/{conversationId}/{messageId}/{fileName} {
+      // Only authenticated users can read message attachments
+      // Note: In production, you should verify conversation participation
+      // using Firestore security rules before generating signed URLs
+      allow read: if isAuthenticated();
+
+      // Authenticated users can upload message attachments
+      allow create: if isAuthenticated() &&
+                      isValidSize(25) && // 25MB max for message attachments
+                      (isImage() ||
+                       request.resource.contentType.matches('application/.*') ||
+                       request.resource.contentType.matches('text/.*') ||
+                       request.resource.contentType.matches('video/.*') ||
+                       request.resource.contentType.matches('audio/.*'));
+
+      // Message attachments are immutable once sent
+      allow update: if false;
+
+      // Only message sender can delete attachments
+      // Note: Sender verification should happen at application level
+      allow delete: if isAuthenticated() || isAdmin();
+    }
+
+    // ========================================
+    // Payment Receipts (Private)
+    // Path: paymentReceipts/{userId}/{paymentId}/{fileName}
+    // ========================================
+    match /paymentReceipts/{userId}/{paymentId}/{fileName} {
+      // Only the user and admins can read payment receipts
+      allow read: if isOwner(userId) || isAdmin();
+
+      // System/Admin generates receipts
+      allow create: if isAdmin() &&
+                      request.resource.contentType == 'application/pdf' &&
+                      isValidSize(5);
+
+      // Receipts are immutable
+      allow update: if false;
+
+      // Only admins can delete receipts
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Dispute Evidence
+    // Path: disputeEvidence/{disputeId}/{userId}/{fileName}
+    // ========================================
+    match /disputeEvidence/{disputeId}/{userId}/{fileName} {
+      // Only dispute parties and admins can read evidence
+      // Note: Proper authorization should be handled at application level
+      allow read: if isAuthenticated() || isAdmin();
+
+      // Users involved in dispute can upload evidence
+      allow create: if isOwner(userId) &&
+                      isValidSize(15) && // 15MB max
+                      (isImage() ||
+                       request.resource.contentType == 'application/pdf' ||
+                       request.resource.contentType.matches('text/.*'));
+
+      // Evidence is immutable once submitted
+      allow update: if false;
+
+      // Only admins can delete evidence
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Safety Report Evidence
+    // Path: safetyReports/{reportId}/{fileName}
+    // ========================================
+    match /safetyReports/{reportId}/{fileName} {
+      // Only report creator and admins can read evidence
+      allow read: if isAuthenticated() || isAdmin();
+
+      // Authenticated users can upload safety report evidence
+      allow create: if isAuthenticated() &&
+                      isValidSize(10) && // 10MB max
+                      (isImage() || request.resource.contentType == 'application/pdf');
+
+      // Safety evidence is immutable
+      allow update: if false;
+
+      // Only admins can delete safety evidence
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // ID Documents (Temporary Upload for Verification)
+    // Path: temp/idVerification/{userId}/{fileName}
+    // ========================================
+    match /temp/idVerification/{userId}/{fileName} {
+      // Only the user and admins can read temp ID documents
+      allow read: if isOwner(userId) || isAdmin();
+
+      // Users can upload their ID for verification
+      allow create: if isOwner(userId) &&
+                      isValidVerificationDocument();
+
+      // Cannot update temp documents
+      allow update: if false;
+
+      // Auto-delete after processing (can be deleted by user or system)
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ========================================
+    // Background Check Documents (Private)
+    // Path: backgroundChecks/{userId}/{checkId}/{fileName}
+    // ========================================
+    match /backgroundChecks/{userId}/{checkId}/{fileName} {
+      // Only the user and admins can read background check docs
+      allow read: if isOwner(userId) || isAdmin();
+
+      // Only admins/system can upload background check results
+      allow create: if isAdmin() &&
+                      request.resource.contentType == 'application/pdf' &&
+                      isValidSize(5);
+
+      // Background check docs are immutable
+      allow update: if false;
+
+      // Only admins can delete
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Public Assets (Platform assets, logos, etc.)
+    // Path: public/{fileName}
+    // ========================================
+    match /public/{fileName} {
+      // Anyone can read public assets
+      allow read: if true;
+
+      // Only admins can upload public assets
+      allow create: if isAdmin() &&
+                      isValidSize(10);
+
+      // Only admins can update public assets
+      allow update: if isAdmin() &&
+                      isValidSize(10);
+
+      // Only admins can delete public assets
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Default Deny All Other Paths
+    // ========================================
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

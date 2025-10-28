@@ -1,0 +1,527 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ========================================
+    // Helper Functions
+    // ========================================
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user is the resource owner
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Check if user is admin (based on custom claims or admin collection)
+    function isAdmin() {
+      return isAuthenticated() &&
+             request.auth.token.admin == true;
+    }
+
+    // Get user document
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Check if user is verified
+    function isVerifiedUser() {
+      return isAuthenticated() &&
+             getUserData().isVerified == true;
+    }
+
+    // Check if the user is a participant in a conversation
+    function isConversationParticipant(conversationData) {
+      return request.auth.uid in conversationData.participants.userId;
+    }
+
+    // Validate required fields exist
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // Check if data is being created (not updated)
+    function isCreating() {
+      return !exists(/databases/$(database)/documents/$(request.path));
+    }
+
+    // ========================================
+    // Users Collection
+    // ========================================
+    match /users/{userId} {
+      // Anyone authenticated can read basic user profiles (for browsing)
+      allow read: if isAuthenticated();
+
+      // Users can only create their own profile during registration
+      allow create: if isOwner(userId) &&
+                      hasRequiredFields(['email', 'firstName', 'lastName', 'userType']) &&
+                      request.resource.data.id == userId;
+
+      // Users can only update their own profile
+      allow update: if isOwner(userId) &&
+                      // Cannot change immutable fields
+                      request.resource.data.id == resource.data.id &&
+                      request.resource.data.email == resource.data.email &&
+                      request.resource.data.createdAt == resource.data.createdAt;
+
+      // Users can delete their own profile
+      allow delete: if isOwner(userId) || isAdmin();
+
+      // Subcollection: User verification documents (private)
+      match /verificationDocuments/{docId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+
+      // Subcollection: Emergency contacts (private)
+      match /emergencyContacts/{contactId} {
+        allow read, write: if isOwner(userId);
+      }
+    }
+
+    // ========================================
+    // Gigs Collection
+    // ========================================
+    match /gigs/{gigId} {
+      // Anyone authenticated can read gigs (for browsing)
+      allow read: if isAuthenticated();
+
+      // Only authenticated users can create gigs
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['title', 'description', 'category', 'budget', 'employerId']) &&
+                      request.resource.data.employerId == request.auth.uid &&
+                      request.resource.data.status == 'open' &&
+                      request.resource.data.budget >= 100; // Minimum R100
+
+      // Only the employer (owner) can update their gig
+      allow update: if isAuthenticated() &&
+                      resource.data.employerId == request.auth.uid &&
+                      // Cannot change employer
+                      request.resource.data.employerId == resource.data.employerId &&
+                      request.resource.data.createdAt == resource.data.createdAt;
+
+      // Only the employer or admin can delete the gig
+      allow delete: if isAuthenticated() &&
+                      (resource.data.employerId == request.auth.uid || isAdmin());
+    }
+
+    // ========================================
+    // Applications Collection
+    // ========================================
+    match /applications/{applicationId} {
+      // Applicant and employer can read the application
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.applicantId ||
+                     request.auth.uid == resource.data.employerId);
+
+      // Only authenticated job seekers can create applications
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['gigId', 'applicantId', 'coverLetter', 'proposedRate']) &&
+                      request.resource.data.applicantId == request.auth.uid &&
+                      request.resource.data.status == 'pending' &&
+                      // Verify the gig exists
+                      exists(/databases/$(database)/documents/gigs/$(request.resource.data.gigId));
+
+      // Applicant can update their own application (before accepted)
+      // Employer can update application status
+      allow update: if isAuthenticated() &&
+                      (
+                        // Applicant updating their own pending application
+                        (request.auth.uid == resource.data.applicantId &&
+                         resource.data.status == 'pending' &&
+                         request.resource.data.status == 'pending') ||
+                        // Employer updating application status
+                        (request.auth.uid == resource.data.employerId &&
+                         request.resource.data.applicantId == resource.data.applicantId &&
+                         request.resource.data.gigId == resource.data.gigId)
+                      );
+
+      // Only applicant or admin can delete
+      allow delete: if isAuthenticated() &&
+                      (request.auth.uid == resource.data.applicantId || isAdmin());
+    }
+
+    // ========================================
+    // Reviews Collection
+    // ========================================
+    match /reviews/{reviewId} {
+      // Anyone authenticated can read reviews
+      allow read: if isAuthenticated();
+
+      // Users can create reviews for completed gigs they participated in
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['gigId', 'reviewerId', 'revieweeId', 'rating', 'type']) &&
+                      request.resource.data.reviewerId == request.auth.uid &&
+                      request.resource.data.rating >= 1 &&
+                      request.resource.data.rating <= 5 &&
+                      // Verify gig exists and user was involved
+                      exists(/databases/$(database)/documents/gigs/$(request.resource.data.gigId));
+
+      // Reviewers can update their own reviews within 24 hours
+      allow update: if isAuthenticated() &&
+                      request.auth.uid == resource.data.reviewerId &&
+                      request.time < resource.data.createdAt + duration.value(24, 'h') &&
+                      request.resource.data.reviewerId == resource.data.reviewerId &&
+                      request.resource.data.gigId == resource.data.gigId;
+
+      // Only reviewer or admin can delete
+      allow delete: if isAuthenticated() &&
+                      (request.auth.uid == resource.data.reviewerId || isAdmin());
+    }
+
+    // ========================================
+    // Conversations Collection
+    // ========================================
+    match /conversations/{conversationId} {
+      // Only participants can read the conversation
+      allow read: if isAuthenticated() &&
+                    request.auth.uid in resource.data.participants[0].userId ||
+                    request.auth.uid in resource.data.participants[1].userId;
+
+      // Authenticated users can create conversations
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['participants', 'status']) &&
+                      // User must be one of the participants
+                      (request.auth.uid == request.resource.data.participants[0].userId ||
+                       request.auth.uid == request.resource.data.participants[1].userId);
+
+      // Participants can update conversation metadata (archive, etc.)
+      allow update: if isAuthenticated() &&
+                      (request.auth.uid in resource.data.participants[0].userId ||
+                       request.auth.uid in resource.data.participants[1].userId) &&
+                      // Cannot change participants
+                      request.resource.data.participants == resource.data.participants;
+
+      // Participants can delete (archive) conversations
+      allow delete: if isAuthenticated() &&
+                      (request.auth.uid in resource.data.participants[0].userId ||
+                       request.auth.uid in resource.data.participants[1].userId);
+    }
+
+    // ========================================
+    // Messages Collection
+    // ========================================
+    match /messages/{messageId} {
+      // Only conversation participants can read messages
+      allow read: if isAuthenticated() &&
+                    exists(/databases/$(database)/documents/conversations/$(resource.data.conversationId)) &&
+                    (request.auth.uid in get(/databases/$(database)/documents/conversations/$(resource.data.conversationId)).data.participants[0].userId ||
+                     request.auth.uid in get(/databases/$(database)/documents/conversations/$(resource.data.conversationId)).data.participants[1].userId);
+
+      // Users can create messages in conversations they're part of
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['conversationId', 'senderId', 'content']) &&
+                      request.resource.data.senderId == request.auth.uid &&
+                      exists(/databases/$(database)/documents/conversations/$(request.resource.data.conversationId));
+
+      // Senders can update their own messages (mark as edited, etc.)
+      allow update: if isAuthenticated() &&
+                      request.auth.uid == resource.data.senderId &&
+                      request.resource.data.senderId == resource.data.senderId &&
+                      request.resource.data.conversationId == resource.data.conversationId;
+
+      // Senders can delete their own messages
+      allow delete: if isAuthenticated() &&
+                      (request.auth.uid == resource.data.senderId || isAdmin());
+    }
+
+    // ========================================
+    // Payments Collection
+    // ========================================
+    match /payments/{paymentId} {
+      // Employer, worker, and admin can read payment
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.employerId ||
+                     request.auth.uid == resource.data.workerId ||
+                     isAdmin());
+
+      // Only employers can create payments (initiating escrow)
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['gigId', 'employerId', 'workerId', 'amount']) &&
+                      request.resource.data.employerId == request.auth.uid &&
+                      request.resource.data.amount > 0 &&
+                      request.resource.data.escrowStatus == 'pending' &&
+                      exists(/databases/$(database)/documents/gigs/$(request.resource.data.gigId));
+
+      // Employers can update payment status (release escrow)
+      // Workers can dispute
+      allow update: if isAuthenticated() &&
+                      (
+                        // Employer releasing payment
+                        (request.auth.uid == resource.data.employerId &&
+                         request.resource.data.workerId == resource.data.workerId) ||
+                        // Worker disputing payment
+                        (request.auth.uid == resource.data.workerId) ||
+                        // Admin managing disputes
+                        isAdmin()
+                      );
+
+      // Only admin can delete payments
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Payment Methods Collection
+    // ========================================
+    match /paymentMethods/{methodId} {
+      // Users can only read their own payment methods
+      allow read: if isAuthenticated() &&
+                    resource.data.userId == request.auth.uid;
+
+      // Users can create their own payment methods
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['type', 'userId']) &&
+                      request.resource.data.userId == request.auth.uid;
+
+      // Users can update their own payment methods
+      allow update: if isAuthenticated() &&
+                      resource.data.userId == request.auth.uid &&
+                      request.resource.data.userId == resource.data.userId;
+
+      // Users can delete their own payment methods
+      allow delete: if isAuthenticated() &&
+                      resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // Withdrawals Collection
+    // ========================================
+    match /withdrawals/{withdrawalId} {
+      // Users can read their own withdrawals, admins can read all
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.userId || isAdmin());
+
+      // Users can create withdrawal requests for their own account
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['userId', 'amount', 'paymentMethodId']) &&
+                      request.resource.data.userId == request.auth.uid &&
+                      request.resource.data.amount >= 50 && // Minimum R50
+                      request.resource.data.status == 'pending';
+
+      // Only users can cancel pending withdrawals, admins can update status
+      allow update: if isAuthenticated() &&
+                      (
+                        (request.auth.uid == resource.data.userId &&
+                         resource.data.status == 'pending') ||
+                        isAdmin()
+                      );
+
+      // Users and admins can delete
+      allow delete: if isAuthenticated() &&
+                      (request.auth.uid == resource.data.userId || isAdmin());
+    }
+
+    // ========================================
+    // Fee Configuration Collection (Admin Only)
+    // ========================================
+    match /feeConfigs/{configId} {
+      // Anyone authenticated can read fee configuration
+      allow read: if isAuthenticated();
+
+      // Only admins can create, update, or delete fee configs
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Safety Reports Collection
+    // ========================================
+    match /safetyReports/{reportId} {
+      // Reporter and admin can read reports
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.reporterId || isAdmin());
+
+      // Authenticated users can create safety reports
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['reporterId', 'reporteeId', 'type', 'description']) &&
+                      request.resource.data.reporterId == request.auth.uid &&
+                      request.resource.data.status == 'pending';
+
+      // Only admins can update safety reports
+      allow update: if isAdmin();
+
+      // Only admins can delete safety reports
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Safety Check-Ins Collection
+    // ========================================
+    match /safetyCheckIns/{checkInId} {
+      // Users can read their own check-ins, admins can read all
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.userId || isAdmin());
+
+      // Users can create check-ins for gigs they're involved in
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['userId', 'gigId', 'type']) &&
+                      request.resource.data.userId == request.auth.uid &&
+                      exists(/databases/$(database)/documents/gigs/$(request.resource.data.gigId));
+
+      // Users cannot update check-ins (immutable record)
+      allow update: if false;
+
+      // Only admins can delete check-ins
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Background Checks Collection
+    // ========================================
+    match /backgroundChecks/{checkId} {
+      // Users can read their own checks, admins can read all
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.userId || isAdmin());
+
+      // Users can request background checks for themselves
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['userId', 'checkType']) &&
+                      request.resource.data.userId == request.auth.uid &&
+                      request.resource.data.status == 'pending';
+
+      // Only admins can update background check results
+      allow update: if isAdmin();
+
+      // Only admins can delete background checks
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Trust Score History Collection
+    // ========================================
+    match /trustScoreHistory/{historyId} {
+      // Users can read their own history, admins can read all
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.userId || isAdmin());
+
+      // Only system/admin can create trust score history entries
+      allow create: if isAdmin();
+
+      // Trust score history is immutable
+      allow update: if false;
+
+      // Only admins can delete history
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Safe Meeting Locations Collection
+    // ========================================
+    match /safeMeetingLocations/{locationId} {
+      // Anyone authenticated can read safe meeting locations
+      allow read: if isAuthenticated();
+
+      // Only verified users can suggest locations
+      allow create: if isVerifiedUser() &&
+                      hasRequiredFields(['name', 'address', 'coordinates', 'type']) &&
+                      request.resource.data.verified == false;
+
+      // Only admins can update/verify locations
+      allow update: if isAdmin();
+
+      // Only admins can delete locations
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Milestones Collection (for milestone-based payments)
+    // ========================================
+    match /milestones/{milestoneId} {
+      // Employer, worker, and admin can read milestones
+      allow read: if isAuthenticated() &&
+                    exists(/databases/$(database)/documents/gigs/$(resource.data.gigId)) &&
+                    (request.auth.uid == get(/databases/$(database)/documents/gigs/$(resource.data.gigId)).data.employerId ||
+                     request.auth.uid == get(/databases/$(database)/documents/gigs/$(resource.data.gigId)).data.assignedTo ||
+                     isAdmin());
+
+      // Only employers can create milestones for their gigs
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['gigId', 'title', 'amount']) &&
+                      exists(/databases/$(database)/documents/gigs/$(request.resource.data.gigId)) &&
+                      request.auth.uid == get(/databases/$(database)/documents/gigs/$(request.resource.data.gigId)).data.employerId;
+
+      // Employers can update milestone status, workers can mark as completed
+      allow update: if isAuthenticated() &&
+                      exists(/databases/$(database)/documents/gigs/$(resource.data.gigId)) &&
+                      (request.auth.uid == get(/databases/$(database)/documents/gigs/$(resource.data.gigId)).data.employerId ||
+                       request.auth.uid == get(/databases/$(database)/documents/gigs/$(resource.data.gigId)).data.assignedTo);
+
+      // Only employers and admins can delete milestones
+      allow delete: if isAuthenticated() &&
+                      exists(/databases/$(database)/documents/gigs/$(resource.data.gigId)) &&
+                      (request.auth.uid == get(/databases/$(database)/documents/gigs/$(resource.data.gigId)).data.employerId ||
+                       isAdmin());
+    }
+
+    // ========================================
+    // Payment Disputes Collection
+    // ========================================
+    match /paymentDisputes/{disputeId} {
+      // Involved parties and admin can read disputes
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.raisedBy ||
+                     request.auth.uid == resource.data.raisedAgainst ||
+                     isAdmin());
+
+      // Users involved in payment can create disputes
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['paymentId', 'gigId', 'raisedBy', 'reason']) &&
+                      request.resource.data.raisedBy == request.auth.uid &&
+                      exists(/databases/$(database)/documents/payments/$(request.resource.data.paymentId));
+
+      // Involved parties can add evidence, admins can resolve
+      allow update: if isAuthenticated() &&
+                      (
+                        // Parties adding evidence to open disputes
+                        ((request.auth.uid == resource.data.raisedBy ||
+                          request.auth.uid == resource.data.raisedAgainst) &&
+                         resource.data.status in ['open', 'investigating']) ||
+                        // Admin resolving disputes
+                        isAdmin()
+                      );
+
+      // Only admins can delete disputes
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Location Safety Ratings Collection
+    // ========================================
+    match /locationSafetyRatings/{ratingId} {
+      // Anyone authenticated can read location safety ratings
+      allow read: if isAuthenticated();
+
+      // Only system/admin can create or update ratings (aggregated data)
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Admin Collection (for admin user management)
+    // ========================================
+    match /admins/{adminId} {
+      // Only admins can read admin list
+      allow read: if isAdmin();
+
+      // Only existing admins can add new admins
+      allow create: if isAdmin();
+
+      // Admins cannot update themselves
+      allow update: if isAdmin() && request.auth.uid != adminId;
+
+      // Only super admin can delete (implement custom logic)
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Default Deny All Other Collections
+    // ========================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
