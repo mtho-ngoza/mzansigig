@@ -26,21 +26,21 @@ Runs on every pull request and push.
 - Validates all type definitions
 - Catches type errors before merge
 
-#### Firebase Emulators
+#### Firebase Configuration
 
-Both the test and build jobs use Firebase emulators running in Docker containers. This provides:
+The CI workflow does NOT use Firebase emulators. Instead:
 
-- **Isolated testing environment**: No need for real Firebase credentials
-- **Consistent behavior**: Same environment across all CI runs
-- **Cost-effective**: No Firebase usage costs during CI
-- **Faster execution**: Local emulators are faster than cloud services
+- **Tests**: Use mocked Firebase services via Jest - no emulators or real Firebase needed
+- **Build**: Uses fake Firebase credentials (sufficient for Next.js build process)
+- **Faster CI**: Simpler and faster than running emulators in Docker
 
-**Emulator Services:**
-- Auth Emulator (port 9099)
-- Firestore Emulator (port 8080)
-- Storage Emulator (port 9199)
+This approach provides:
+- **Zero setup**: No Docker containers or emulator configuration
+- **Fast execution**: No waiting for emulators to start
+- **Reliable**: No external service dependencies
+- **Cost-effective**: No infrastructure costs
 
-The Docker image `andreysenov/firebase-tools:latest` provides all Firebase emulators pre-configured.
+For local development with Firebase emulators, see `EMULATORS.md` in the project root.
 
 #### Optional Secrets
 
