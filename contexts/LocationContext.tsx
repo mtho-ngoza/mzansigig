@@ -5,7 +5,7 @@ import { Coordinates, UserLocation, LocationFilter } from '@/types/location'
 import { LocationService } from '@/lib/services/locationService'
 import { useToast } from './ToastContext'
 
-interface LocationContextType {
+export interface LocationContextType {
   // Location state
   userLocation: UserLocation | null
   currentCoordinates: Coordinates | null
@@ -32,7 +32,7 @@ interface LocationContextType {
   isLocationFilterActive: () => boolean
 }
 
-const LocationContext = createContext<LocationContextType | null>(null)
+export const LocationContext = createContext<LocationContextType | null>(null)
 
 interface LocationProviderProps {
   children: ReactNode

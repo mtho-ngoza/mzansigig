@@ -85,8 +85,8 @@ service cloud.firestore {
     // Gigs Collection
     // ========================================
     match /gigs/{gigId} {
-      // Anyone authenticated can read gigs (for browsing)
-      allow read: if isAuthenticated();
+      // Anyone can read open gigs (public browsing), authenticated users can read all
+      allow read: if true; // Public read access for gig browsing
 
       // Only authenticated users can create gigs
       allow create: if isAuthenticated() &&
@@ -317,8 +317,8 @@ service cloud.firestore {
     // Fee Configuration Collection (Admin Only)
     // ========================================
     match /feeConfigs/{configId} {
-      // Anyone authenticated can read fee configuration
-      allow read: if isAuthenticated();
+      // Anyone can read fee configuration (public information)
+      allow read: if true;
 
       // Only admins can create, update, or delete fee configs
       allow create: if isAdmin();

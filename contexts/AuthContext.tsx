@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { User, AuthState, LoginCredentials, RegisterData } from '@/types/auth'
 import { FirebaseAuthService } from '@/lib/auth/firebase'
 
-interface AuthContextType extends AuthState {
+export interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<{ success: boolean; message: string }>
   register: (data: RegisterData) => Promise<{ success: boolean; message: string }>
   logout: () => Promise<void>
@@ -12,7 +12,7 @@ interface AuthContextType extends AuthState {
   refreshUser: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function useAuth() {
   const context = useContext(AuthContext)
