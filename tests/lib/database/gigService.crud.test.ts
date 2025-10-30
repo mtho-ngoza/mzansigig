@@ -179,7 +179,7 @@ describe('GigService - CRUD Operations', () => {
             'gigs',
             mockGigId,
             expect.objectContaining({
-              status: 'closed',
+              status: 'cancelled',
               updatedAt: expect.any(Date),
             })
           )
