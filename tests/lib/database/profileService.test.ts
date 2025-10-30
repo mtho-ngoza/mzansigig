@@ -51,6 +51,8 @@ describe('ProfileService', () => {
                 title: 'Project 1',
                 description: 'A great project',
                 imageUrl: 'https://example.com/project.jpg',
+                category: 'web-development',
+                completedAt: new Date('2024-01-01'),
               },
             ],
           }
@@ -79,14 +81,7 @@ describe('ProfileService', () => {
             availability: 'full-time',
             education: 'MBA',
             languages: ['English'],
-            certifications: [
-              {
-                id: 'cert-1',
-                name: 'Certified Project Manager',
-                issuedBy: 'PMI',
-                issuedDate: new Date('2020-01-01'),
-              },
-            ],
+            certifications: ['Certified Project Manager'],
           }
 
           // When
@@ -178,6 +173,8 @@ describe('ProfileService', () => {
                 title: 'Project 1',
                 description: 'Description',
                 imageUrl: 'https://example.com/img.jpg',
+                category: 'web-development',
+                completedAt: new Date('2024-01-01'),
               },
             ],
             // 3 out of 9 fields = 33%
@@ -206,6 +203,8 @@ describe('ProfileService', () => {
                 title: 'Project',
                 description: 'Desc',
                 imageUrl: 'url',
+                category: 'web-development',
+                completedAt: new Date('2024-01-01'),
               },
             ],
             // 2 out of 9 fields = 22%
@@ -215,14 +214,7 @@ describe('ProfileService', () => {
             ...baseUser,
             userType: 'employer',
             bio: 'Bio',
-            certifications: [
-              {
-                id: 'cert-1',
-                name: 'Cert',
-                issuedBy: 'Issuer',
-                issuedDate: new Date(),
-              },
-            ],
+            certifications: ['Cert'],
             // 2 out of 9 fields = 22%
           }
 
@@ -360,6 +352,8 @@ describe('ProfileService', () => {
                 title: 'Work',
                 description: 'Desc',
                 imageUrl: 'url',
+                category: 'web-development',
+                completedAt: new Date('2024-01-01'),
               },
             ],
           }

@@ -168,7 +168,7 @@ describe('GigService - CRUD Operations', () => {
       describe('when updating gig status', () => {
         it('then updates only status and timestamp', async () => {
           // Given
-          const updates = { status: 'closed' as const }
+          const updates = { status: 'cancelled' as const }
           jest.mocked(FirestoreService.update).mockResolvedValue()
 
           // When
@@ -179,7 +179,7 @@ describe('GigService - CRUD Operations', () => {
             'gigs',
             mockGigId,
             expect.objectContaining({
-              status: 'closed',
+              status: 'cancelled',
               updatedAt: expect.any(Date),
             })
           )
@@ -293,19 +293,19 @@ describe('GigService - CRUD Operations', () => {
       describe('when getting closed gigs', () => {
         it('then returns only closed gigs', async () => {
           // Given
-          const closedGigs = [{ ...mockGig, status: 'closed' as const }]
-          jest.mocked(FirestoreService.getWhere).mockResolvedValue(closedGigs)
+          const cancelledGigs = [{ ...mockGig, status: 'cancelled' as const }]
+          jest.mocked(FirestoreService.getWhere).mockResolvedValue(cancelledGigs)
 
           // When
-          const result = await GigService.getGigsByStatus('closed')
+          const result = await GigService.getGigsByStatus('cancelled')
 
           // Then
-          expect(result).toEqual(closedGigs)
+          expect(result).toEqual(cancelledGigs)
           expect(FirestoreService.getWhere).toHaveBeenCalledWith(
             'gigs',
             'status',
             '==',
-            'closed',
+            'cancelled',
             'createdAt'
           )
         })
@@ -418,6 +418,7 @@ describe('GigService - CRUD Operations', () => {
     const mockApplicationData = {
       gigId: mockGigId,
       applicantId: mockApplicantId,
+      applicantName: 'Test Applicant',
       employerId: mockEmployerId,
       coverLetter: 'I am interested in this position',
       proposedRate: 4500,

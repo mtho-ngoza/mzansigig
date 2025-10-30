@@ -60,3 +60,8 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 
+# Firebase Emulator data
+emulator-data/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
