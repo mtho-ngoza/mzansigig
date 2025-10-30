@@ -1,0 +1,15 @@
+{
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["cpt1"],
+  "env": {
+    "NEXT_PUBLIC_USE_EMULATOR": "false"
+  },
+  "build": {
+    "env": {
+      "NEXT_PUBLIC_USE_EMULATOR": "false"
+    }
+  }
+}
