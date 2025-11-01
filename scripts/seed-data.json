@@ -1,0 +1,15 @@
+{
+  "feeConfigs": {
+    "default-fee-config": {
+      "platformFeePercentage": 10,
+      "gigPostingFee": 10,
+      "minimumGigAmount": 100,
+      "active": true,
+      "name": "Default Fee Configuration",
+      "description": "Standard platform fees for all gigs",
+      "createdAt": "__TIMESTAMP__",
+      "updatedAt": "__TIMESTAMP__",
+      "createdBy": "system-seed"
+    }
+  }
+}

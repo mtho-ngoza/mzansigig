@@ -63,8 +63,16 @@ export class FeeConfigService {
       const querySnapshot = await getDocs(q)
 
       if (querySnapshot.empty) {
-        // Create default config if none exists
-        return await this.createFeeConfig(DEFAULT_FEE_CONFIG, 'system')
+        // Return default config if none exists in database
+        // Run 'npm run seed:prod' or 'npm run seed:dev' to seed the database
+        console.warn('⚠️  No fee config found in database. Using default config. Run seed script to persist.')
+        return {
+          id: 'default',
+          ...DEFAULT_FEE_CONFIG,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          createdBy: 'system'
+        }
       }
 
       const doc = querySnapshot.docs[0]

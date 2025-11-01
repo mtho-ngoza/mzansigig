@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "gig-sa-production"
+    "default": "kasigig-dev",
+    "dev": "kasigig-dev",
+    "production": "kasigig-production"
   }
 }

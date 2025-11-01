@@ -161,7 +161,7 @@ KasiGig empowers all South Africans - from informal sector workers to profession
 
 ### Prerequisites
 - Node.js 18+ and npm
-- Firebase project with Authentication and Firestore enabled
+- Git
 
 ### Installation
 
@@ -176,39 +176,54 @@ cd kasigig
 npm install
 ```
 
-3. **Configure Firebase**
-   - Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
-   - Enable Authentication → Email/Password provider
-   - Enable Firestore Database
-   - Enable Firebase Storage for file uploads
-   - Add your domain to authorized domains in Authentication settings
-   - Configure Storage CORS for development (see `cors.json` in project root)
+3. **Set up environment** (Use Firebase Emulators - No cloud needed!)
+```bash
+# Copy the environment template
+cp .env.example .env.local
 
-4. **Set up environment variables**
-Copy `.env.example` to `.env.local` and add your Firebase config:
-```env
-# Firebase Configuration (Required)
-NEXT_PUBLIC_FIREBASE_API_KEY=your_api_key
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
-
-# Google Vision API for ID Verification (Optional - fallback will be used)
-GOOGLE_CLOUD_API_KEY=your_google_vision_api_key_here
-
-# OCR Configuration (Optional)
-OCR_ENABLED=true
-OCR_CONFIDENCE_THRESHOLD=70
+# The default configuration uses Firebase Emulators
+# No need to change anything - it works out of the box!
 ```
 
-5. **Run the development server**
+4. **Start development**
 ```bash
 npm run dev
 ```
 
-6. **Open [http://localhost:3000](http://localhost:3000)**
+5. **Access the application**
+   - **App**: http://localhost:3000
+   - **Emulator UI**: http://localhost:4000
+
+**That's it!** You're ready to develop locally with Firebase Emulators.
+
+### 🌍 Environment Options
+
+This project supports 3 environments:
+
+| Environment | Use Case | Setup Required |
+|-------------|----------|----------------|
+| **Local (Emulators)** | Daily development | ✅ None - works out of the box |
+| **Dev (kasigig-dev)** | Cloud testing | Firebase credentials needed |
+| **Production (kasigig-production)** | Vercel deployment only | Never connect locally! |
+
+📖 **For detailed environment setup**: See [ENVIRONMENTS.md](./ENVIRONMENTS.md)
+
+### 🔧 Alternative: Use Dev Environment
+
+If you need to test with real Firebase cloud services:
+
+1. Get credentials from [Firebase Console](https://console.firebase.google.com/project/kasigig-dev/settings/general)
+2. Update `.env.local`:
+```env
+NEXT_PUBLIC_USE_EMULATOR=false
+NEXT_PUBLIC_FIREBASE_API_KEY=<your_dev_api_key>
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=kasigig-dev.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=kasigig-dev
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=kasigig-dev.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=<your_sender_id>
+NEXT_PUBLIC_FIREBASE_APP_ID=<your_app_id>
+```
+3. Run `npm run dev`
 
 ## 🧪 Local Development with Firebase Emulators
 
@@ -231,8 +246,8 @@ NEXT_PUBLIC_USE_EMULATOR=true
 # Use fake credentials for emulators
 NEXT_PUBLIC_FIREBASE_API_KEY=fake-api-key-for-emulator
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=localhost
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-gig-sa
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=demo-gig-sa.appspot.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-kasigig-production
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=demo-kasigig-production.appspot.com
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
 NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abc123
 ```
@@ -535,7 +550,7 @@ firebase deploy --only storage
 
 #### 4. Firebase Production Setup (Day 3-5) 🔥
 
-- [ ] Create production Firebase project (or rename existing from "gig-sa-production")
+- [x] Create production Firebase project `kasigig-production`
 - [ ] Update `.firebaserc` with new project ID
 - [ ] Enable services: Authentication, Firestore, Storage
 - [ ] Configure Authentication:

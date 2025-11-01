@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kasigig-v1'
+const CACHE_NAME = 'kasigig-v2' // Updated to force service worker refresh
 const urlsToCache = [
   '/',
   '/manifest.json',
@@ -18,6 +18,18 @@ self.addEventListener('install', (event) => {
 
 // Fetch events
 self.addEventListener('fetch', (event) => {
+  // Skip caching for Firebase API calls
+  if (
+    event.request.url.includes('firebaseio.com') ||
+    event.request.url.includes('googleapis.com') ||
+    event.request.url.includes('firestore.googleapis.com') ||
+    event.request.url.includes('identitytoolkit.googleapis.com') ||
+    event.request.url.includes('securetoken.googleapis.com')
+  ) {
+    // Let Firebase requests go through without caching
+    return
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {

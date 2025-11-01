@@ -21,7 +21,7 @@ This document provides step-by-step instructions for deploying GigSA to Vercel.
 ### 1.1 Create Firebase Project
 1. Go to [Firebase Console](https://console.firebase.google.com)
 2. Click "Add project"
-3. Name it (e.g., "gig-sa-production")
+3. Name it (e.g., "kasigig-production")
 4. Follow the setup wizard
 
 ### 1.2 Enable Required Services
@@ -179,7 +179,7 @@ For staging vs production environments:
 | `NEXT_PUBLIC_USE_EMULATOR` | Yes | Set to `false` for production | `false` |
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | Yes | Firebase API key | `AIza...` |
 | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` | Yes | Firebase auth domain | `project.firebaseapp.com` |
-| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Yes | Firebase project ID | `gig-sa-production` |
+| `NEXT_PUBLIC_FIREBASE_PROJECT_ID` | Yes | Firebase project ID | `kasigig-production` |
 | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` | Yes | Firebase storage bucket | `project.appspot.com` |
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | Yes | Firebase sender ID | `123456789` |
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | Yes | Firebase app ID | `1:123:web:abc` |

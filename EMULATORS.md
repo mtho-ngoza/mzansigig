@@ -90,7 +90,7 @@ Created from `.env.example`, contains:
 
 ```bash
 # Emulator-friendly Firebase config
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-gig-sa
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-kasigig-production
 FIRESTORE_EMULATOR_HOST=localhost:8080
 FIREBASE_AUTH_EMULATOR_HOST=localhost:9099
 FIREBASE_STORAGE_EMULATOR_HOST=localhost:9199
