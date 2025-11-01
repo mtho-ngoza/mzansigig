@@ -1,10 +1,12 @@
-# GigSA - South Africa's Inclusive Gig Economy Platform
+# KasiGig - Empowering South Africa's Informal Sector
 
-A modern, responsive web platform designed to empower South Africa's informal sector workers and unemployed population through secure, accessible work opportunities. Built with enhanced safety features to create trust in South Africa's challenging environment while maintaining barrier-free access for all.
+A modern, responsive web platform designed to empower South Africa's informal sector workers and unemployed population through secure, accessible gig opportunities. Built with enhanced safety features to create trust in South Africa's challenging environment while maintaining barrier-free access for all.
+
+**From kasi to career** - we're bridging the gap between South Africa's 11.2 million unemployed and the R750B informal sector economy.
 
 ## 🌍 **Mission: Inclusive Employment Through Safe Opportunities**
 
-GigSA empowers all South Africans - from informal sector workers to professionals - by providing:
+KasiGig empowers all South Africans - from informal sector workers to professionals - by providing:
 - **Informal sector focus** - Built specifically for SA's underserved informal economy
 - **Barrier-free access** - Accessible to all via smartphone with context-aware UX
 - **Trust & Safety** - Enhanced security features addressing SA's unique challenges
@@ -166,7 +168,7 @@ GigSA empowers all South Africans - from informal sector workers to professional
 1. **Clone the repository**
 ```bash
 git clone <repository-url>
-cd gig-sa-claude-code
+cd kasigig
 ```
 
 2. **Install dependencies**
@@ -485,16 +487,470 @@ npm run start    # Start production server
 npm run lint     # Run ESLint
 ```
 
-## 🚀 Deployment
+---
+
+## 🚀 PRE-LAUNCH CHECKLIST & NEXT STEPS
+
+### 🔴 CRITICAL - Must Complete Before Launch (Week 1-2)
+
+#### 1. Secure Digital Assets (Day 1-2) 🔒
+**Cost**: R100-3,000 | **Priority**: IMMEDIATE
+
+- [ ] **Register kasigig.co.za domain** (R99/year)
+  - Providers: [Afrihost](https://www.afrihost.com/domains) or [Register.co.za](https://www.register.co.za/)
+  - Alternative: kasigig.africa (R249/year)
+- [ ] **Check kasigig.com availability** (for future expansion)
+- [ ] **Secure social media handles**: @kasigig on Twitter, Instagram, Facebook, TikTok, LinkedIn
+  - Register ALL handles today to prevent squatting
+
+#### 2. File Trademark Application (Day 1-3) 📋
+**Cost**: R2,990 | **Priority**: HIGH
+
+- [ ] File SA trademark via [BrandLaw](https://www.brandlaw.co.za/)
+- [ ] Class 42 (Software/Platform services)
+- [ ] Processing time: 6-12 months (file NOW before public launch)
+
+#### 3. Deploy Production Security Rules (Day 3-5) 🔐
+**Priority**: CRITICAL - CANNOT GO LIVE WITHOUT THIS
+
+```bash
+# Review production rules
+cat firestore.rules
+
+# Deploy to Firebase
+firebase deploy --only firestore:rules
+firebase deploy --only storage
+
+# Test in Firebase Console: Firestore → Rules → Test
+```
+
+**Verification checklist:**
+- [ ] Users can only read/write their own data
+- [ ] Employers can only manage their own gigs
+- [ ] Applications restricted to applicant and employer
+- [ ] Profile photos upload correctly with size limits
+- [ ] ID documents properly secured (no public access)
+
+**⚠️ Current Status**: Development rules are OPEN - MUST deploy production rules!
+
+#### 4. Firebase Production Setup (Day 3-5) 🔥
+
+- [ ] Create production Firebase project (or rename existing from "gig-sa-production")
+- [ ] Update `.firebaserc` with new project ID
+- [ ] Enable services: Authentication, Firestore, Storage
+- [ ] Configure Authentication:
+  - [ ] Enable Email/Password provider
+  - [ ] Add authorized domains (kasigig.co.za, kasigig.com)
+  - [ ] Customize email templates (verification, password reset)
+  - [ ] Enable email verification requirement
+- [ ] Set up Firebase billing alerts (prevent surprise costs)
+
+#### 5. Google Cloud OCR Setup (Day 4-5) 🔍
+**Priority**: HIGH (required for ID verification)
+
+- [ ] Create/configure Google Cloud project
+- [ ] Enable Vision API at [Google Cloud Console](https://console.cloud.google.com/apis/library/vision.googleapis.com)
+- [ ] Generate production API key
+- [ ] Restrict API key:
+  - [ ] Vision API only
+  - [ ] Domain restrictions (kasigig.co.za)
+  - [ ] IP restrictions (if possible)
+- [ ] Set up billing alerts
+- [ ] Test ID verification with real SA ID documents
+
+#### 6. Environment Configuration (Day 5-6) ⚙️
+**Priority**: CRITICAL
+
+```bash
+# Create production .env.local (DO NOT COMMIT TO GIT)
+# Copy from .env.example and update with real credentials
+
+NEXT_PUBLIC_USE_EMULATOR=false
+NEXT_PUBLIC_FIREBASE_API_KEY=your_production_api_key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=kasigig-production.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=kasigig-production
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=kasigig-production.appspot.com
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+GOOGLE_CLOUD_API_KEY=your_google_vision_api_key
+OCR_ENABLED=true
+OCR_CONFIDENCE_THRESHOLD=70
+NODE_ENV=production
+```
+
+- [ ] Configure deployment platform (Vercel/Netlify) environment variables
+- [ ] Test production build locally: `npm run build && npm run start`
+- [ ] Verify all features work with production config
+
+#### 7. Legal Documents (Day 7-10) ⚖️
+**Cost**: R5,000-15,000 (legal consultation) | **Priority**: HIGH
+
+- [ ] **Terms of Service** (consult lawyer)
+  - Platform fees and payment terms
+  - User responsibilities and conduct
+  - Dispute resolution process
+  - Data privacy commitments
+  - Limitation of liability
+  - Verification requirements
+- [ ] **Privacy Policy** (POPIA compliant)
+  - Data collection and usage details
+  - ID verification and OCR processing
+  - User rights (access, deletion, portability)
+  - Cookie policy
+  - Third-party services (Firebase, Google Cloud)
+  - Resource: [POPIA Compliance Guide](https://popia.co.za/)
+- [ ] Add acceptance checkbox to registration flow
+- [ ] Create T&Cs and Privacy Policy pages on website
+
+#### 8. Beta Testing (Day 8-14) 🧪
+**Priority**: HIGH | **Target**: 20-30 testers
+
+**Recruitment:**
+- [ ] 10 informal sector workers (cleaners, handymen, construction, etc.)
+- [ ] 5 professional gig workers (designers, developers, etc.)
+- [ ] 10 employers (5 households, 5 SMEs)
+
+**Testing Process:**
+- [ ] Create test instructions document
+- [ ] Set up feedback form (Google Forms)
+- [ ] Monitor user behavior in Firebase Analytics
+- [ ] Track completion rates for key flows:
+  - Registration → Profile completion
+  - Gig posting → First application
+  - Application → Messaging → (future: Payment)
+- [ ] Document bugs and feature requests
+- [ ] Fix CRITICAL bugs immediately (blocking issues)
+
+---
+
+### 🟡 HIGH PRIORITY - Complete Before Launch (Week 2-3)
+
+#### 9. Review & Rating System 🌟
+**Timeline**: 1 week development | **Priority**: HIGH
+
+- [ ] Design review schema (5-star rating + text review)
+- [ ] Implement review submission (post-gig completion)
+- [ ] Display reviews on user profiles
+- [ ] Add review moderation tools
+- [ ] Anti-fraud measures (only verified completed gigs)
+- [ ] Review response capability
+
+#### 10. Security Audit 🔒
+**Priority**: HIGH
+
+- [ ] Firestore security rules vulnerability scan
+- [ ] Authentication flow security review
+- [ ] File upload security testing (XSS, malicious files)
+- [ ] Payment system security audit
+- [ ] API endpoint security (rate limiting, validation)
+- [ ] Test common attack vectors (SQL injection, CSRF, etc.)
+
+#### 11. Performance Testing ⚡
+**Priority**: HIGH
+
+- [ ] Load testing (simulate 1000+ concurrent users)
+- [ ] Mobile performance on entry-level smartphones (<R2,000)
+- [ ] Test on 2G/3G connections (common in townships)
+- [ ] Image upload/processing speed optimization
+- [ ] Messaging real-time latency testing
+- [ ] Database query optimization
+- [ ] Lighthouse score: 90+ on mobile
+
+#### 12. Browser & Device Testing 📱
+**Priority**: MEDIUM-HIGH
+
+- [ ] Chrome Mobile (Android) - primary platform
+- [ ] Safari (iOS)
+- [ ] Chrome Desktop
+- [ ] Firefox Desktop
+- [ ] Edge Desktop
+- [ ] Entry-level Android devices (test on actual devices if possible)
+- [ ] PWA installation flow on mobile
+- [ ] Offline functionality testing
+
+---
+
+### 🟢 MEDIUM PRIORITY - Complete Within 1 Month of Launch
+
+#### 13. Content & Communications 📝
+
+**Platform Content:**
+- [ ] Comprehensive FAQ (20+ questions)
+- [ ] "How It Works" guides:
+  - [ ] For job seekers (finding gigs, applying, getting verified)
+  - [ ] For employers (posting gigs, reviewing applications)
+  - [ ] For first-time users (step-by-step walkthrough)
+- [ ] Safety tips and best practices
+- [ ] Category-specific guides (cleaning, construction, tech, design)
+- [ ] Video tutorials (3-5 minutes each):
+  - [ ] English version
+  - [ ] isiZulu version (high priority for townships)
+  - [ ] Afrikaans version
+
+**Email Templates:**
+- [ ] Welcome email (separate for job seekers vs employers)
+- [ ] Application confirmation
+- [ ] Application status update (accepted/rejected)
+- [ ] Payment notifications (received/withdrawn)
+- [ ] Verification reminders
+- [ ] Weekly digest (new gigs, platform updates)
+
+**Support Infrastructure:**
+- [ ] Set up support email: support@kasigig.co.za
+- [ ] Choose helpdesk system: [Freshdesk](https://freshdesk.com/) (free tier) or [Zendesk](https://www.zendesk.com/)
+- [ ] Create support response templates (10-15 common issues)
+- [ ] Define Support SLAs:
+  - Critical: 4 hours
+  - High: 24 hours
+  - Medium: 3 days
+  - Low: 1 week
+
+#### 14. Analytics & Monitoring 📊
+
+**Google Analytics 4:**
+- [ ] Set up GA4 property
+- [ ] Track key events:
+  - User registration (job seeker vs employer)
+  - Profile completion %
+  - Gig posted
+  - Application submitted
+  - Verification completed
+  - First payment
+- [ ] Set up conversion goals
+- [ ] E-commerce tracking (platform fees)
+- [ ] User retention cohorts
+
+**Error Monitoring:**
+- [ ] Set up [Sentry](https://sentry.io/) (free tier for small projects)
+- [ ] Configure error alerts (email/Slack)
+- [ ] Error severity classification
+- [ ] Error response playbook
+
+**Application Performance:**
+- [ ] Firebase Performance Monitoring
+- [ ] Real User Monitoring (RUM)
+- [ ] Track metrics:
+  - Page load times (target: <3s)
+  - API response times (target: <500ms)
+  - Database query performance
+  - Image processing time
+  - Message delivery latency
+
+**Business Metrics Dashboard:**
+- [ ] Active users (DAU/MAU)
+- [ ] Gig posting rate (per day/week)
+- [ ] Application rate and conversion
+- [ ] Verification completion rate
+- [ ] Payment volume (GMV - Gross Merchandise Value)
+- [ ] Platform revenue (fees collected)
+- [ ] User retention (7-day, 30-day)
+
+#### 15. Marketing & Launch Preparation 🎯
+
+**Pre-Launch Marketing:**
+- [ ] Create landing page with waitlist (optional)
+- [ ] Build email list: target 500+ before launch
+- [ ] Social media presence:
+  - [ ] Post 2-3 times per week (pre-launch teasers)
+  - [ ] Create content calendar
+  - [ ] Engage with township/employment communities
+- [ ] Press materials:
+  - [ ] Press release (social impact angle)
+  - [ ] Media kit (logo, screenshots, founder story)
+  - [ ] Pitch deck (for media and investors)
+- [ ] Identify media contacts:
+  - [ ] Tech publications (Ventureburn, Disrupt Africa)
+  - [ ] Employment/social impact media
+  - [ ] Township/community radio stations
+
+**Community Partnerships (CRITICAL for credibility):**
+- [ ] Reach out to 5-10 township NGOs:
+  - Soweto
+  - Khayelitsha
+  - Alexandra
+  - Umlazi (Durban)
+  - Mamelodi (Pretoria)
+- [ ] Contact community centers and job placement services
+- [ ] Partner with skills training organizations
+- [ ] Identify influencers in kasi culture (5-15K followers):
+  - Micro-influencers with authentic township following
+  - Offer early access and partnership opportunities
+
+---
+
+### 🔵 NICE TO HAVE - Post-Launch Enhancements (Month 1-3)
+
+#### 16. Multi-Language Support 🌍
+**Timeline**: 2-3 weeks per language
+
+- [ ] Set up i18n framework (next-i18next)
+- [ ] Priority languages:
+  1. **isiZulu** (most spoken in townships)
+  2. **Afrikaans** (urban areas, Western Cape)
+  3. **Sesotho** (Gauteng, Free State)
+- [ ] Translate core interface elements
+- [ ] Translate safety information and guides
+- [ ] Work with native speakers for accuracy
+
+#### 17. Skills Hub Beta 📚
+**Timeline**: 4-6 weeks
+
+- [ ] Create 15 core micro-learning modules:
+  - Soft skills (5 modules): Communication, Reliability, Professionalism, Conflict Resolution, Time Management
+  - Safety & security (3 modules): Safe work practices, Personal safety, Document security
+  - Financial literacy (3 modules): Budgeting basics, Saving strategies, Banking for beginners
+  - Category-specific skills (4 modules): Cleaning best practices, Basic construction safety, Customer service, Digital basics
+- [ ] Implement skill badge system
+- [ ] Track completion and engagement
+- [ ] Mobile-first video content (3-5 minutes each)
+
+#### 18. Enhanced Safety Features 🛡️
+**Timeline**: 3-4 weeks
+
+- [ ] Emergency contacts system
+- [ ] Check-in system for active gigs
+- [ ] Safe meeting location recommendations
+- [ ] Safety ratings and community feedback
+- [ ] In-app emergency button (links to local emergency services)
+
+#### 19. SMS & WhatsApp Integration 📱
+**Timeline**: 1-2 weeks
+
+- [ ] SMS notifications (Twilio, ClickSend, or African SMS Gateway)
+  - Application updates
+  - Payment confirmations
+  - Verification reminders
+  - Keep costs low (critical notifications only)
+- [ ] WhatsApp Business integration
+  - Automated responses
+  - Customer support channel
+  - Share gigs via WhatsApp
+  - Community support groups
+
+---
+
+## 📅 RECOMMENDED LAUNCH TIMELINE
+
+### Option 1: Rapid Launch (3-4 Weeks) ⚡
+**For**: Experienced founders, ready to iterate quickly
+
+**Week 1**: Complete items 1-6 (Domain, trademark, Firebase, security)
+**Week 2**: Complete items 7-8 (Legal, beta testing)
+**Week 3**: Fix critical bugs, soft launch to 1 township
+**Week 4**: Monitor, iterate, full public launch
+
+### Option 2: Careful Launch (6-8 Weeks) 🎯
+**For**: First-time founders, want more features at launch (RECOMMENDED)
+
+**Week 1-2**: Complete CRITICAL items (1-8)
+**Week 3-4**: Complete HIGH PRIORITY items (9-12)
+**Week 5**: Soft launch to 1-2 townships (100 users)
+**Week 6-7**: Build review system, gather feedback, fix bugs
+**Week 8**: Full public launch with reviews + refined UX
+
+### Soft Launch Strategy (HIGHLY RECOMMENDED)
+**Target**: 100 users (50 workers, 50 employers) in 1 township
+
+**Location**: Soweto or Khayelitsha (largest townships, good connectivity)
+
+**Activities**:
+- In-person onboarding at community center
+- WhatsApp support group
+- Daily monitoring and rapid bug fixes
+- User feedback sessions (in-person if possible)
+- Document learnings for full launch
+
+**Success Criteria** (before full launch):
+- 80%+ registration completion rate
+- 50%+ profile completion rate
+- 20+ gigs posted
+- 50+ applications submitted
+- 10+ users verified
+- <5 critical bugs
+- 80%+ user satisfaction (feedback survey)
+
+---
+
+## 💰 BUDGET ESTIMATE (First 6 Months)
+
+### Immediate Setup Costs (One-Time)
+| Item | Cost (ZAR) | Priority | Timeline |
+|------|-----------|----------|----------|
+| Domain (kasigig.co.za) | R99/year | CRITICAL | Day 1 |
+| Trademark filing | R2,990 | HIGH | Day 3 |
+| Legal consultation (T&Cs, Privacy) | R5,000-15,000 | HIGH | Week 2 |
+| Beta testing incentives | R2,000-5,000 | MEDIUM | Week 2 |
+| Marketing materials (logo, graphics) | R3,000-10,000 | MEDIUM | Week 3 |
+| **SUBTOTAL** | **R13,089-33,089** | | |
+
+### Monthly Operating Costs
+| Item | Monthly Cost (ZAR) | Priority |
+|------|-------------------|----------|
+| Firebase (Blaze plan) | R200-2,000 | CRITICAL |
+| Google Cloud (Vision API for OCR) | R500-3,000 | HIGH |
+| Hosting (Vercel Pro optional) | R0-400 | MEDIUM |
+| Customer support tools (Freshdesk) | R0-1,000 | MEDIUM |
+| Marketing & ads | R5,000-20,000 | HIGH |
+| Content creation | R2,000-5,000 | MEDIUM |
+| SMS notifications (if enabled) | R500-2,000 | LOW |
+| **MONTHLY TOTAL** | **R8,200-33,400** | |
+
+### 6-Month Total Budget
+**Conservative**: R63,000 (R13,000 setup + R50,000 operations)
+**Moderate**: R120,000 (R23,000 setup + R97,000 operations)
+**Aggressive**: R233,000 (R33,000 setup + R200,000 operations)
+
+### Revenue Projections (6 Months)
+**Conservative** (500 completed gigs):
+- Gig posting fees: R5,000 (500 gigs × R10)
+- Service fees: R45,000 (500 gigs × R900 avg × 10%)
+- **Total**: R50,000
+
+**Moderate** (2,000 completed gigs):
+- Gig posting fees: R20,000
+- Service fees: R180,000
+- **Total**: R200,000
+
+**Optimistic** (5,000 completed gigs):
+- Gig posting fees: R50,000
+- Service fees: R450,000
+- **Total**: R500,000
+
+**Break-even**: ~800-1,500 completed gigs (depending on burn rate)
+
+---
+
+## 🚀 DEPLOYMENT & PRODUCTION
 
 Ready for deployment to:
-- **Vercel** (recommended for Next.js)
+- **Vercel** (recommended for Next.js) - [Deployment Guide](./DEPLOYMENT.md)
 - **Netlify**
 - **Firebase Hosting**
 
-Ensure environment variables are configured in your deployment platform.
+**Production Deployment Checklist:**
+```bash
+# 1. Build and test production locally
+npm run build
+npm run start
+# Test all critical flows
 
-## 📋 Development Roadmap
+# 2. Configure environment variables in deployment platform
+# (Vercel/Netlify dashboard → Environment Variables)
+
+# 3. Deploy Firebase security rules
+firebase deploy --only firestore:rules,storage
+
+# 4. Configure custom domain (kasigig.co.za)
+# In Vercel/Netlify: Domains → Add Custom Domain
+
+# 5. Enable SSL (automatic with Vercel/Netlify)
+# 6. Test production deployment thoroughly
+# 7. Set up monitoring and alerts
+```
+
+---
+
+## 📋 Development Roadmap (Post-Launch)
 
 ### High Priority (Enhanced Features)
 - [x] **Payment system integration** with escrow for completed work ✅
@@ -600,6 +1056,20 @@ For questions, suggestions, or issues:
 - Community and family acceptance of platform safety
 - Time from registration to first paid gig (target: <7 days)
 - Transition rate from informal gig work to formal employment or entrepreneurship
+
+---
+
+---
+
+## 🎯 **Why "KasiGig"?**
+
+**Kasi** (from Afrikaans "lokasie") is South African slang for "township" - representing community, authenticity, and home. It's where most of our target users live and work.
+
+**The name signals:**
+- 🏘️ **Township roots** - We're built FOR the kasi, BY people who understand it
+- 🤝 **Cultural authenticity** - Not another corporate platform, but a community solution
+- 💪 **Empowerment** - From informal work in the kasi to building a career path
+- 🇿🇦 **Proudly South African** - Local slang that resonates with our community
 
 ---
 

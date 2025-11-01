@@ -1,7 +1,7 @@
 {
-  "name": "gig-sa-claude-code",
+  "name": "kasigig",
   "version": "1.0.0",
-  "description": "South African Gig Economy Platform",
+  "description": "KasiGig - Empowering South Africa's Informal Sector Through Secure, Inclusive Gig Opportunities",
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"firebase emulators:start --only auth,firestore,storage\" \"next dev\"",

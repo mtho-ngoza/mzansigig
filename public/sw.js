@@ -1,4 +1,4 @@
-const CACHE_NAME = 'gigsa-v1'
+const CACHE_NAME = 'kasigig-v1'
 const urlsToCache = [
   '/',
   '/manifest.json',

@@ -12,20 +12,20 @@ import { AppLayout } from '@/components/layout/AppLayout'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'GigSA - South African Gig Economy Platform',
-  description: 'Connect with local gig opportunities in South Africa',
+  title: 'KasiGig - Empowering South Africa\'s Informal Sector',
+  description: 'Secure, inclusive gig opportunities for all South Africans. From kasi to career - find work, build skills, earn income.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'GigSA'
+    title: 'KasiGig'
   },
   other: {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'default',
-    'apple-mobile-web-app-title': 'GigSA',
-    'application-name': 'GigSA',
+    'apple-mobile-web-app-title': 'KasiGig',
+    'application-name': 'KasiGig',
     'msapplication-TileColor': '#2563eb',
     'msapplication-config': '/browserconfig.xml'
   }

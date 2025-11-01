@@ -1,7 +1,7 @@
 {
-  "name": "GigSA - South Africa's Premier Gig Economy Platform",
-  "short_name": "GigSA",
-  "description": "Connect with employers and job seekers across South Africa. Find freelance work, post gigs, and build your professional network.",
+  "name": "KasiGig - Empowering South Africa's Informal Sector",
+  "short_name": "KasiGig",
+  "description": "Secure, inclusive gig opportunities for all South Africans. From kasi to career - find work, build skills, earn income.",
   "icons": [
     {
       "src": "/icons/icon-72x72.png",
@@ -66,14 +66,14 @@
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "GigSA Desktop Home Screen"
+      "label": "KasiGig Desktop Home Screen"
     },
     {
       "src": "/screenshots/mobile-home.png",
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "GigSA Mobile Home Screen"
+      "label": "KasiGig Mobile Home Screen"
     }
   ],
   "shortcuts": [

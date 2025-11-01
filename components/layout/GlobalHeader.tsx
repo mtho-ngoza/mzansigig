@@ -54,10 +54,10 @@ export function GlobalHeader({
             <div className="flex items-center space-x-6">
               <div className="flex items-center">
                 <h1 className="text-2xl font-bold text-primary-600 cursor-pointer" onClick={() => onNavigate?.('browse')}>
-                  GigSA
+                  KasiGig
                 </h1>
                 <p className="ml-4 text-gray-600 hidden sm:block">
-                  South Africa&apos;s Premier Gig Economy Platform
+                  From kasi to career
                 </p>
               </div>
 
