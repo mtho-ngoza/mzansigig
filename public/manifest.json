@@ -60,22 +60,6 @@
   "scope": "/",
   "lang": "en-US",
   "categories": ["business", "productivity", "social"],
-  "screenshots": [
-    {
-      "src": "/screenshots/desktop-home.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "KasiGig Desktop Home Screen"
-    },
-    {
-      "src": "/screenshots/mobile-home.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "KasiGig Mobile Home Screen"
-    }
-  ],
   "shortcuts": [
     {
       "name": "Browse Gigs",

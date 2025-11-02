@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
@@ -8,6 +8,8 @@ import { GigService } from '@/lib/database/gigService'
 import { useAuth } from '@/contexts/AuthContext'
 import { Gig } from '@/types/gig'
 import { useToast } from '@/contexts/ToastContext'
+import { usePayment } from '@/contexts/PaymentContext'
+import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
 
 interface ApplicationFormProps {
   gig: Gig
@@ -26,8 +28,10 @@ interface ApplicationFormData {
 export default function ApplicationForm({ gig, onSuccess, onCancel }: ApplicationFormProps) {
   const { success, error: showError } = useToast()
   const { user } = useAuth()
+  const { calculateGigFees } = usePayment()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<ApplicationFormData>>({})
+  const [workerEarnings, setWorkerEarnings] = useState<number>(gig.budget)
   const [formData, setFormData] = useState<ApplicationFormData>({
     coverLetter: '',
     proposedRate: gig.budget.toString(),
@@ -35,6 +39,24 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
     availability: '',
     equipment: ''
   })
+
+  // Calculate worker's net earnings on mount
+  useEffect(() => {
+    const loadWorkerEarnings = async () => {
+      try {
+        const breakdown = await calculateGigFees(gig.budget)
+        setWorkerEarnings(breakdown.netAmountToWorker)
+        // Update default proposed rate to worker's net amount
+        setFormData(prev => ({
+          ...prev,
+          proposedRate: breakdown.netAmountToWorker.toString()
+        }))
+      } catch (error) {
+        console.error('Error calculating worker earnings:', error)
+      }
+    }
+    loadWorkerEarnings()
+  }, [gig.budget, calculateGigFees])
 
   // Determine if this is a physical/informal work category
   const isPhysicalWork = ['Construction', 'Transportation', 'Cleaning', 'Healthcare'].includes(gig.category)
@@ -149,7 +171,7 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
         success('Application submitted successfully!')
         setFormData({
           coverLetter: '',
-          proposedRate: gig.budget.toString(),
+          proposedRate: workerEarnings.toString(),
           experience: '',
           availability: '',
           equipment: ''
@@ -176,12 +198,15 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
         <CardContent>
           {/* Gig Summary */}
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <h4 className="font-semibold mb-2">Gig Details</h4>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span className="text-gray-600">Budget:</span>
-                <span className="ml-2 font-medium">R{gig.budget.toLocaleString()}</span>
-              </div>
+            <h4 className="font-semibold mb-3">Gig Details</h4>
+
+            {/* Payment Breakdown */}
+            <div className="mb-4">
+              <GigAmountDisplay budget={gig.budget} showBreakdown={true} variant="compact" />
+            </div>
+
+            {/* Other Details */}
+            <div className="grid grid-cols-2 gap-4 text-sm pt-3 border-t border-gray-200">
               <div>
                 <span className="text-gray-600">Duration:</span>
                 <span className="ml-2">{gig.duration}</span>
@@ -190,11 +215,12 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
                 <span className="text-gray-600">Location:</span>
                 <span className="ml-2">{gig.location}</span>
               </div>
-              <div>
+              <div className="col-span-2">
                 <span className="text-gray-600">Category:</span>
                 <span className="ml-2">{gig.category}</span>
               </div>
             </div>
+
             {gig.skillsRequired.length > 0 && (
               <div className="mt-3">
                 <span className="text-gray-600 text-sm">Required Skills:</span>
@@ -314,15 +340,15 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
                   value={formData.proposedRate}
                   onChange={(e) => handleInputChange('proposedRate', e.target.value)}
                   className={`pl-8 ${errors.proposedRate ? 'border-red-500' : ''}`}
-                  min="100"
-                  step="100"
+                  min="50"
+                  step="0.01"
                 />
               </div>
               {errors.proposedRate && (
                 <p className="mt-1 text-sm text-red-600">{errors.proposedRate}</p>
               )}
               <p className="mt-1 text-sm text-gray-500">
-                The employer&apos;s budget is R{gig.budget.toLocaleString()}. You can propose a different rate.
+                Based on the client&apos;s budget of R{gig.budget.toLocaleString()}, you&apos;ll earn R{workerEarnings.toLocaleString()} after platform fees. You can propose a different rate.
               </p>
             </div>
 

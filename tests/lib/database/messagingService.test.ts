@@ -145,6 +145,7 @@ describe('MessagingService', () => {
         { ...mockParticipant1, joinedAt: new Date() },
         { ...mockParticipant2, joinedAt: new Date() },
       ],
+      participantIds: [mockUserId1, mockUserId2],
       gigId: undefined,
       gigTitle: undefined,
       lastMessageAt: new Date(),
@@ -157,7 +158,7 @@ describe('MessagingService', () => {
       describe('when getting conversation', () => {
         it('then returns the conversation', async () => {
           // Given
-          jest.mocked(FirestoreService.getAll).mockResolvedValue([mockConversation])
+          jest.mocked(FirestoreService.getWhere).mockResolvedValue([mockConversation])
 
           // When
           const result = await MessagingService.getConversationBetweenUsers(
@@ -167,6 +168,12 @@ describe('MessagingService', () => {
 
           // Then
           expect(result).toEqual(mockConversation)
+          expect(FirestoreService.getWhere).toHaveBeenCalledWith(
+            'conversations',
+            'participantIds',
+            'array-contains',
+            mockUserId1
+          )
         })
       })
     })
@@ -175,7 +182,7 @@ describe('MessagingService', () => {
       describe('when getting conversation', () => {
         it('then returns null', async () => {
           // Given
-          jest.mocked(FirestoreService.getAll).mockResolvedValue([])
+          jest.mocked(FirestoreService.getWhere).mockResolvedValue([])
 
           // When
           const result = await MessagingService.getConversationBetweenUsers(
@@ -195,7 +202,7 @@ describe('MessagingService', () => {
           // Given
           const gigId = 'gig-789'
           const conversationWithGig = { ...mockConversation, gigId }
-          jest.mocked(FirestoreService.getAll).mockResolvedValue([conversationWithGig])
+          jest.mocked(FirestoreService.getWhere).mockResolvedValue([conversationWithGig])
 
           // When
           const result = await MessagingService.getConversationBetweenUsers(
@@ -215,7 +222,7 @@ describe('MessagingService', () => {
         it('then returns null', async () => {
           // Given
           const conversationWithDifferentGig = { ...mockConversation, gigId: 'other-gig' }
-          jest.mocked(FirestoreService.getAll).mockResolvedValue([
+          jest.mocked(FirestoreService.getWhere).mockResolvedValue([
             conversationWithDifferentGig,
           ])
 
@@ -237,7 +244,7 @@ describe('MessagingService', () => {
         it('then returns the first matching conversation', async () => {
           // Given
           const conversation2 = { ...mockConversation, id: 'conv-2', gigId: 'gig-abc' }
-          jest.mocked(FirestoreService.getAll).mockResolvedValue([
+          jest.mocked(FirestoreService.getWhere).mockResolvedValue([
             mockConversation,
             conversation2,
           ])
@@ -266,6 +273,7 @@ describe('MessagingService', () => {
               { ...mockParticipant1, joinedAt: new Date() },
               { ...mockParticipant2, joinedAt: new Date() },
             ],
+            participantIds: [mockUserId1, mockUserId2],
             gigId: undefined,
             gigTitle: undefined,
             lastMessageAt: new Date(),
@@ -273,7 +281,7 @@ describe('MessagingService', () => {
             status: 'active',
             createdAt: new Date(),
           }
-          jest.mocked(FirestoreService.getAll).mockResolvedValue([existingConversation])
+          jest.mocked(FirestoreService.getWhere).mockResolvedValue([existingConversation])
 
           // When
           const conversationId = await MessagingService.getOrCreateConversation(
@@ -294,7 +302,7 @@ describe('MessagingService', () => {
       describe('when getting or creating conversation', () => {
         it('then creates new conversation and returns ID', async () => {
           // Given
-          jest.mocked(FirestoreService.getAll).mockResolvedValue([])
+          jest.mocked(FirestoreService.getWhere).mockResolvedValue([])
           jest.mocked(FirestoreService.create).mockResolvedValue(mockConversationId)
 
           // When
@@ -338,7 +346,7 @@ describe('MessagingService', () => {
           // Given
           const gigId = 'gig-789'
           const gigTitle = 'Web Development Project'
-          jest.mocked(FirestoreService.getAll).mockResolvedValue([])
+          jest.mocked(FirestoreService.getWhere).mockResolvedValue([])
           jest.mocked(FirestoreService.create).mockResolvedValue(mockConversationId)
 
           // When
@@ -369,7 +377,7 @@ describe('MessagingService', () => {
       describe('when creating conversation', () => {
         it('then uses default name for current user', async () => {
           // Given
-          jest.mocked(FirestoreService.getAll).mockResolvedValue([])
+          jest.mocked(FirestoreService.getWhere).mockResolvedValue([])
           jest.mocked(FirestoreService.create).mockResolvedValue(mockConversationId)
 
           // When
@@ -404,6 +412,7 @@ describe('MessagingService', () => {
         { ...mockParticipant1, joinedAt: new Date() },
         { ...mockParticipant2, joinedAt: new Date() },
       ],
+      participantIds: [mockUserId1, mockUserId2],
       gigId: undefined,
       gigTitle: undefined,
       lastMessageAt: new Date(),
@@ -512,6 +521,7 @@ describe('MessagingService', () => {
         { ...mockParticipant1, joinedAt: new Date() },
         { ...mockParticipant2, joinedAt: new Date() },
       ],
+      participantIds: [mockUserId1, mockUserId2],
       gigId: undefined,
       gigTitle: undefined,
       lastMessageAt: new Date(),

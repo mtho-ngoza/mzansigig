@@ -23,6 +23,7 @@ export interface Message {
 export interface Conversation {
   id: string
   participants: ConversationParticipant[]
+  participantIds: string[] // Array of participant user IDs for easier querying
   gigId?: string
   gigTitle?: string
   lastMessage?: Message

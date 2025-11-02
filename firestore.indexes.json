@@ -111,8 +111,8 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "participants.userId",
-          "order": "ASCENDING"
+          "fieldPath": "participantIds",
+          "arrayConfig": "CONTAINS"
         },
         {
           "fieldPath": "lastMessageAt",

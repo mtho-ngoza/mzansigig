@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { GigApplication } from '@/types/gig'
 import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
 import { useMessaging } from '@/contexts/MessagingContext'
+import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
 
 interface MyApplicationsProps {
   onBack?: () => void
@@ -264,21 +265,34 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                 </CardHeader>
 
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                      <span className="text-sm text-gray-500">Applied:</span>
-                      <div className="font-medium">{formatDate(application.createdAt)}</div>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-500">Your Proposed Rate:</span>
-                      <div className="font-medium">{formatCurrency(application.proposedRate)}</div>
-                    </div>
+                  {/* Application Date */}
+                  <div className="mb-4">
+                    <span className="text-sm text-gray-500">Applied:</span>
+                    <div className="font-medium">{formatDate(application.createdAt)}</div>
+                  </div>
+
+                  {/* Payment Information */}
+                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Payment Details</h4>
+
+                    {/* Client Budget Breakdown */}
                     {application.gigBudget && (
-                      <div>
-                        <span className="text-sm text-gray-500">Client Budget:</span>
-                        <div className="font-medium">{formatCurrency(application.gigBudget)}</div>
+                      <div className="mb-3">
+                        <GigAmountDisplay
+                          budget={application.gigBudget}
+                          showBreakdown={true}
+                          variant="compact"
+                        />
                       </div>
                     )}
+
+                    {/* Your Proposed Rate */}
+                    <div className="pt-3 border-t border-gray-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Your Proposed Rate:</span>
+                        <span className="font-semibold text-lg text-primary-600">{formatCurrency(application.proposedRate)}</span>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="mb-4">
@@ -290,33 +304,36 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                     </div>
                   </div>
 
+                  {/* Message Employer - Available for all application statuses */}
+                  {application.gigEmployerId && application.status !== 'rejected' && (
+                    <div className="mb-4">
+                      <QuickMessageButton
+                        recipientId={application.gigEmployerId}
+                        recipientName={application.gigEmployer || 'Employer'}
+                        recipientType="employer"
+                        gigId={application.gigId}
+                        gigTitle={application.gigTitle}
+                        size="sm"
+                        variant="outline"
+                        onConversationStart={onMessageConversationStart}
+                      >
+                        Message Employer
+                      </QuickMessageButton>
+                    </div>
+                  )}
+
                   {application.status === 'accepted' && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center">
-                          <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="text-green-800 font-medium">
-                            Congratulations! Your application has been accepted.
-                          </span>
-                        </div>
-                        {application.gigEmployerId && (
-                          <QuickMessageButton
-                            recipientId={application.gigEmployerId}
-                            recipientName={application.gigEmployer || 'Client'}
-                            recipientType="employer"
-                            gigId={application.gigId}
-                            gigTitle={application.gigTitle}
-                            size="sm"
-                            onConversationStart={onMessageConversationStart}
-                          >
-                            Contact Client
-                          </QuickMessageButton>
-                        )}
+                      <div className="flex items-center">
+                        <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-green-800 font-medium">
+                          Congratulations! Your application has been accepted.
+                        </span>
                       </div>
-                      <p className="text-green-700 text-sm">
-                        You can now message the client to discuss project details and next steps.
+                      <p className="text-green-700 text-sm mt-2">
+                        Use the &quot;Message Employer&quot; button above to discuss project details and next steps.
                       </p>
                     </div>
                   )}

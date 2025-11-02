@@ -31,6 +31,7 @@ export class MessagingService {
           ...p,
           joinedAt: new Date()
         })),
+        participantIds: participants.map(p => p.userId), // Add participantIds for easier querying
         gigId: gigId || null,
         gigTitle: gigTitle || null,
         lastMessageAt: new Date(),
@@ -54,7 +55,13 @@ export class MessagingService {
     gigId?: string
   ): Promise<Conversation | null> {
     try {
-      const conversations = await FirestoreService.getAll<Conversation>('conversations');
+      // Query conversations where userId1 is a participant (only gets conversations user has access to)
+      const conversations = await FirestoreService.getWhere<Conversation>(
+        'conversations',
+        'participantIds',
+        'array-contains',
+        userId1
+      );
 
       return conversations.find(conv => {
         const participantIds = conv.participants.map(p => p.userId);
@@ -107,13 +114,19 @@ export class MessagingService {
 
   static async getUserConversations(userId: string, includeArchived: boolean = false): Promise<ConversationPreview[]> {
     try {
-      const conversations = await FirestoreService.getAll<Conversation>('conversations', 'lastMessageAt', 'desc');
+      // Query conversations where userId is a participant (only gets conversations user has access to)
+      const conversations = await FirestoreService.getWhere<Conversation>(
+        'conversations',
+        'participantIds',
+        'array-contains',
+        userId,
+        'lastMessageAt'
+      );
 
       return conversations
         .filter(conv => {
-          const hasUser = conv.participants.some(p => p.userId === userId);
           const statusFilter = includeArchived ? true : conv.status !== 'archived';
-          return hasUser && statusFilter;
+          return statusFilter;
         })
         .map(conv => {
           const otherParticipant = conv.participants.find(p => p.userId !== userId)!;
@@ -309,6 +322,7 @@ export class MessagingService {
   ): Unsubscribe {
     const q = query(
       collection(db, 'conversations'),
+      where('participantIds', 'array-contains', userId),
       orderBy('lastMessageAt', 'desc')
     );
 
@@ -317,7 +331,8 @@ export class MessagingService {
         const conversations: Conversation[] = [];
         snapshot.forEach((doc) => {
           const data = doc.data() as Omit<Conversation, 'id'>;
-          if (data.participants.some(p => p.userId === userId) && data.status !== 'archived') {
+          // Filter out archived conversations
+          if (data.status !== 'archived') {
             conversations.push({ id: doc.id, ...data });
           }
         });

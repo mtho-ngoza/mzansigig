@@ -46,6 +46,7 @@ export default function PublicGigBrowser({
   const [showLocationPrompt, setShowLocationPrompt] = useState(true)
   const [showNearbyOnly, setShowNearbyOnly] = useState(false)
   const [radiusKm, setRadiusKm] = useState(25)
+  const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({})
 
   const categories = [
     'Technology',
@@ -91,6 +92,18 @@ export default function PublicGigBrowser({
     try {
       setLoading(true)
       const openGigs = await GigService.getGigsByStatus('open')
+
+      // Load application counts for all gigs (only if user is authenticated)
+      if (currentUser) {
+        const counts: Record<string, number> = {}
+        await Promise.all(
+          openGigs.map(async (gig) => {
+            const count = await GigService.getApplicationCountByGig(gig.id)
+            counts[gig.id] = count
+          })
+        )
+        setApplicationCounts(counts)
+      }
 
       // If no gigs found from database, show demo data
       if (openGigs.length === 0) {
@@ -234,11 +247,10 @@ export default function PublicGigBrowser({
       return
     }
 
-    setShowNearbyOnly(!showNearbyOnly)
-    // Reload gigs with new filter
-    await loadGigs()
+    const newShowNearbyOnly = !showNearbyOnly
+    setShowNearbyOnly(newShowNearbyOnly)
 
-    if (!showNearbyOnly) {
+    if (newShowNearbyOnly) {
       success(`Now showing gigs within ${formatDistance(radiusKm)} of your location`)
     } else {
       success('Now showing all gigs')
@@ -250,16 +262,44 @@ export default function PublicGigBrowser({
   }, [])
 
   useEffect(() => {
-    if (showNearbyOnly) {
-      loadGigs() // Reload when location filter changes
-    }
+    // Reload gigs whenever the location filter changes (on or off)
+    loadGigs()
   }, [showNearbyOnly, radiusKm, currentCoordinates])
+
+  // Auto-search when category changes (instant filter)
+  useEffect(() => {
+    handleSearch()
+  }, [selectedCategory])
+
+  // Debounced search for text input (auto-search after user stops typing)
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      if (searchTerm !== '') {
+        handleSearch()
+      }
+    }, 500) // 500ms delay after user stops typing
+
+    return () => clearTimeout(debounceTimer)
+  }, [searchTerm])
 
   const handleSearch = async () => {
     try {
       setLoading(true)
       const searchResults = await GigService.searchGigs(searchTerm, selectedCategory || undefined)
       const openGigs = searchResults.filter(gig => gig.status === 'open').slice(0, 20)
+
+      // Load application counts for search results (only if user is authenticated)
+      if (currentUser) {
+        const counts: Record<string, number> = {}
+        await Promise.all(
+          openGigs.map(async (gig) => {
+            const count = await GigService.getApplicationCountByGig(gig.id)
+            counts[gig.id] = count
+          })
+        )
+        setApplicationCounts(counts)
+      }
+
       const filteredGigs = await filterGigsByLocation(openGigs)
       setGigs(filteredGigs)
     } catch (error) {
@@ -267,6 +307,13 @@ export default function PublicGigBrowser({
       setGigs([])
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Handle Enter key press for immediate search
+  const handleSearchKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch()
     }
   }
 
@@ -315,8 +362,18 @@ export default function PublicGigBrowser({
     setShowApplicationForm(true)
   }
 
-  const handleApplicationSuccess = () => {
+  const handleApplicationSuccess = async () => {
     setShowApplicationForm(false)
+
+    // Refresh the application count for this gig
+    if (selectedGig) {
+      const newCount = await GigService.getApplicationCountByGig(selectedGig.id)
+      setApplicationCounts(prev => ({
+        ...prev,
+        [selectedGig.id]: newCount
+      }))
+    }
+
     setSelectedGig(null)
     success('Application submitted successfully! You can track your applications in your dashboard.')
   }
@@ -345,9 +402,10 @@ export default function PublicGigBrowser({
               <div className="md:col-span-2">
                 <input
                   type="text"
-                  placeholder="Search gigs..."
+                  placeholder="Search gigs... (auto-searches as you type)"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={handleSearchKeyPress}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent text-gray-900"
                 />
               </div>
@@ -364,8 +422,8 @@ export default function PublicGigBrowser({
                 </select>
               </div>
               <div>
-                <Button onClick={handleSearch} className="w-full">
-                  Search
+                <Button onClick={handleSearch} className="w-full" variant="outline">
+                  🔍 Search Now
                 </Button>
               </div>
             </div>
@@ -587,9 +645,13 @@ export default function PublicGigBrowser({
                   )}
 
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-500">
-                      {gig.applicants?.length || 0} applicants
-                    </span>
+                    {currentUser ? (
+                      <span className="text-sm text-gray-500">
+                        {applicationCounts[gig.id] || 0} applicants
+                      </span>
+                    ) : (
+                      <span></span>
+                    )}
                     <div className="flex items-center space-x-2">
                       {currentUser && currentUser.id !== gig.employerId && (
                         <QuickMessageButton

@@ -426,13 +426,10 @@ describe('GigService - CRUD Operations', () => {
 
     describe('given valid application data', () => {
       describe('when creating application', () => {
-        it('then creates application and updates gig applicants array', async () => {
+        it('then creates application without updating gig applicants array', async () => {
           // Given
           const applicationId = 'app-123'
-          const gigWithApplicants = { ...mockGig, applicants: [] }
           jest.mocked(FirestoreService.create).mockResolvedValue(applicationId)
-          jest.mocked(FirestoreService.getById).mockResolvedValue(gigWithApplicants)
-          jest.mocked(FirestoreService.update).mockResolvedValue()
 
           // When
           const result = await GigService.createApplication(mockApplicationData)
@@ -447,13 +444,11 @@ describe('GigService - CRUD Operations', () => {
               createdAt: expect.any(Date),
             })
           )
-          expect(FirestoreService.update).toHaveBeenCalledWith(
+          // Should NOT update gig's applicants array (uses query-based count instead)
+          expect(FirestoreService.update).not.toHaveBeenCalledWith(
             'gigs',
-            mockGigId,
-            expect.objectContaining({
-              applicants: [mockApplicantId],
-              updatedAt: expect.any(Date),
-            })
+            expect.any(String),
+            expect.anything()
           )
         })
       })
