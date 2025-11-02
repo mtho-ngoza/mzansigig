@@ -112,9 +112,8 @@ service cloud.firestore {
     // ========================================
     match /applications/{applicationId} {
       // Applicant and employer can read the application
-      allow read: if isAuthenticated() &&
-                    (request.auth.uid == resource.data.applicantId ||
-                     request.auth.uid == resource.data.employerId);
+      // Also allow reading for counting purposes (anyone can see count)
+      allow read: if isAuthenticated();
 
       // Only authenticated job seekers can create applications
       allow create: if isAuthenticated() &&

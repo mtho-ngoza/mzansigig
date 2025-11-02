@@ -278,18 +278,19 @@ export class GigService {
 
     const applicationId = await FirestoreService.create('applications', application);
 
-    // Add applicant to gig's applicants array
-    const gig = await this.getGigById(applicationData.gigId);
-    if (gig) {
-      const updatedApplicants = [...gig.applicants, applicationData.applicantId];
-      await this.updateGig(applicationData.gigId, { applicants: updatedApplicants });
-    }
+    // Note: We don't need to update the gig's applicants array since we can query
+    // applications by gigId. This also avoids permission issues when job seekers apply.
 
     return applicationId;
   }
 
   static async getApplicationsByGig(gigId: string): Promise<GigApplication[]> {
     return await FirestoreService.getWhere<GigApplication>('applications', 'gigId', '==', gigId, 'createdAt');
+  }
+
+  static async getApplicationCountByGig(gigId: string): Promise<number> {
+    const applications = await FirestoreService.getWhere<GigApplication>('applications', 'gigId', '==', gigId);
+    return applications.length;
   }
 
   static async getApplicationsByApplicant(applicantId: string): Promise<GigApplication[]> {

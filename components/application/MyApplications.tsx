@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { GigApplication } from '@/types/gig'
 import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
 import { useMessaging } from '@/contexts/MessagingContext'
+import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
 
 interface MyApplicationsProps {
   onBack?: () => void
@@ -264,21 +265,34 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                 </CardHeader>
 
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                      <span className="text-sm text-gray-500">Applied:</span>
-                      <div className="font-medium">{formatDate(application.createdAt)}</div>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-500">Your Proposed Rate:</span>
-                      <div className="font-medium">{formatCurrency(application.proposedRate)}</div>
-                    </div>
+                  {/* Application Date */}
+                  <div className="mb-4">
+                    <span className="text-sm text-gray-500">Applied:</span>
+                    <div className="font-medium">{formatDate(application.createdAt)}</div>
+                  </div>
+
+                  {/* Payment Information */}
+                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3">Payment Details</h4>
+
+                    {/* Client Budget Breakdown */}
                     {application.gigBudget && (
-                      <div>
-                        <span className="text-sm text-gray-500">Client Budget:</span>
-                        <div className="font-medium">{formatCurrency(application.gigBudget)}</div>
+                      <div className="mb-3">
+                        <GigAmountDisplay
+                          budget={application.gigBudget}
+                          showBreakdown={true}
+                          variant="compact"
+                        />
                       </div>
                     )}
+
+                    {/* Your Proposed Rate */}
+                    <div className="pt-3 border-t border-gray-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-600">Your Proposed Rate:</span>
+                        <span className="font-semibold text-lg text-primary-600">{formatCurrency(application.proposedRate)}</span>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="mb-4">

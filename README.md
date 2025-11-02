@@ -112,7 +112,7 @@ KasiGig empowers all South Africans - from informal sector workers to profession
 #### **Demo & Testing**
 - **💾 Demo Data**: 6 realistic South African gigs including cleaning examples
 - **🧪 Test Accounts**: Both job seeker and employer registration flows
-- **📍 SA Locations**: Pre-configured South African cities and remote options
+- **📍 SA Locations**: Pre-configured South African cities and remote options (hardcoded for MVP - search/autocomplete coming in Platform Enhancement phase)
 
 ### 🚧 **Planned Features** (Next Development Phase)
 
@@ -138,13 +138,17 @@ KasiGig empowers all South Africans - from informal sector workers to profession
 
 #### **Platform Enhancement**
 - **⭐ Review System**: Rating and feedback system for completed gigs
-- **🔍 Advanced Search**: Location-based matching with safety zone filtering
+- **🔍 Advanced Search & Location**:
+  - Location search/autocomplete (replacing hardcoded city dropdown)
+  - GPS-based matching with community safety mapping
+  - Safety zone filtering for secure meetup locations
+  - Radius-based gig discovery
 - **📊 Impact Analytics**: Employment outcome tracking and skills development metrics
 - **🔔 Safety Notifications**: Real-time safety alerts and emergency response system
 - **📧 Community Integration**: Optional community safety networks and peer support
 - **📱 Mobile App**: React Native app optimized for entry-level smartphones
-- **🗺️ Location Services**: GPS-based matching with community safety mapping
 - **🏆 Skills Verification**: Badges and micro-credentials for employability
+- **📧 Email Verification**: Enhanced signup flow with email verification requirement
 
 ## 🛠 Tech Stack
 
@@ -547,6 +551,26 @@ firebase deploy --only storage
 - [ ] ID documents properly secured (no public access)
 
 **⚠️ Current Status**: Development rules are OPEN - MUST deploy production rules!
+
+#### 3.5 Configure Vercel CI Checks (Day 3-5) 🔧
+**Priority**: HIGH - Prevent broken deployments
+
+In Vercel Project Settings → Git:
+- [ ] Enable "Ignored Build Step" with custom command:
+  ```bash
+  npx tsc --noEmit && exit 0 || exit 1
+  ```
+- [ ] OR configure in `vercel.json`:
+  ```json
+  {
+    "buildCommand": "npm run build",
+    "ignoreCommand": "npx tsc --noEmit"
+  }
+  ```
+- [ ] Enable "Deployment Protection" for production branch
+- [ ] Test by pushing a commit with type errors (should block deployment)
+
+**Why this matters**: Prevents deploying broken code to production when TypeScript errors exist.
 
 #### 4. Firebase Production Setup (Day 3-5) 🔥
 
@@ -971,6 +995,8 @@ firebase deploy --only firestore:rules,storage
 - [x] **Payment system integration** with escrow for completed work ✅
 - [x] **Payment dashboard** for earnings tracking and financial reporting ✅
 - [x] **Fee management system** with configurable platform fees ✅
+- [ ] **Application withdrawal** - Allow job seekers to withdraw their pending applications for any reason. Gives workers control and flexibility if they find another job, change their mind, or circumstances change. Important for informal sector where opportunities can come up quickly.
+- [ ] **Max applicants limit** - Let employers specify how many applicants they want to review (e.g., "5 applicants max"). Shows job seekers "3/5 applicants" so they know if it's worth applying. Auto-closes gig to "reviewing" when limit reached. Critical for informal work where employers typically choose from first 3-5 applicants.
 - [ ] **Firestore security rules** implementation for production
 - [ ] **Review and rating system** with trust building features
 - [ ] **Milestone-based payments** for project-based work enhancement

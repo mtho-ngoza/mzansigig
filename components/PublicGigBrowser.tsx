@@ -46,6 +46,7 @@ export default function PublicGigBrowser({
   const [showLocationPrompt, setShowLocationPrompt] = useState(true)
   const [showNearbyOnly, setShowNearbyOnly] = useState(false)
   const [radiusKm, setRadiusKm] = useState(25)
+  const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({})
 
   const categories = [
     'Technology',
@@ -91,6 +92,16 @@ export default function PublicGigBrowser({
     try {
       setLoading(true)
       const openGigs = await GigService.getGigsByStatus('open')
+
+      // Load application counts for all gigs
+      const counts: Record<string, number> = {}
+      await Promise.all(
+        openGigs.map(async (gig) => {
+          const count = await GigService.getApplicationCountByGig(gig.id)
+          counts[gig.id] = count
+        })
+      )
+      setApplicationCounts(counts)
 
       // If no gigs found from database, show demo data
       if (openGigs.length === 0) {
@@ -274,6 +285,17 @@ export default function PublicGigBrowser({
       setLoading(true)
       const searchResults = await GigService.searchGigs(searchTerm, selectedCategory || undefined)
       const openGigs = searchResults.filter(gig => gig.status === 'open').slice(0, 20)
+
+      // Load application counts for search results
+      const counts: Record<string, number> = {}
+      await Promise.all(
+        openGigs.map(async (gig) => {
+          const count = await GigService.getApplicationCountByGig(gig.id)
+          counts[gig.id] = count
+        })
+      )
+      setApplicationCounts(counts)
+
       const filteredGigs = await filterGigsByLocation(openGigs)
       setGigs(filteredGigs)
     } catch (error) {
@@ -336,8 +358,18 @@ export default function PublicGigBrowser({
     setShowApplicationForm(true)
   }
 
-  const handleApplicationSuccess = () => {
+  const handleApplicationSuccess = async () => {
     setShowApplicationForm(false)
+
+    // Refresh the application count for this gig
+    if (selectedGig) {
+      const newCount = await GigService.getApplicationCountByGig(selectedGig.id)
+      setApplicationCounts(prev => ({
+        ...prev,
+        [selectedGig.id]: newCount
+      }))
+    }
+
     setSelectedGig(null)
     success('Application submitted successfully! You can track your applications in your dashboard.')
   }
@@ -610,7 +642,7 @@ export default function PublicGigBrowser({
 
                   <div className="flex justify-between items-center">
                     <span className="text-sm text-gray-500">
-                      {gig.applicants?.length || 0} applicants
+                      {applicationCounts[gig.id] || 0} applicants
                     </span>
                     <div className="flex items-center space-x-2">
                       {currentUser && currentUser.id !== gig.employerId && (
