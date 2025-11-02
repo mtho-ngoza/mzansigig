@@ -1,12 +1,20 @@
 {
   "feeConfigs": {
     "default-fee-config": {
-      "platformFeePercentage": 10,
-      "gigPostingFee": 10,
+      "platformFeePercentage": 5,
+      "paymentProcessingFeePercentage": 2.9,
+      "fixedTransactionFee": 2.50,
+      "workerCommissionPercentage": 10,
       "minimumGigAmount": 100,
-      "active": true,
-      "name": "Default Fee Configuration",
-      "description": "Standard platform fees for all gigs",
+      "minimumWithdrawal": 50,
+      "minimumMilestone": 50,
+      "escrowReleaseDelayHours": 72,
+      "autoReleaseEnabled": true,
+      "enabledProviders": ["payfast", "ozow", "yoco"],
+      "defaultProvider": "payfast",
+      "vatIncluded": true,
+      "vatPercentage": 15,
+      "isActive": true,
       "createdAt": "__TIMESTAMP__",
       "updatedAt": "__TIMESTAMP__",
       "createdBy": "system-seed"
