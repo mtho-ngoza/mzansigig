@@ -300,6 +300,8 @@ describe('FirestoreService', () => {
         email: 'test@example.com',
         firstName: 'Test',
         lastName: 'User',
+        phone: '+27123456789',
+        location: 'Johannesburg',
         userType: 'job-seeker',
         createdAt: new Date(),
         updatedAt: new Date()
@@ -377,6 +379,8 @@ describe('FirestoreService', () => {
           email: 'john@example.com',
           firstName: 'John',
           lastName: 'Doe',
+          phone: '+27123456789',
+          location: 'Cape Town',
           userType: 'job-seeker',
           createdAt: new Date(),
           updatedAt: new Date()
@@ -386,6 +390,8 @@ describe('FirestoreService', () => {
           email: 'jane@example.com',
           firstName: 'Jane',
           lastName: 'Smith',
+          phone: '+27987654321',
+          location: 'Durban',
           userType: 'job-seeker',
           createdAt: new Date(),
           updatedAt: new Date()
@@ -413,6 +419,8 @@ describe('FirestoreService', () => {
           email: 'john@example.com',
           firstName: 'John',
           lastName: 'Doe',
+          phone: '+27123456789',
+          location: 'Cape Town',
           userType: 'job-seeker',
           createdAt: new Date(),
           updatedAt: new Date()
@@ -440,6 +448,8 @@ describe('FirestoreService', () => {
           email: 'dev@example.com',
           firstName: 'Developer',
           lastName: 'Pro',
+          phone: '+27123456789',
+          location: 'Johannesburg',
           userType: 'job-seeker',
           skills: ['JavaScript', 'React', 'Node.js'],
           createdAt: new Date(),
@@ -468,6 +478,8 @@ describe('FirestoreService', () => {
           email: 'test@example.com',
           firstName: 'Test',
           lastName: 'User',
+          phone: '+27123456789',
+          location: 'Pretoria',
           userType: 'job-seeker',
           createdAt: new Date(),
           updatedAt: new Date()
