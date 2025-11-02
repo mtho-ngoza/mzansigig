@@ -146,8 +146,8 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
 
     if (!formData.description.trim()) {
       newErrors.description = 'Description is required'
-    } else if (formData.description.length < 50) {
-      newErrors.description = 'Description must be at least 50 characters'
+    } else if (formData.description.length < 30) {
+      newErrors.description = 'Description must be at least 30 characters'
     }
 
     if (!formData.category) {
@@ -298,7 +298,7 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
               <p className="mt-1 text-sm text-red-600">{errors.description}</p>
             )}
             <p className="mt-1 text-sm text-gray-500">
-              {formData.description.length}/500 characters (minimum 50)
+              {formData.description.length}/500 characters (minimum 30)
             </p>
           </div>
 
