@@ -995,6 +995,9 @@ firebase deploy --only firestore:rules,storage
 - [x] **Payment system integration** with escrow for completed work ✅
 - [x] **Payment dashboard** for earnings tracking and financial reporting ✅
 - [x] **Fee management system** with configurable platform fees ✅
+- [ ] **Job seeker profile viewing** - Employers can't view applicant profiles when reviewing applications. Need to show full profile (work history, skills, reviews, verification) so employers can make informed hiring decisions.
+- [ ] **Manage Gigs dashboard** - Button exists but functionality not implemented. Employers need to view/edit/close their posted gigs. Should show gig status, application count, ability to mark as completed/cancelled.
+- [ ] **Browse Talent page** - Currently "Browse Talent" redirects to Browse Gigs instead of showing job seeker profiles. Employers need to proactively find workers by skills, location, ratings, verification status.
 - [ ] **Application withdrawal** - Allow job seekers to withdraw their pending applications for any reason. Gives workers control and flexibility if they find another job, change their mind, or circumstances change. Important for informal sector where opportunities can come up quickly.
 - [ ] **Max applicants limit** - Let employers specify how many applicants they want to review (e.g., "5 applicants max"). Shows job seekers "3/5 applicants" so they know if it's worth applying. Auto-closes gig to "reviewing" when limit reached. Critical for informal work where employers typically choose from first 3-5 applicants.
 - [ ] **Firestore security rules** implementation for production

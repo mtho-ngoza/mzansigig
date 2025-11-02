@@ -304,33 +304,36 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                     </div>
                   </div>
 
+                  {/* Message Employer - Available for all application statuses */}
+                  {application.gigEmployerId && application.status !== 'rejected' && (
+                    <div className="mb-4">
+                      <QuickMessageButton
+                        recipientId={application.gigEmployerId}
+                        recipientName={application.gigEmployer || 'Employer'}
+                        recipientType="employer"
+                        gigId={application.gigId}
+                        gigTitle={application.gigTitle}
+                        size="sm"
+                        variant="outline"
+                        onConversationStart={onMessageConversationStart}
+                      >
+                        Message Employer
+                      </QuickMessageButton>
+                    </div>
+                  )}
+
                   {application.status === 'accepted' && (
                     <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center">
-                          <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="text-green-800 font-medium">
-                            Congratulations! Your application has been accepted.
-                          </span>
-                        </div>
-                        {application.gigEmployerId && (
-                          <QuickMessageButton
-                            recipientId={application.gigEmployerId}
-                            recipientName={application.gigEmployer || 'Client'}
-                            recipientType="employer"
-                            gigId={application.gigId}
-                            gigTitle={application.gigTitle}
-                            size="sm"
-                            onConversationStart={onMessageConversationStart}
-                          >
-                            Contact Client
-                          </QuickMessageButton>
-                        )}
+                      <div className="flex items-center">
+                        <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-green-800 font-medium">
+                          Congratulations! Your application has been accepted.
+                        </span>
                       </div>
-                      <p className="text-green-700 text-sm">
-                        You can now message the client to discuss project details and next steps.
+                      <p className="text-green-700 text-sm mt-2">
+                        Use the &quot;Message Employer&quot; button above to discuss project details and next steps.
                       </p>
                     </div>
                   )}

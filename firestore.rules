@@ -131,8 +131,9 @@ service cloud.firestore {
                         (request.auth.uid == resource.data.applicantId &&
                          resource.data.status == 'pending' &&
                          request.resource.data.status == 'pending') ||
-                        // Employer updating application status
-                        (request.auth.uid == resource.data.employerId &&
+                        // Employer updating application status (check gig ownership)
+                        (exists(/databases/$(database)/documents/gigs/$(resource.data.gigId)) &&
+                         request.auth.uid == get(/databases/$(database)/documents/gigs/$(resource.data.gigId)).data.employerId &&
                          request.resource.data.applicantId == resource.data.applicantId &&
                          request.resource.data.gigId == resource.data.gigId)
                       );
@@ -206,8 +207,7 @@ service cloud.firestore {
       // Only conversation participants can read messages
       allow read: if isAuthenticated() &&
                     exists(/databases/$(database)/documents/conversations/$(resource.data.conversationId)) &&
-                    (request.auth.uid in get(/databases/$(database)/documents/conversations/$(resource.data.conversationId)).data.participants[0].userId ||
-                     request.auth.uid in get(/databases/$(database)/documents/conversations/$(resource.data.conversationId)).data.participants[1].userId);
+                    request.auth.uid in get(/databases/$(database)/documents/conversations/$(resource.data.conversationId)).data.participantIds;
 
       // Users can create messages in conversations they're part of
       allow create: if isAuthenticated() &&
@@ -216,10 +216,20 @@ service cloud.firestore {
                       exists(/databases/$(database)/documents/conversations/$(request.resource.data.conversationId));
 
       // Senders can update their own messages (mark as edited, etc.)
+      // Recipients can mark messages as read
       allow update: if isAuthenticated() &&
-                      request.auth.uid == resource.data.senderId &&
-                      request.resource.data.senderId == resource.data.senderId &&
-                      request.resource.data.conversationId == resource.data.conversationId;
+                      exists(/databases/$(database)/documents/conversations/$(resource.data.conversationId)) &&
+                      (
+                        // Sender updating their own message
+                        (request.auth.uid == resource.data.senderId &&
+                         request.resource.data.senderId == resource.data.senderId &&
+                         request.resource.data.conversationId == resource.data.conversationId) ||
+                        // Recipient marking message as read (conversation participant, not the sender)
+                        (request.auth.uid in get(/databases/$(database)/documents/conversations/$(resource.data.conversationId)).data.participantIds &&
+                         request.auth.uid != resource.data.senderId &&
+                         request.resource.data.senderId == resource.data.senderId &&
+                         request.resource.data.conversationId == resource.data.conversationId)
+                      );
 
       // Senders can delete their own messages
       allow delete: if isAuthenticated() &&

@@ -55,7 +55,13 @@ export class MessagingService {
     gigId?: string
   ): Promise<Conversation | null> {
     try {
-      const conversations = await FirestoreService.getAll<Conversation>('conversations');
+      // Query conversations where userId1 is a participant (only gets conversations user has access to)
+      const conversations = await FirestoreService.getWhere<Conversation>(
+        'conversations',
+        'participantIds',
+        'array-contains',
+        userId1
+      );
 
       return conversations.find(conv => {
         const participantIds = conv.participants.map(p => p.userId);
@@ -108,13 +114,19 @@ export class MessagingService {
 
   static async getUserConversations(userId: string, includeArchived: boolean = false): Promise<ConversationPreview[]> {
     try {
-      const conversations = await FirestoreService.getAll<Conversation>('conversations', 'lastMessageAt', 'desc');
+      // Query conversations where userId is a participant (only gets conversations user has access to)
+      const conversations = await FirestoreService.getWhere<Conversation>(
+        'conversations',
+        'participantIds',
+        'array-contains',
+        userId,
+        'lastMessageAt'
+      );
 
       return conversations
         .filter(conv => {
-          const hasUser = conv.participants.some(p => p.userId === userId);
           const statusFilter = includeArchived ? true : conv.status !== 'archived';
-          return hasUser && statusFilter;
+          return statusFilter;
         })
         .map(conv => {
           const otherParticipant = conv.participants.find(p => p.userId !== userId)!;
