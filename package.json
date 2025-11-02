@@ -15,7 +15,9 @@
     "emulators": "firebase emulators:start",
     "seed": "node scripts/seed-firestore.js",
     "seed:dev": "firebase use dev && FIREBASE_PROJECT_ID=kasigig-dev npm run seed",
-    "seed:prod": "firebase use production && FIREBASE_PROJECT_ID=kasigig-production npm run seed"
+    "seed:prod": "firebase use production && FIREBASE_PROJECT_ID=kasigig-production npm run seed",
+    "seed:fee-config:dev": "ts-node scripts/seed-fee-config.ts dev",
+    "seed:fee-config:prod": "ts-node scripts/seed-fee-config.ts production"
   },
   "keywords": [
     "gig",
