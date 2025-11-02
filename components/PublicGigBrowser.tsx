@@ -234,11 +234,10 @@ export default function PublicGigBrowser({
       return
     }
 
-    setShowNearbyOnly(!showNearbyOnly)
-    // Reload gigs with new filter
-    await loadGigs()
+    const newShowNearbyOnly = !showNearbyOnly
+    setShowNearbyOnly(newShowNearbyOnly)
 
-    if (!showNearbyOnly) {
+    if (newShowNearbyOnly) {
       success(`Now showing gigs within ${formatDistance(radiusKm)} of your location`)
     } else {
       success('Now showing all gigs')
@@ -250,9 +249,8 @@ export default function PublicGigBrowser({
   }, [])
 
   useEffect(() => {
-    if (showNearbyOnly) {
-      loadGigs() // Reload when location filter changes
-    }
+    // Reload gigs whenever the location filter changes (on or off)
+    loadGigs()
   }, [showNearbyOnly, radiusKm, currentCoordinates])
 
   // Auto-search when category changes (instant filter)
