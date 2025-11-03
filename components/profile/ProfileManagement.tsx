@@ -214,12 +214,19 @@ export default function ProfileManagement({ onBack }: ProfileManagementProps) {
                     <p className="text-gray-700 mb-3">{user.bio}</p>
                   )}
 
+                  {/* Work Sector */}
+                  {user.workSector && (
+                    <span className="inline-block mb-2 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                      {user.workSector === 'professional' ? 'Professional' : 'Informal Sector'}
+                    </span>
+                  )}
+
                   {/* Skills */}
                   {user.skills && user.skills.length > 0 && (
                     <div className="mb-3">
                       <span className="text-sm text-gray-500 block mb-1">Skills:</span>
                       <div className="flex flex-wrap gap-1">
-                        {user.skills.slice(0, 5).map((skill, index) => (
+                        {user.skills.map((skill, index) => (
                           <span
                             key={index}
                             className="px-2 py-1 bg-primary-100 text-primary-700 rounded-full text-xs"
@@ -227,11 +234,6 @@ export default function ProfileManagement({ onBack }: ProfileManagementProps) {
                             {skill}
                           </span>
                         ))}
-                        {user.skills.length > 5 && (
-                          <span className="text-xs text-gray-500">
-                            +{user.skills.length - 5} more
-                          </span>
-                        )}
                       </div>
                     </div>
                   )}
@@ -259,12 +261,68 @@ export default function ProfileManagement({ onBack }: ProfileManagementProps) {
                 </div>
               </div>
 
+              {/* Experience & Education */}
+              {(user.experience || user.education || user.availability) && (
+                <div className="mb-6 pb-6 border-b">
+                  <h4 className="font-semibold text-gray-900 mb-3">Experience & Background</h4>
+                  <div className="space-y-3">
+                    {user.experience && (
+                      <div>
+                        <span className="text-sm text-gray-500 block mb-1">Experience:</span>
+                        <p className="text-gray-700 text-sm">{user.experience}</p>
+                      </div>
+                    )}
+                    {user.education && (
+                      <div>
+                        <span className="text-sm text-gray-500 block mb-1">Education:</span>
+                        <p className="text-gray-700 text-sm">{user.education}</p>
+                      </div>
+                    )}
+                    {user.availability && (
+                      <div>
+                        <span className="text-sm text-gray-500 block mb-1">Availability:</span>
+                        <p className="text-gray-700 text-sm">{user.availability}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Languages */}
+              {user.languages && user.languages.length > 0 && (
+                <div className="mb-6 pb-6 border-b">
+                  <h4 className="font-semibold text-gray-900 mb-3">Languages</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {user.languages.map((language, index) => (
+                      <span
+                        key={index}
+                        className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                      >
+                        {language}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Certifications */}
+              {user.certifications && user.certifications.length > 0 && (
+                <div className="mb-6 pb-6 border-b">
+                  <h4 className="font-semibold text-gray-900 mb-3">Certifications</h4>
+                  <ul className="list-disc list-inside text-gray-700 text-sm space-y-1">
+                    {user.certifications.map((cert, index) => (
+                      <li key={index}>{cert}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
               {/* Portfolio Preview */}
               {user.userType === 'job-seeker' && user.portfolio && user.portfolio.length > 0 && (
-                <div className="mb-6">
-                  <h4 className="font-semibold text-gray-900 mb-3">Recent Work</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {user.portfolio.slice(0, 3).map((item) => (
+                <div className="mb-6 pb-6 border-b">
+                  <h4 className="font-semibold text-gray-900 mb-3">Portfolio</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {user.portfolio.map((item) => (
                       <div key={item.id} className="border rounded-lg p-3">
                         {item.imageUrl && (
                           <img
@@ -275,8 +333,59 @@ export default function ProfileManagement({ onBack }: ProfileManagementProps) {
                         )}
                         <h5 className="font-medium text-sm mb-1">{item.title}</h5>
                         <p className="text-xs text-gray-600 line-clamp-2">{item.description}</p>
+                        {item.technologies && item.technologies.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {item.technologies.map((tech, index) => (
+                              <span
+                                key={index}
+                                className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
+                              >
+                                {tech}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Social Links */}
+              {user.socialLinks && (user.socialLinks.linkedin || user.socialLinks.website || user.socialLinks.github) && (
+                <div className="mb-6">
+                  <h4 className="font-semibold text-gray-900 mb-3">Links</h4>
+                  <div className="flex flex-wrap gap-3">
+                    {user.socialLinks.linkedin && (
+                      <a
+                        href={user.socialLinks.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-600 hover:text-primary-700 text-sm"
+                      >
+                        LinkedIn →
+                      </a>
+                    )}
+                    {user.socialLinks.website && (
+                      <a
+                        href={user.socialLinks.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-600 hover:text-primary-700 text-sm"
+                      >
+                        Website →
+                      </a>
+                    )}
+                    {user.socialLinks.github && (
+                      <a
+                        href={user.socialLinks.github}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-600 hover:text-primary-700 text-sm"
+                      >
+                        GitHub →
+                      </a>
+                    )}
                   </div>
                 </div>
               )}
