@@ -171,16 +171,14 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
   }
 
   const formatCurrency = (amount: number) => {
-    // Ensure regular spaces in output for test compatibility (Intl may use non-breaking spaces)
-    return new Intl.NumberFormat('en-ZA', {
-      style: 'currency',
-      currency: 'ZAR',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    })
-      .format(amount)
-      // Replace non-breaking space and narrow no-break space with a normal space
-      .replace(/[\u00A0\u202F]/g, ' ')
+    // Deterministic ZAR formatting for tests and CI: always "R 5 000" style
+    // Avoid Intl differences across environments
+    const isNegative = amount < 0
+    const abs = Math.round(Math.abs(amount))
+    const formatted = abs
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
+    return `${isNegative ? '-' : ''}R ${formatted}`
   }
 
   const formatDate = (date: Date | unknown) => {
