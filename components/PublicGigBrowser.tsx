@@ -47,6 +47,7 @@ export default function PublicGigBrowser({
   const [showNearbyOnly, setShowNearbyOnly] = useState(false)
   const [radiusKm, setRadiusKm] = useState(25)
   const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({})
+  const [userAppliedGigs, setUserAppliedGigs] = useState<Set<string>>(new Set())
 
   const categories = [
     'Technology',
@@ -93,16 +94,24 @@ export default function PublicGigBrowser({
       setLoading(true)
       const openGigs = await GigService.getGigsByStatus('open')
 
-      // Load application counts for all gigs (only if user is authenticated)
+      // Load application counts and check which gigs user has applied to (only if user is authenticated)
       if (currentUser) {
         const counts: Record<string, number> = {}
+        const appliedGigIds = new Set<string>()
         await Promise.all(
           openGigs.map(async (gig) => {
             const count = await GigService.getApplicationCountByGig(gig.id)
             counts[gig.id] = count
+
+            // Check if current user has applied to this gig
+            const hasApplied = await GigService.hasUserApplied(gig.id, currentUser.id)
+            if (hasApplied) {
+              appliedGigIds.add(gig.id)
+            }
           })
         )
         setApplicationCounts(counts)
+        setUserAppliedGigs(appliedGigIds)
       }
 
       // If no gigs found from database, show demo data
@@ -358,6 +367,12 @@ export default function PublicGigBrowser({
       return
     }
 
+    // Check if user has already applied
+    if (userAppliedGigs.has(gig.id)) {
+      error('You have already applied to this gig')
+      return
+    }
+
     setSelectedGig(gig)
     setShowApplicationForm(true)
   }
@@ -365,13 +380,16 @@ export default function PublicGigBrowser({
   const handleApplicationSuccess = async () => {
     setShowApplicationForm(false)
 
-    // Refresh the application count for this gig
+    // Refresh the application count for this gig and mark as applied
     if (selectedGig) {
       const newCount = await GigService.getApplicationCountByGig(selectedGig.id)
       setApplicationCounts(prev => ({
         ...prev,
         [selectedGig.id]: newCount
       }))
+
+      // Add this gig to the user's applied gigs set
+      setUserAppliedGigs(prev => new Set(prev).add(selectedGig.id))
     }
 
     setSelectedGig(null)
@@ -668,8 +686,10 @@ export default function PublicGigBrowser({
                       <Button
                         size="sm"
                         onClick={() => handleApplyClick(gig)}
+                        disabled={!!(currentUser && userAppliedGigs.has(gig.id))}
+                        variant={currentUser && userAppliedGigs.has(gig.id) ? 'outline' : 'primary'}
                       >
-                        {currentUser ? 'Apply' : 'Apply Now'}
+                        {currentUser && userAppliedGigs.has(gig.id) ? 'Already Applied' : (currentUser ? 'Apply' : 'Apply Now')}
                       </Button>
                     </div>
                   </div>

@@ -297,6 +297,11 @@ export class GigService {
     return await FirestoreService.getWhere<GigApplication>('applications', 'applicantId', '==', applicantId, 'createdAt');
   }
 
+  static async hasUserApplied(gigId: string, applicantId: string): Promise<boolean> {
+    const applications = await this.getApplicationsByGig(gigId);
+    return applications.some(app => app.applicantId === applicantId);
+  }
+
   static async updateApplicationStatus(
     applicationId: string,
     status: GigApplication['status']

@@ -278,4 +278,112 @@ describe('GigService - Application Management', () => {
       );
     });
   });
+
+  describe('hasUserApplied', () => {
+    it('should return true when user has applied to the gig', async () => {
+      const mockApplications: GigApplication[] = [
+        {
+          id: 'app-1',
+          gigId: mockGigId,
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          coverLetter: 'I am interested',
+          proposedRate: 5000,
+          status: 'pending',
+          createdAt: new Date()
+        },
+        {
+          id: 'app-2',
+          gigId: mockGigId,
+          applicantId: 'other-user',
+          applicantName: 'Jane Smith',
+          coverLetter: 'I want this job',
+          proposedRate: 4500,
+          status: 'pending',
+          createdAt: new Date()
+        }
+      ];
+
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue(mockApplications);
+
+      const result = await GigService.hasUserApplied(mockGigId, mockApplicantId);
+
+      expect(result).toBe(true);
+      expect(FirestoreService.getWhere).toHaveBeenCalledWith(
+        'applications',
+        'gigId',
+        '==',
+        mockGigId,
+        'createdAt'
+      );
+    });
+
+    it('should return false when user has not applied to the gig', async () => {
+      const mockApplications: GigApplication[] = [
+        {
+          id: 'app-1',
+          gigId: mockGigId,
+          applicantId: 'other-user-1',
+          applicantName: 'Jane Smith',
+          coverLetter: 'I want this job',
+          proposedRate: 4500,
+          status: 'pending',
+          createdAt: new Date()
+        },
+        {
+          id: 'app-2',
+          gigId: mockGigId,
+          applicantId: 'other-user-2',
+          applicantName: 'Bob Johnson',
+          coverLetter: 'I have experience',
+          proposedRate: 5500,
+          status: 'pending',
+          createdAt: new Date()
+        }
+      ];
+
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue(mockApplications);
+
+      const result = await GigService.hasUserApplied(mockGigId, mockApplicantId);
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false when there are no applications for the gig', async () => {
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue([]);
+
+      const result = await GigService.hasUserApplied(mockGigId, mockApplicantId);
+
+      expect(result).toBe(false);
+    });
+
+    it('should return true even if application is rejected or accepted', async () => {
+      const mockApplications: GigApplication[] = [
+        {
+          id: 'app-1',
+          gigId: mockGigId,
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          coverLetter: 'I am interested',
+          proposedRate: 5000,
+          status: 'rejected',
+          createdAt: new Date()
+        }
+      ];
+
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue(mockApplications);
+
+      const result = await GigService.hasUserApplied(mockGigId, mockApplicantId);
+
+      expect(result).toBe(true);
+    });
+
+    it('should handle errors gracefully', async () => {
+      (FirestoreService.getWhere as jest.Mock).mockRejectedValue(
+        new Error('Firestore error')
+      );
+
+      await expect(GigService.hasUserApplied(mockGigId, mockApplicantId)).rejects.toThrow();
+    });
+  });
 });
