@@ -49,7 +49,10 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
       const gigsWithCounts = await Promise.all(
         employerGigs.map(async (gig) => {
           const applications = await GigService.getApplicationsByGig(gig.id)
-          const acceptedApplication = applications.find(app => app.status === 'accepted')
+          // Find the accepted/assigned application (could be accepted, funded, or completed status)
+          const acceptedApplication = applications.find(app =>
+            app.status === 'accepted' || app.status === 'funded' || app.status === 'completed'
+          )
 
           return {
             ...gig,
@@ -99,6 +102,11 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
       await GigService.updateGig(selectedGig.id, {
         status: 'completed'
       })
+
+      // Update application status to completed
+      if (selectedGig.acceptedApplication?.id) {
+        await GigService.updateApplicationStatus(selectedGig.acceptedApplication.id, 'completed')
+      }
 
       // Release escrow if there's a payment
       if (selectedGig.acceptedApplication?.paymentId) {
@@ -171,6 +179,34 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
     }).format(amount)
   }
 
+  const formatDate = (date: Date | unknown) => {
+    try {
+      let dateObj: Date;
+
+      if (date && typeof date === 'object' && 'toDate' in date && typeof (date as { toDate: () => Date }).toDate === 'function') {
+        dateObj = (date as { toDate: () => Date }).toDate();
+      } else if (date instanceof Date) {
+        dateObj = date;
+      } else if (typeof date === 'string' || typeof date === 'number') {
+        dateObj = new Date(date);
+      } else {
+        return 'N/A';
+      }
+
+      if (isNaN(dateObj.getTime())) {
+        return 'N/A';
+      }
+
+      return dateObj.toLocaleDateString('en-ZA', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch {
+      return 'N/A';
+    }
+  }
+
   if (loading) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -228,6 +264,7 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
                     </div>
                     <p className="text-gray-600 mb-3 line-clamp-2">{gig.description}</p>
                     <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+                      <span>📅 Posted {formatDate(gig.createdAt)}</span>
                       <span>📍 {gig.location}</span>
                       <span>💰 {formatCurrency(gig.budget)}</span>
                       <span>⏱️ {gig.duration}</span>

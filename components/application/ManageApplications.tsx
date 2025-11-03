@@ -28,6 +28,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [processingApplications, setProcessingApplications] = useState<Set<string>>(new Set())
+  const [statusFilter, setStatusFilter] = useState<GigApplication['status'] | 'all'>('all')
   const [showPaymentDialog, setShowPaymentDialog] = useState<{
     isOpen: boolean
     application?: ApplicationWithGig
@@ -230,25 +231,34 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
           </Card>
         ) : (
           <div className="space-y-6">
-            {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-              <Card>
+            {/* Summary Stats - Clickable Filters */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+              <Card
+                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'all' ? 'ring-2 ring-gray-900' : ''}`}
+                onClick={() => setStatusFilter('all')}
+              >
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-gray-900">
                     {applications.length}
                   </div>
-                  <div className="text-sm text-gray-600">Total Applications</div>
+                  <div className="text-sm text-gray-600">Total</div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card
+                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'pending' ? 'ring-2 ring-yellow-600' : ''}`}
+                onClick={() => setStatusFilter('pending')}
+              >
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-yellow-600">
                     {applications.filter(app => app.status === 'pending').length}
                   </div>
-                  <div className="text-sm text-gray-600">Pending Review</div>
+                  <div className="text-sm text-gray-600">Pending</div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card
+                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'accepted' ? 'ring-2 ring-green-600' : ''}`}
+                onClick={() => setStatusFilter('accepted')}
+              >
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-green-600">
                     {applications.filter(app => app.status === 'accepted').length}
@@ -256,18 +266,57 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                   <div className="text-sm text-gray-600">Accepted</div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card
+                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'funded' ? 'ring-2 ring-blue-600' : ''}`}
+                onClick={() => setStatusFilter('funded')}
+              >
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-blue-600">
-                    {gigs.length}
+                    {applications.filter(app => app.status === 'funded').length}
                   </div>
-                  <div className="text-sm text-gray-600">Active Gigs</div>
+                  <div className="text-sm text-gray-600">Funded</div>
+                </CardContent>
+              </Card>
+              <Card
+                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'completed' ? 'ring-2 ring-purple-600' : ''}`}
+                onClick={() => setStatusFilter('completed')}
+              >
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {applications.filter(app => app.status === 'completed').length}
+                  </div>
+                  <div className="text-sm text-gray-600">Completed</div>
+                </CardContent>
+              </Card>
+              <Card
+                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'rejected' ? 'ring-2 ring-red-600' : ''}`}
+                onClick={() => setStatusFilter('rejected')}
+              >
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-red-600">
+                    {applications.filter(app => app.status === 'rejected').length}
+                  </div>
+                  <div className="text-sm text-gray-600">Rejected</div>
                 </CardContent>
               </Card>
             </div>
 
             {/* Applications */}
-            {applications.map((application) => (
+            {(statusFilter === 'all' ? applications : applications.filter(app => app.status === statusFilter)).length === 0 ? (
+              <Card className="text-center py-12">
+                <CardContent>
+                  <p className="text-gray-600">
+                    {statusFilter === 'all' ? 'No applications received yet.' : `No applications found with status: ${statusFilter}`}
+                  </p>
+                  {statusFilter !== 'all' && (
+                    <Button variant="outline" onClick={() => setStatusFilter('all')} className="mt-4">
+                      Show All Applications
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              (statusFilter === 'all' ? applications : applications.filter(app => app.status === statusFilter)).map((application) => (
               <Card key={application.id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
@@ -407,7 +456,8 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                   )}
                 </CardContent>
               </Card>
-            ))}
+              ))
+            )}
           </div>
         )}
 

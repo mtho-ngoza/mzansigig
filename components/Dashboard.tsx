@@ -11,7 +11,7 @@ import ManageGigs from './gig/ManageGigs'
 import MyApplications from './application/MyApplications'
 import ManageApplications from './application/ManageApplications'
 import ProfileManagement from './profile/ProfileManagement'
-import { MessagingHub } from './messaging/MessagingHub'
+import { MessagingHub } from '@/components/messaging'
 import PaymentDashboard from './payment/PaymentDashboard'
 
 interface DashboardProps {
@@ -122,7 +122,6 @@ export default function Dashboard({
           onBack={() => setCurrentView('dashboard')}
           onBrowseGigs={onBrowseGigs}
           onMessageConversationStart={onMessageConversationStart}
-          onMessagesClick={() => setCurrentView('messages')}
         />
       </>
     )

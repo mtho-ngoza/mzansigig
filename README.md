@@ -1004,8 +1004,9 @@ firebase deploy --only firestore:rules,storage
 - [x] **Payment system integration** with escrow for completed work ✅
 - [x] **Payment dashboard** for earnings tracking and financial reporting ✅
 - [x] **Fee management system** with configurable platform fees ✅
+- [x] **Manage Gigs dashboard & completion workflow** - Employers can view all posted gigs, track application counts, assign workers, mark gigs as complete, and cancel gigs. Comprehensive tests included. Current workflow: Accept application → (Optional) Make payment → Mark complete → Payment released. ✅
+- [ ] **Worker wallet & withdrawal system + Payment flow improvements** - Workers need to see their balance/earnings from completed gigs and request withdrawals. Currently, escrow is released but workers have no way to see or withdraw their money. Additionally, need to add payment status warnings/reminders since payment is currently optional when accepting applications (by design - allows employers to accept/book workers in advance and pay closer to work date, e.g., photographer for event 3 months away). Needs: balance tracking on User model, worker earnings dashboard, withdrawal request system, admin approval workflow, SA payment provider integration, payment status warnings for workers ("Don't start work until funded"), employer payment reminders, and worker ability to withdraw unfunded applications.
 - [ ] **Job seeker profile viewing** - Employers can't view applicant profiles when reviewing applications. Need to show full profile (work history, skills, reviews, verification) so employers can make informed hiring decisions.
-- [ ] **Manage Gigs dashboard & completion workflow** - Button exists but functionality not implemented. Employers need to view/edit/close their posted gigs. Critical missing feature: ability to mark gig as "completed" which triggers payment release from escrow to worker. Without this, payments remain stuck in escrow even after work is done. Should show gig status, application count, ability to mark as completed/cancelled.
 - [ ] **Browse Talent page** - Currently "Browse Talent" redirects to Browse Gigs instead of showing job seeker profiles. Employers need to proactively find workers by skills, location, ratings, verification status.
 - [ ] **Application withdrawal** - Allow job seekers to withdraw their pending applications for any reason. Gives workers control and flexibility if they find another job, change their mind, or circumstances change. Important for informal sector where opportunities can come up quickly.
 - [ ] **Max applicants limit** - Let employers specify how many applicants they want to review (e.g., "5 applicants max"). Shows job seekers "3/5 applicants" so they know if it's worth applying. Auto-closes gig to "reviewing" when limit reached. Critical for informal work where employers typically choose from first 3-5 applicants.
@@ -1033,8 +1034,18 @@ firebase deploy --only firestore:rules,storage
 
 ## 🔧 Known Issues
 
+### Critical (Fix Before Go Live)
+- **🚨 Duplicate applications**: Users can submit multiple applications to the same gig. Need to add validation to prevent duplicate applications from the same user.
+
+### Non-Critical (Can be addressed post-launch)
 - Warning about Next.js SWC dependencies (cosmetic, doesn't affect functionality)
 - Demo data shown when Firebase database is empty (by design)
+
+### Current Workflow Limitations (Post-Launch Enhancements)
+- **No worker work submission**: Workers cannot indicate when work is finished. Currently, employer decides when work is complete without worker input. This is acceptable for MVP - matches real-world where employer verifies completion.
+- **No review/approval step**: No formal review process or dispute resolution before marking gig complete. For MVP, parties can communicate via messaging. Formal dispute system can be added later.
+- **No milestone payments**: Only single payment supported. Milestone-based payments (e.g., 50% deposit upfront, 50% on completion) would be valuable for larger projects but not blocking for launch. Most gigs in informal sector are small, single-payment jobs.
+- **No deposit/partial payment options**: Some workers may want upfront deposits before starting. Can be added as milestone feature post-launch.
 
 ## 🔐 Firebase Security
 

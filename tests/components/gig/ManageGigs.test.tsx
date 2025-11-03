@@ -300,6 +300,7 @@ describe('ManageGigs', () => {
       ;(GigService.getGigsByEmployer as jest.Mock).mockResolvedValue([mockInProgressGig])
       ;(GigService.getApplicationsByGig as jest.Mock).mockResolvedValue([mockApplication])
       ;(GigService.updateGig as jest.Mock).mockResolvedValue(undefined)
+      ;(GigService.updateApplicationStatus as jest.Mock).mockResolvedValue(undefined)
       ;(PaymentService.releaseEscrow as jest.Mock).mockResolvedValue(undefined)
 
       render(<ManageGigs onBack={mockOnBack} />)
@@ -318,6 +319,7 @@ describe('ManageGigs', () => {
         expect(GigService.updateGig).toHaveBeenCalledWith('gig-2', {
           status: 'completed'
         })
+        expect(GigService.updateApplicationStatus).toHaveBeenCalledWith('app-1', 'completed')
         expect(PaymentService.releaseEscrow).toHaveBeenCalledWith('payment-123')
         expect(alertSpy).toHaveBeenCalledWith(
           'Gig marked as completed! Payment has been released to the worker.'
