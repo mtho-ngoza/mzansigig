@@ -7,10 +7,11 @@ import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { PageHeader } from '@/components/layout/PageHeader'
 import PostGigPage from './gig/PostGigPage'
+import ManageGigs from './gig/ManageGigs'
 import MyApplications from './application/MyApplications'
 import ManageApplications from './application/ManageApplications'
 import ProfileManagement from './profile/ProfileManagement'
-import { MessagingHub } from './messaging/MessagingHub'
+import { MessagingHub } from '@/components/messaging'
 import PaymentDashboard from './payment/PaymentDashboard'
 
 interface DashboardProps {
@@ -26,7 +27,7 @@ export default function Dashboard({
 }: DashboardProps) {
   const { user } = useAuth()
   const { totalUnreadCount } = useMessaging()
-  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments'>('dashboard')
+  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'manage-gigs' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments'>('dashboard')
 
   // Auto-navigate to messages if conversationId is provided
   useEffect(() => {
@@ -61,6 +62,12 @@ export default function Dashboard({
           isCurrentPage: true
         })
         break
+      case 'manage-gigs':
+        breadcrumbs.push({
+          label: 'Manage Gigs',
+          isCurrentPage: true
+        })
+        break
       case 'messages':
         breadcrumbs.push({
           label: 'Messages',
@@ -81,6 +88,11 @@ export default function Dashboard({
   // Show post gig page if user is on that view
   if (currentView === 'post-gig') {
     return <PostGigPage onBack={() => setCurrentView('dashboard')} />
+  }
+
+  // Show manage gigs page if user is on that view
+  if (currentView === 'manage-gigs') {
+    return <ManageGigs onBack={() => setCurrentView('dashboard')} />
   }
 
   // Show my applications page if user is on that view
@@ -110,7 +122,6 @@ export default function Dashboard({
           onBack={() => setCurrentView('dashboard')}
           onBrowseGigs={onBrowseGigs}
           onMessageConversationStart={onMessageConversationStart}
-          onMessagesClick={() => setCurrentView('messages')}
         />
       </>
     )
@@ -322,7 +333,13 @@ export default function Dashboard({
                       >
                         Post a Gig
                       </Button>
-                      <Button variant="outline" className="w-full">Manage Gigs</Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setCurrentView('manage-gigs')}
+                      >
+                        Manage Gigs
+                      </Button>
                       <Button
                         variant="outline"
                         className="w-full"

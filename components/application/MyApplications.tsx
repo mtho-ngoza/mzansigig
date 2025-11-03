@@ -7,14 +7,12 @@ import { GigService } from '@/lib/database/gigService'
 import { useAuth } from '@/contexts/AuthContext'
 import { GigApplication } from '@/types/gig'
 import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
-import { useMessaging } from '@/contexts/MessagingContext'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
 
 interface MyApplicationsProps {
   onBack?: () => void
   onBrowseGigs?: () => void
   onMessageConversationStart?: (conversationId: string) => void
-  onMessagesClick?: () => void
 }
 
 interface ApplicationWithGig extends GigApplication {
@@ -24,12 +22,12 @@ interface ApplicationWithGig extends GigApplication {
   gigBudget?: number
 }
 
-export default function MyApplications({ onBack, onBrowseGigs, onMessageConversationStart, onMessagesClick }: MyApplicationsProps) {
+export default function MyApplications({ onBack, onBrowseGigs, onMessageConversationStart }: MyApplicationsProps) {
   const { user } = useAuth()
-  const { totalUnreadCount } = useMessaging()
   const [applications, setApplications] = useState<ApplicationWithGig[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [statusFilter, setStatusFilter] = useState<GigApplication['status'] | 'all'>('all')
 
   useEffect(() => {
     const loadApplications = async () => {
@@ -80,6 +78,10 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
         return 'bg-yellow-100 text-yellow-800 border-yellow-200'
       case 'accepted':
         return 'bg-green-100 text-green-800 border-green-200'
+      case 'funded':
+        return 'bg-blue-100 text-blue-800 border-blue-200'
+      case 'completed':
+        return 'bg-purple-100 text-purple-800 border-purple-200'
       case 'rejected':
         return 'bg-red-100 text-red-800 border-red-200'
       default:
@@ -122,6 +124,11 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
     }).format(amount)
   }
 
+  // Filter applications based on selected status
+  const filteredApplications = statusFilter === 'all'
+    ? applications
+    : applications.filter(app => app.status === statusFilter)
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
@@ -154,31 +161,17 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
       <div className="max-w-6xl mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            {onBack && (
+          {/* Back Button */}
+          {onBack && (
+            <div className="mb-6">
               <Button variant="ghost" onClick={onBack}>
                 ← Back to Dashboard
               </Button>
-            )}
-            {onMessagesClick && (
-              <Button
-                variant="ghost"
-                onClick={onMessagesClick}
-                className="relative"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                {totalUnreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
-                  </span>
-                )}
-              </Button>
-            )}
-          </div>
+            </div>
+          )}
 
-          <div className="text-center mb-8">
+          {/* Page Title */}
+          <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               My Applications
             </h1>
@@ -213,17 +206,23 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
           </Card>
         ) : (
           <div className="space-y-6">
-            {/* Summary Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-              <Card>
+            {/* Summary Stats - Clickable Filters */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
+              <Card
+                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'all' ? 'ring-2 ring-gray-900' : ''}`}
+                onClick={() => setStatusFilter('all')}
+              >
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-gray-900">
                     {applications.length}
                   </div>
-                  <div className="text-sm text-gray-600">Total Applications</div>
+                  <div className="text-sm text-gray-600">Total</div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card
+                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'pending' ? 'ring-2 ring-yellow-600' : ''}`}
+                onClick={() => setStatusFilter('pending')}
+              >
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-yellow-600">
                     {applications.filter(app => app.status === 'pending').length}
@@ -231,7 +230,10 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                   <div className="text-sm text-gray-600">Pending</div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card
+                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'accepted' ? 'ring-2 ring-green-600' : ''}`}
+                onClick={() => setStatusFilter('accepted')}
+              >
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-green-600">
                     {applications.filter(app => app.status === 'accepted').length}
@@ -239,7 +241,32 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                   <div className="text-sm text-gray-600">Accepted</div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card
+                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'funded' ? 'ring-2 ring-blue-600' : ''}`}
+                onClick={() => setStatusFilter('funded')}
+              >
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {applications.filter(app => app.status === 'funded').length}
+                  </div>
+                  <div className="text-sm text-gray-600">Funded</div>
+                </CardContent>
+              </Card>
+              <Card
+                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'completed' ? 'ring-2 ring-purple-600' : ''}`}
+                onClick={() => setStatusFilter('completed')}
+              >
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {applications.filter(app => app.status === 'completed').length}
+                  </div>
+                  <div className="text-sm text-gray-600">Completed</div>
+                </CardContent>
+              </Card>
+              <Card
+                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'rejected' ? 'ring-2 ring-red-600' : ''}`}
+                onClick={() => setStatusFilter('rejected')}
+              >
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-red-600">
                     {applications.filter(app => app.status === 'rejected').length}
@@ -250,8 +277,20 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
             </div>
 
             {/* Applications */}
-            {applications.map((application) => (
-              <Card key={application.id}>
+            {filteredApplications.length === 0 ? (
+              <Card className="text-center py-12">
+                <CardContent>
+                  <p className="text-gray-600">
+                    No applications found with status: <strong>{statusFilter}</strong>
+                  </p>
+                  <Button variant="outline" onClick={() => setStatusFilter('all')} className="mt-4">
+                    Show All Applications
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : (
+              filteredApplications.map((application) => (
+                <Card key={application.id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <div>
@@ -355,7 +394,8 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                   )}
                 </CardContent>
               </Card>
-            ))}
+              ))
+            )}
           </div>
         )}
       </div>
