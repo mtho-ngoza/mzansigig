@@ -132,6 +132,13 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
     setIsSubmitting(true)
 
     try {
+      // Check if user has already applied
+      const hasApplied = await GigService.hasUserApplied(gig.id, user.id)
+      if (hasApplied) {
+        showError('You have already applied to this gig')
+        setIsSubmitting(false)
+        return
+      }
       // Combine all responses into cover letter for storage
       let combinedMessage = formData.coverLetter.trim()
 
