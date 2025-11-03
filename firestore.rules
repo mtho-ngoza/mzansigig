@@ -339,9 +339,12 @@ service cloud.firestore {
     // Safety Reports Collection
     // ========================================
     match /safetyReports/{reportId} {
-      // Reporter and admin can read reports
+      // Reporter, reportee (person being reported), and admin can read reports
+      // This allows users to see reports about themselves for trust score display
       allow read: if isAuthenticated() &&
-                    (request.auth.uid == resource.data.reporterId || isAdmin());
+                    (request.auth.uid == resource.data.reporterId ||
+                     request.auth.uid == resource.data.reporteeId ||
+                     isAdmin());
 
       // Authenticated users can create safety reports
       allow create: if isAuthenticated() &&

@@ -29,7 +29,7 @@ export default function ProfileCompleteness() {
     if (percentage >= 80) return 'Excellent! Your profile looks great.'
     if (percentage >= 60) return 'Good progress! Add a few more details.'
     if (percentage >= 40) return 'Getting there! Keep adding information.'
-    return 'Let&apos;s start building your profile!'
+    return "Let's start building your profile!"
   }
 
   const getMissingFields = () => {

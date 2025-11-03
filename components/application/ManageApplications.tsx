@@ -9,6 +9,7 @@ import { GigApplication, Gig } from '@/types/gig'
 import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
 import { useToast } from '@/contexts/ToastContext'
 import PaymentDialog from '@/components/payment/PaymentDialog'
+import JobSeekerProfileDialog from '@/components/application/JobSeekerProfileDialog'
 
 interface ManageApplicationsProps {
   onBack?: () => void
@@ -32,6 +33,10 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
   const [showPaymentDialog, setShowPaymentDialog] = useState<{
     isOpen: boolean
     application?: ApplicationWithGig
+  }>({ isOpen: false })
+  const [showProfileDialog, setShowProfileDialog] = useState<{
+    isOpen: boolean
+    userId?: string
   }>({ isOpen: false })
 
   useEffect(() => {
@@ -69,7 +74,6 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
 
         setApplications(allApplications)
       } catch (error) {
-        console.error('Error loading applications:', error)
         setError('Failed to load applications')
       } finally {
         setLoading(false)
@@ -99,7 +103,6 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
       success(`Application ${actionText} successfully!`)
 
     } catch (error) {
-      console.error('Error updating application status:', error)
       showError('Failed to update application status. Please try again.')
     } finally {
       setProcessingApplications(prev => {
@@ -320,9 +323,19 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
               <Card key={application.id}>
                 <CardHeader>
                   <div className="flex justify-between items-start">
-                    <div>
+                    <div className="flex-1">
                       <CardTitle className="text-lg">{application.gigTitle}</CardTitle>
-                      <p className="text-gray-600">Applied by {application.applicantName}</p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <p className="text-gray-600">Applied by {application.applicantName}</p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowProfileDialog({ isOpen: true, userId: application.applicantId })}
+                          className="text-primary-600 hover:text-primary-700 hover:bg-primary-50 h-auto py-1 px-2 text-xs"
+                        >
+                          👤 View Profile
+                        </Button>
+                      </div>
                     </div>
                     <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusBadgeClass(application.status)}`}>
                       {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
@@ -499,11 +512,21 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                     )
                   )
                 } catch (error) {
-                  console.error('Error updating application payment status:', error)
+                  // Payment status update failed - payment was successful but status wasn't updated
+                  // User can still proceed with the funded application
                 }
               }
             }}
             onCancel={() => setShowPaymentDialog({ isOpen: false })}
+          />
+        )}
+
+        {/* Profile Dialog */}
+        {showProfileDialog.isOpen && showProfileDialog.userId && (
+          <JobSeekerProfileDialog
+            userId={showProfileDialog.userId}
+            isOpen={showProfileDialog.isOpen}
+            onClose={() => setShowProfileDialog({ isOpen: false })}
           />
         )}
       </div>

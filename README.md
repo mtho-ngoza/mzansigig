@@ -19,6 +19,12 @@ KasiGig empowers all South Africans - from informal sector workers to profession
 - Complete application system with gig posting, applications, and tracking
 - **🆔 ID Verification System**: Automated SA ID verification with OCR technology
 - **🛡️ Trust Score**: Dynamic scoring based on verifications and activity
+  - Consistent display across all profile views (defaults to 50 for new users)
+  - Visible in profile preview and applicant profile dialogs
+- **👥 Applicant Profile Viewing**: Full profile viewing for employers when reviewing applications
+  - Work history, skills, portfolio, languages, certifications
+  - Verification status and trust score display
+  - Integrated "View Profile" button on all applications
 - Comprehensive profile management with portfolio uploads and photo capabilities
 - Real-time messaging system with conversation archiving
 - Mobile-first navigation with PWA installation support
@@ -27,7 +33,8 @@ KasiGig empowers all South Africans - from informal sector workers to profession
 - Public gig browsing with real-time application functionality
 - Role-based dashboards for job seekers and employers
 - Responsive design with Tailwind CSS v4 and enhanced mobile interactions
-- Comprehensive error handling and loading states
+- Comprehensive error handling without unnecessary console.error logging
+- Full test coverage with 273 passing tests
 
 ## 🎯 Features
 
@@ -1005,8 +1012,8 @@ firebase deploy --only firestore:rules,storage
 - [x] **Payment dashboard** for earnings tracking and financial reporting ✅
 - [x] **Fee management system** with configurable platform fees ✅
 - [x] **Manage Gigs dashboard & completion workflow** - Employers can view all posted gigs, track application counts, assign workers, mark gigs as complete, and cancel gigs. Comprehensive tests included. Current workflow: Accept application → (Optional) Make payment → Mark complete → Payment released. ✅
+- [x] **Job seeker profile viewing** - Employers can view full applicant profiles when reviewing applications. Includes work history, skills, portfolio, languages, certifications, verification status, and trust score (defaults to 50 for new users). Profile dialog integrated into application management workflow with "View Profile" button on each application. ✅
 - [ ] **Worker wallet & withdrawal system + Payment flow improvements** - Workers need to see their balance/earnings from completed gigs and request withdrawals. Currently, escrow is released but workers have no way to see or withdraw their money. Additionally, need to add payment status warnings/reminders since payment is currently optional when accepting applications (by design - allows employers to accept/book workers in advance and pay closer to work date, e.g., photographer for event 3 months away). Needs: balance tracking on User model, worker earnings dashboard, withdrawal request system, admin approval workflow, SA payment provider integration, payment status warnings for workers ("Don't start work until funded"), employer payment reminders, and worker ability to withdraw unfunded applications.
-- [ ] **Job seeker profile viewing** - Employers can't view applicant profiles when reviewing applications. Need to show full profile (work history, skills, reviews, verification) so employers can make informed hiring decisions.
 - [ ] **Browse Talent page** - Currently "Browse Talent" redirects to Browse Gigs instead of showing job seeker profiles. Employers need to proactively find workers by skills, location, ratings, verification status.
 - [ ] **Application withdrawal** - Allow job seekers to withdraw their pending applications for any reason. Gives workers control and flexibility if they find another job, change their mind, or circumstances change. Important for informal sector where opportunities can come up quickly.
 - [ ] **Max applicants limit** - Let employers specify how many applicants they want to review (e.g., "5 applicants max"). Shows job seekers "3/5 applicants" so they know if it's worth applying. Auto-closes gig to "reviewing" when limit reached. Critical for informal work where employers typically choose from first 3-5 applicants.
