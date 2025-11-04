@@ -357,7 +357,7 @@ export class MessagingService {
 
         callback(previews);
       } catch (error) {
-        console.error('Error in conversations subscription:', error);
+        console.debug('Error in conversations subscription:', error);
       }
     });
   }
@@ -381,7 +381,7 @@ export class MessagingService {
         });
         callback(messages.reverse()); // Reverse to show oldest first
       } catch (error) {
-        console.error('Error in messages subscription:', error);
+        console.debug('Error in messages subscription:', error);
       }
     });
   }

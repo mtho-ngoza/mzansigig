@@ -83,7 +83,7 @@ export class PaymentService {
 
       return paymentMethod
     } catch (error) {
-      console.error('Error adding payment method:', error)
+      console.debug('Error adding payment method:', error)
       throw new Error('Failed to add payment method')
     }
   }
@@ -104,7 +104,7 @@ export class PaymentService {
         updatedAt: doc.data().updatedAt?.toDate() || new Date()
       } as PaymentMethod))
     } catch (error) {
-      console.error('Error fetching payment methods:', error)
+      console.debug('Error fetching payment methods:', error)
       return []
     }
   }
@@ -132,7 +132,7 @@ export class PaymentService {
 
       await batch.commit()
     } catch (error) {
-      console.error('Error setting default payment method:', error)
+      console.debug('Error setting default payment method:', error)
       throw new Error('Failed to set default payment method')
     }
   }
@@ -173,7 +173,7 @@ export class PaymentService {
         createdAt: new Date()
       }
     } catch (error) {
-      console.error('Error creating payment intent:', error)
+      console.debug('Error creating payment intent:', error)
       throw new Error('Failed to create payment intent')
     }
   }
@@ -258,7 +258,7 @@ export class PaymentService {
         processedAt: new Date()
       }
     } catch (error) {
-      console.error('Error processing payment:', error)
+      console.debug('Error processing payment:', error)
       throw new Error('Failed to process payment')
     }
   }
@@ -292,7 +292,7 @@ export class PaymentService {
         createdAt: new Date()
       }
     } catch (error) {
-      console.error('Error creating escrow account:', error)
+      console.debug('Error creating escrow account:', error)
       throw new Error('Failed to create escrow account')
     }
   }
@@ -340,7 +340,7 @@ export class PaymentService {
       // Move funds from pending to wallet
       await WalletService.movePendingToWallet(paymentData.workerId, releaseAmount)
     } catch (error) {
-      console.error('Error releasing escrow:', error)
+      console.debug('Error releasing escrow:', error)
       throw new Error(error instanceof Error ? error.message : 'Failed to release escrow')
     }
   }
@@ -373,7 +373,7 @@ export class PaymentService {
         createdAt: new Date()
       }
     } catch (error) {
-      console.error('Error creating milestone:', error)
+      console.debug('Error creating milestone:', error)
       throw new Error('Failed to create milestone')
     }
   }
@@ -398,7 +398,7 @@ export class PaymentService {
 
       await updateDoc(doc(db, COLLECTIONS.MILESTONES, milestoneId), updateData)
     } catch (error) {
-      console.error('Error updating milestone status:', error)
+      console.debug('Error updating milestone status:', error)
       throw new Error('Failed to update milestone status')
     }
   }
@@ -432,7 +432,7 @@ export class PaymentService {
         requestedAt: new Date()
       }
     } catch (error) {
-      console.error('Error requesting withdrawal:', error)
+      console.debug('Error requesting withdrawal:', error)
       throw new Error('Failed to request withdrawal')
     }
   }
@@ -491,7 +491,7 @@ export class PaymentService {
 
       await updateDoc(doc(db, COLLECTIONS.WITHDRAWALS, withdrawalId), updateData)
     } catch (error) {
-      console.error('Error updating withdrawal status:', error)
+      console.debug('Error updating withdrawal status:', error)
       throw new Error(error instanceof Error ? error.message : 'Failed to update withdrawal status')
     }
   }
@@ -519,7 +519,7 @@ export class PaymentService {
         createdAt: Timestamp.now()
       })
     } catch (error) {
-      console.error('Error adding payment history:', error)
+      console.debug('Error adding payment history:', error)
     }
   }
 
@@ -538,7 +538,7 @@ export class PaymentService {
         createdAt: doc.data().createdAt?.toDate() || new Date()
       } as PaymentHistory))
     } catch (error) {
-      console.error('Error fetching payment history:', error)
+      console.debug('Error fetching payment history:', error)
       return []
     }
   }
@@ -583,7 +583,7 @@ export class PaymentService {
         paymentMethodUsage: [] // Would need to aggregate from payment methods used
       }
     } catch (error) {
-      console.error('Error calculating payment analytics:', error)
+      console.debug('Error calculating payment analytics:', error)
       return {
         totalEarnings: 0,
         totalPaid: 0,
@@ -634,7 +634,7 @@ export class PaymentService {
         createdAt: new Date()
       }
     } catch (error) {
-      console.error('Error creating dispute:', error)
+      console.debug('Error creating dispute:', error)
       throw new Error('Failed to create dispute')
     }
   }
@@ -717,7 +717,7 @@ export class PaymentService {
         console.log(`Fixed ${defaultMethods.length - 1} duplicate default payment methods for user ${userId}`)
       }
     } catch (error) {
-      console.error('Error fixing multiple default payment methods:', error)
+      console.debug('Error fixing multiple default payment methods:', error)
     }
   }
 }

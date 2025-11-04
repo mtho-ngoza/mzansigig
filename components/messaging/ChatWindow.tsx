@@ -28,7 +28,7 @@ export function ChatWindow({ conversation }: ChatWindowProps) {
       setIsTyping(false)
       await sendMessage(messageInput)
     } catch (error) {
-      console.error('Error sending message:', error)
+      console.debug('Error sending message:', error)
       // Error handling is managed by the context
     }
   }

@@ -35,7 +35,6 @@ export class WalletService {
         })
       }
     } catch (error) {
-      console.error('Error crediting wallet:', error)
       throw new Error(error instanceof Error ? error.message : 'Failed to credit wallet')
     }
   }
@@ -65,7 +64,6 @@ export class WalletService {
         updatedAt: Timestamp.now()
       })
     } catch (error) {
-      console.error('Error debiting wallet:', error)
       throw new Error(error instanceof Error ? error.message : 'Failed to debit wallet')
     }
   }
@@ -101,7 +99,6 @@ export class WalletService {
         })
       }
     } catch (error) {
-      console.error('Error updating pending balance:', error)
       throw new Error(error instanceof Error ? error.message : 'Failed to update pending balance')
     }
   }
@@ -139,7 +136,6 @@ export class WalletService {
         })
       }
     } catch (error) {
-      console.error('Error moving pending to wallet:', error)
       throw new Error(error instanceof Error ? error.message : 'Failed to move pending to wallet')
     }
   }
@@ -170,7 +166,7 @@ export class WalletService {
         totalWithdrawn: userData.totalWithdrawn || 0
       }
     } catch (error) {
-      console.error('Error getting wallet balance:', error)
+      console.debug('Error getting wallet balance:', error)
       return {
         walletBalance: 0,
         pendingBalance: 0,

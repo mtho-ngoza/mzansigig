@@ -38,7 +38,6 @@ export default function TransactionHistory({ onClose }: TransactionHistoryProps)
         setTransactions(history)
         setFilteredTransactions(history)
       } catch (err) {
-        console.error('Error loading transaction history:', err)
         setError('Failed to load transaction history')
       } finally {
         setIsLoading(false)

@@ -80,7 +80,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await FirebaseAuthService.signOut()
       setUser(null)
     } catch (error) {
-      console.error('Error signing out:', error)
+      console.debug('Error signing out:', error)
     }
   }
 
@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const updatedUser = { ...user, ...userData }
         setUser(updatedUser)
       } catch (error) {
-        console.error('Error updating user profile:', error)
+        console.debug('Error updating user profile:', error)
       }
     }
   }
@@ -101,7 +101,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const currentUser = await FirebaseAuthService.getCurrentUser()
       setUser(currentUser)
     } catch (error) {
-      console.error('Error refreshing user data:', error)
+      console.debug('Error refreshing user data:', error)
     }
   }
 
