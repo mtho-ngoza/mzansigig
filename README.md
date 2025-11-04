@@ -15,26 +15,26 @@ KasiGig empowers all South Africans - from informal sector workers to profession
 
 ## 🚀 Current Status
 
-**✅ Full-Featured Gig Economy Platform with Trust & Safety System!**
-- Complete application system with gig posting, applications, and tracking
-- **🆔 ID Verification System**: Automated SA ID verification with OCR technology
-- **🛡️ Trust Score**: Dynamic scoring based on verifications and activity
-  - Consistent display across all profile views (defaults to 50 for new users)
-  - Visible in profile preview and applicant profile dialogs
-- **👥 Applicant Profile Viewing**: Full profile viewing for employers when reviewing applications
-  - Work history, skills, portfolio, languages, certifications
-  - Verification status and trust score display
-  - Integrated "View Profile" button on all applications
-- Comprehensive profile management with portfolio uploads and photo capabilities
-- Real-time messaging system with conversation archiving
-- Mobile-first navigation with PWA installation support
-- Context-aware UX that adapts to informal vs professional workers
-- Authentication system working with Firebase
-- Public gig browsing with real-time application functionality
-- Role-based dashboards for job seekers and employers
-- Responsive design with Tailwind CSS v4 and enhanced mobile interactions
-- Comprehensive error handling without unnecessary console.error logging
-- Full test coverage with 273 passing tests
+**✅ Full-Featured Gig Economy Platform with Trust & Safety**
+- **Complete application system** with gig posting, applications, and tracking
+- **🆔 ID Verification System**: Automated SA ID verification with OCR technology using Google Vision API
+- **🛡️ Trust Score System**: Dynamic scoring based on verifications and platform activity (defaults to 50 for new users)
+- **👥 Profile Viewing for Employers**: Full applicant profile viewing when reviewing applications
+- **📊 Profile Completeness Tracking**: Real-time progress with actionable suggestions
+- **👔 Manage Gigs Dashboard**: Employers can view, edit, and manage their posted gigs with applicant counts
+- **Comprehensive profile management** with portfolio uploads, photo capabilities, and skills tracking
+- **Real-time messaging system** with conversation archiving and unread indicators
+- **💰 Worker Wallet & Withdrawal System**:
+  - Digital wallet with pending (escrow) and available balances
+  - Secure withdrawal requests with bank account details
+  - Comprehensive earnings dashboard for job seekers
+  - Transaction history and payment tracking
+- **📱 Mobile-first navigation** with PWA installation support and hamburger menu
+- **Context-aware UX** that adapts to informal vs professional workers
+- **Authentication system** with Firebase and role-based access
+- **Public gig browsing** with real-time application functionality
+- **Responsive design** with Tailwind CSS v4 and enhanced mobile interactions
+- **Comprehensive error handling** and test coverage (117 passing tests)
 
 ## 🎯 Features
 
@@ -45,7 +45,7 @@ KasiGig empowers all South Africans - from informal sector workers to profession
 - **👥 Role-based Access**: Separate experiences for job seekers and employers
 - **🌐 Public Gig Browser**: Browse gigs without authentication required
 - **📱 Responsive Design**: Mobile-first, works on all devices
-- **🎨 Modern UI**: Professional design with Tailwind CSS v4
+- **🎨 Modern UI**: Professional design with Tailwind CSS
 - **🔄 Smooth Navigation**: Seamless transitions between pages
 - **⚡ Error Handling**: Graceful error boundaries and fallbacks
 - **🔍 Search & Filter**: Filter gigs by category and search terms
@@ -64,7 +64,7 @@ KasiGig empowers all South Africans - from informal sector workers to profession
 - **🔄 Status Updates**: Real-time pending → accepted/rejected workflow
 - **📊 Application Analytics**: Stats and summary for both user types
 
-#### **Informal Economy Accessibility**
+####  **Informal Economy Accessibility**
 - **🗣️ Simplified Language**: "Tell us about yourself" vs "Cover Letter" for physical work
 - **📋 Quick Selection**: Dropdowns for experience, availability, equipment
 - **🎯 Category-Specific Guidance**: Different examples for cleaning, construction, etc.
@@ -79,7 +79,18 @@ KasiGig empowers all South Africans - from informal sector workers to profession
 - **📋 Skills & Certifications**: Skills management with language support
 - **💰 Experience & Rates**: Set hourly rates, availability, and experience levels
 - **📊 Profile Completeness**: Real-time progress tracking with actionable suggestions
-- **🔧 Work Sector Selection**: Choose work type during signup for immediate context
+- **👥 Employer Profile Viewing**: Full profile viewing for employers when reviewing applications
+  - Work history, skills, portfolio, languages, certifications
+  - Verification status and trust score display
+  - Integrated "View Profile" button on all applications
+
+#### **Trust & Safety System**
+- **🆔 Automated ID Verification**: OCR-powered SA ID document verification with Google Vision API
+- **🔍 Name Cross-Reference**: Intelligent matching between profile and ID document names
+- **🛡️ Trust Score System**: Dynamic scoring based on verifications, reviews, and platform activity
+- **📊 Verification Center**: User-friendly verification dashboard with progress tracking
+- **⚡ Instant Verification**: Real-time document processing with immediate feedback
+- **🔒 Secure Processing**: Server-side OCR processing with no document storage
 
 #### **Messaging System**
 - **💬 Real-time Messaging**: Direct communication between employers and job seekers
@@ -90,14 +101,6 @@ KasiGig empowers all South Africans - from informal sector workers to profession
 - **📋 Message History**: Persistent conversation history with date grouping
 - **🔄 Auto-scroll & Real-time Updates**: Seamless message delivery and display
 - **📦 Archive Conversations**: Archive/unarchive conversations for better organization
-
-#### **Trust & Safety System**
-- **🆔 Automated ID Verification**: OCR-powered SA ID document verification with Google Vision API
-- **🔍 Name Cross-Reference**: Intelligent matching between profile and ID document names
-- **🛡️ Trust Score System**: Dynamic scoring based on verifications, reviews, and platform activity
-- **📊 Verification Center**: User-friendly verification dashboard with progress tracking
-- **⚡ Instant Verification**: Real-time document processing with immediate feedback
-- **🔒 Secure Processing**: Server-side OCR processing with no document storage
 
 #### **Mobile Navigation & PWA Features**
 - **📱 Mobile Hamburger Menu**: Responsive slide-out navigation with smooth animations
@@ -111,51 +114,24 @@ KasiGig empowers all South Africans - from informal sector workers to profession
 - **💳 Payment Integration**: Secure payment processing with escrow for completed work
 - **💰 Fee Management**: Configurable platform fees with admin controls
 - **🏦 Payment Methods**: Support for bank accounts and mobile money
-- **📊 Payment Dashboard**: Comprehensive earnings tracking and payment history
-- **🔄 Withdrawal System**: Secure withdrawal processing with validation
-- **💼 Earnings Analytics**: Detailed financial reporting and insights
-- **🛡️ Payment Security**: Secure handling of financial data and transactions
+- **👛 Worker Wallet System**: Digital wallet with pending (escrow) and available balances
+- **💸 Withdrawal Processing**: Secure withdrawal requests with South African bank details
+- **📊 Earnings Dashboard**: Comprehensive earnings tracking for job seekers
+- **📜 Transaction History**: Detailed payment history and analytics
+- **🔄 Escrow Management**: Automatic balance updates on payment and escrow release
+- **✅ Role-Based Access**: Worker wallet restricted to job seekers only
+
+#### **Gig Management Dashboard**
+- **👔 Manage Gigs**: Employers can view, edit, and manage all their posted gigs
+- **📊 Application Counts**: Real-time display of total applications per gig
+- **✏️ Edit Functionality**: Update gig details, budget, and requirements
+- **🔄 Status Management**: Track active gigs and application progress
+- **📱 Responsive Design**: Mobile-optimized gig management interface
 
 #### **Demo & Testing**
 - **💾 Demo Data**: 6 realistic South African gigs including cleaning examples
 - **🧪 Test Accounts**: Both job seeker and employer registration flows
 - **📍 SA Locations**: Pre-configured South African cities and remote options (hardcoded for MVP - search/autocomplete coming in Platform Enhancement phase)
-
-### 🚧 **Planned Features** (Next Development Phase)
-
-#### **Enhanced Verification (Coming Q2 2025)**
-- **🛡️ Enhanced Background Checks**: Criminal record checks and address verification
-- **📋 Employment History**: Work history verification with references
-- **🎓 Skills Assessment**: Optional skills testing and certification
-- **💰 Subsidized Verification**: Reduced costs for informal sector workers
-
-#### **Premium Features (Coming Q3 2025)**
-- **🔍 Comprehensive Verification**: Full background and professional reference checks
-- **⭐ Premium Trust Score**: Highest tier verification with maximum trust benefits
-- **🎯 Priority Placement**: Enhanced visibility in search results
-- **💼 Professional Services**: Access to premium gig categories
-
-#### **Safety & Community Enhancement**
-- **👥 Emergency Contacts**: Safety network linking to family/friends for all users
-- **📍 Safe Meeting Locations**: Public space recommendations for secure gig meetings
-- **🆘 Check-in System**: Simple safety notifications during active gigs
-- **🎓 Enhanced Skills Hub**: 50+ micro-learning modules for informal sector and professional development
-- **💰 Financial Literacy**: Banking basics and money management for first-time earners
-- **🌍 Multi-language Support**: Safety and skills content in SA's major languages
-
-#### **Platform Enhancement**
-- **⭐ Review System**: Rating and feedback system for completed gigs
-- **🔍 Advanced Search & Location**:
-  - Location search/autocomplete (replacing hardcoded city dropdown)
-  - GPS-based matching with community safety mapping
-  - Safety zone filtering for secure meetup locations
-  - Radius-based gig discovery
-- **📊 Impact Analytics**: Employment outcome tracking and skills development metrics
-- **🔔 Safety Notifications**: Real-time safety alerts and emergency response system
-- **📧 Community Integration**: Optional community safety networks and peer support
-- **📱 Mobile App**: React Native app optimized for entry-level smartphones
-- **🏆 Skills Verification**: Badges and micro-credentials for employability
-- **📧 Email Verification**: Enhanced signup flow with email verification requirement
 
 ## 🛠 Tech Stack
 
@@ -164,8 +140,10 @@ KasiGig empowers all South Africans - from informal sector workers to profession
 - **Authentication**: Firebase Auth with Firestore user profiles
 - **Database**: Cloud Firestore for scalable data storage
 - **File Storage**: Firebase Storage for photos and portfolio images
+- **OCR**: Google Cloud Vision API for ID verification
 - **State Management**: React Context API
 - **Error Handling**: React Error Boundaries
+- **Testing**: Jest with React Testing Library (117 passing tests)
 - **Development**: Hot reload, TypeScript checking, ESLint
 
 ## 🚀 Quick Start
@@ -1013,9 +991,10 @@ firebase deploy --only firestore:rules,storage
 - [x] **Fee management system** with configurable platform fees ✅
 - [x] **Manage Gigs dashboard & completion workflow** - Employers can view all posted gigs, track application counts, assign workers, mark gigs as complete, and cancel gigs. Comprehensive tests included. Current workflow: Accept application → (Optional) Make payment → Mark complete → Payment released. ✅
 - [x] **Job seeker profile viewing** - Employers can view full applicant profiles when reviewing applications. Includes work history, skills, portfolio, languages, certifications, verification status, and trust score (defaults to 50 for new users). Profile dialog integrated into application management workflow with "View Profile" button on each application. ✅
-- [ ] **Worker wallet & withdrawal system + Payment flow improvements** - Workers need to see their balance/earnings from completed gigs and request withdrawals. Currently, escrow is released but workers have no way to see or withdraw their money. Additionally, need to add payment status warnings/reminders since payment is currently optional when accepting applications (by design - allows employers to accept/book workers in advance and pay closer to work date, e.g., photographer for event 3 months away). Needs: balance tracking on User model, worker earnings dashboard, withdrawal request system, admin approval workflow, SA payment provider integration, payment status warnings for workers ("Don't start work until funded"), employer payment reminders, and worker ability to withdraw unfunded applications.
+- [x] **Worker wallet & withdrawal system** - Digital wallet with pending (escrow) and available balances, comprehensive earnings dashboard for job seekers, secure withdrawal requests with South African bank details, automatic balance updates on payment and escrow release, role-based access (job-seekers only), with 30 comprehensive tests. ✅
+- [ ] **Payment flow improvements (Pre-Launch)** - Add payment status warnings for workers ("Don't start work until funded"), employer payment reminders when accepting applications, employer payment dashboard to track outgoing payments, and admin approval workflow for withdrawal requests.
+- [ ] **Application withdrawal (Pre-Launch)** - Allow job seekers to withdraw their pending applications for any reason. Gives workers control and flexibility if they find another job, change their mind, or circumstances change. Important for informal sector where opportunities can come up quickly. Also prevents workers from being stuck in unfunded applications.
 - [ ] **Browse Talent page** - Currently "Browse Talent" redirects to Browse Gigs instead of showing job seeker profiles. Employers need to proactively find workers by skills, location, ratings, verification status.
-- [ ] **Application withdrawal** - Allow job seekers to withdraw their pending applications for any reason. Gives workers control and flexibility if they find another job, change their mind, or circumstances change. Important for informal sector where opportunities can come up quickly.
 - [ ] **Max applicants limit** - Let employers specify how many applicants they want to review (e.g., "5 applicants max"). Shows job seekers "3/5 applicants" so they know if it's worth applying. Auto-closes gig to "reviewing" when limit reached. Critical for informal work where employers typically choose from first 3-5 applicants.
 - [ ] **Firestore security rules** implementation for production
 - [ ] **Review and rating system** with trust building features
@@ -1040,9 +1019,6 @@ firebase deploy --only firestore:rules,storage
 - [ ] **Skills certification partnerships** with formal education institutions
 
 ## 🔧 Known Issues
-
-### Critical (Fix Before Go Live)
-- **🚨 Duplicate applications**: Users can submit multiple applications to the same gig. Need to add validation to prevent duplicate applications from the same user.
 
 ### Non-Critical (Can be addressed post-launch)
 - Warning about Next.js SWC dependencies (cosmetic, doesn't affect functionality)
@@ -1096,6 +1072,112 @@ service cloud.firestore {
 3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## 🗺️ Product Roadmap
+
+### Immediate Priorities (Pre-Launch)
+- [ ] **Employer Payment Dashboard**: View payments made, pending transactions, and payment history
+- [ ] **Payment Status Warnings**: Alert workers not to start work until payment is funded
+- [ ] **Employer Payment Reminders**: Notifications when accepting applications without payment method
+- [ ] **Worker Application Withdrawal**: Ability to withdraw from unfunded gigs
+- [ ] **Admin Withdrawal Approval**: Interface for reviewing and approving withdrawal requests
+- [ ] **Transaction History Component**: Full transaction history view for workers
+- [ ] **Review System**: Rating and feedback for completed gigs
+- [ ] **Advanced Search & Filtering**: Enhanced gig discovery with more filter options
+
+### Q1 2026
+- [ ] **Enhanced Payment System**
+  - Milestone-based payments for large projects
+  - Advanced escrow system with automated releases
+  - Multi-currency support for cross-border work
+  - Enhanced financial reporting for tax purposes
+- [ ] **Trust Score 2.0**
+  - Advanced algorithmic scoring based on 12+ factors
+  - Reputation management system
+  - Dispute resolution framework
+  - Enhanced verification badges
+
+### Q2 2026
+- [ ] **Mobile App Launch**
+  - Native Android app (priority for township users)
+  - Enhanced offline capabilities
+  - Location-based job matching
+  - Real-time notifications
+- [ ] **Skills Development Platform**
+  - Partnership with SETA for accredited training
+  - Micro-credentials system
+  - Video-based learning modules
+  - Skills assessment tools
+
+### Q2 2026
+- [ ] **AI Safety Features**
+  - Smart risk assessment for gigs
+  - Automated content moderation
+  - Behavioral pattern analysis
+  - Safety score predictions
+- [ ] **Enterprise Solutions**
+  - Corporate hiring portal
+  - Bulk gig posting
+  - Advanced analytics dashboard
+  - Custom verification processes
+
+### Q3 2026
+- [ ] **Regional Expansion**
+  - Launch in neighboring countries
+  - Cross-border payment solutions
+  - Multi-language support
+  - Local compliance frameworks
+- [ ] **Community Features**
+  - Worker unions integration
+  - Community forums
+  - Mentorship program
+  - Skills sharing marketplace
+
+### Q4 2026
+- [ ] **Government Integration**
+  - UIF registration integration
+  - Tax filing assistance
+  - SARS compliance tools
+  - Government job board integration
+- [ ] **Financial Services**
+  - Micro-loans for workers
+  - Insurance products
+  - Savings programs
+  - Financial education tools
+
+### Completed Milestones
+✅ **Core gig posting and application flow** with role-based dashboards
+✅ **ID verification system** with OCR (Google Cloud Vision API)
+✅ **Trust Score system** with dynamic scoring based on verifications
+✅ **Profile viewing for employers** when reviewing applications
+✅ **Profile completeness tracking** with real-time progress
+✅ **Worker wallet & withdrawal system** with pending/available balance separation
+✅ **Manage gigs dashboard** for employers to edit and track gigs
+✅ **Real-time messaging system** with conversation archiving
+✅ **Mobile responsive design** with PWA support
+✅ **Enhanced mobile navigation** with hamburger menu and touch optimization
+✅ **Payment system with escrow** and automated balance management
+✅ **Firebase integration** (Auth, Firestore, Storage)
+✅ **Comprehensive test suite** (117 passing tests)
+✅ **Demo data** with realistic South African gigs
+
+### Technical Debt & Optimization (Ongoing)
+- [ ] Performance optimization for township networks
+- [ ] Enhanced error handling and recovery
+- [ ] Improved test coverage
+- [ ] Security hardening
+- [ ] Accessibility improvements
+- [ ] SEO optimization
+- [ ] Analytics enhancement
+
+### Long-term Vision (2027+)
+- [ ] Pan-African expansion
+- [ ] Blockchain-based reputation system
+- [ ] Advanced AI-powered job matching
+- [ ] Integrated training and certification platform
+- [ ] Financial services marketplace
+- [ ] Government policy integration
+- [ ] Social impact measurement framework
 
 ## 📄 License
 

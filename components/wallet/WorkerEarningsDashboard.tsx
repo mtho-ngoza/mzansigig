@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { WalletService } from '@/lib/services/walletService'
 import { PaymentService } from '@/lib/services/paymentService'
 import { PaymentHistory } from '@/types/payment'
+import TransactionHistory from './TransactionHistory'
 
 interface WalletBalance {
   walletBalance: number
@@ -30,6 +31,7 @@ export default function WorkerEarningsDashboard({ onWithdrawalRequest }: WorkerE
   const [recentTransactions, setRecentTransactions] = useState<PaymentHistory[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showFullHistory, setShowFullHistory] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -81,6 +83,11 @@ export default function WorkerEarningsDashboard({ onWithdrawalRequest }: WorkerE
         </CardContent>
       </Card>
     )
+  }
+
+  // Show full transaction history if requested
+  if (showFullHistory) {
+    return <TransactionHistory onClose={() => setShowFullHistory(false)} />
   }
 
   return (
@@ -212,7 +219,11 @@ export default function WorkerEarningsDashboard({ onWithdrawalRequest }: WorkerE
               ))}
 
               <div className="mt-4 text-center">
-                <Button variant="ghost" size="sm">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowFullHistory(true)}
+                >
                   View All Transactions →
                 </Button>
               </div>

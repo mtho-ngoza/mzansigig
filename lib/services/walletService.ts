@@ -10,14 +10,33 @@ export class WalletService {
     try {
       const userRef = doc(db, 'users', userId)
 
-      await updateDoc(userRef, {
-        walletBalance: increment(amount),
-        totalEarnings: increment(amount),
-        updatedAt: Timestamp.now()
-      })
+      // First check if user exists and has wallet fields
+      const userDoc = await getDoc(userRef)
+      if (!userDoc.exists()) {
+        throw new Error('User not found')
+      }
+
+      const userData = userDoc.data()
+
+      // Initialize wallet if fields don't exist
+      if (userData.walletBalance === undefined) {
+        await updateDoc(userRef, {
+          walletBalance: amount,
+          pendingBalance: 0,
+          totalEarnings: amount,
+          totalWithdrawn: 0,
+          updatedAt: Timestamp.now()
+        })
+      } else {
+        await updateDoc(userRef, {
+          walletBalance: increment(amount),
+          totalEarnings: increment(amount),
+          updatedAt: Timestamp.now()
+        })
+      }
     } catch (error) {
       console.error('Error crediting wallet:', error)
-      throw new Error('Failed to credit wallet')
+      throw new Error(error instanceof Error ? error.message : 'Failed to credit wallet')
     }
   }
 
@@ -58,13 +77,32 @@ export class WalletService {
     try {
       const userRef = doc(db, 'users', userId)
 
-      await updateDoc(userRef, {
-        pendingBalance: increment(amount),
-        updatedAt: Timestamp.now()
-      })
+      // First check if user exists and has wallet fields
+      const userDoc = await getDoc(userRef)
+      if (!userDoc.exists()) {
+        throw new Error('User not found')
+      }
+
+      const userData = userDoc.data()
+
+      // Initialize wallet if fields don't exist
+      if (userData.pendingBalance === undefined) {
+        await updateDoc(userRef, {
+          walletBalance: 0,
+          pendingBalance: amount,
+          totalEarnings: 0,
+          totalWithdrawn: 0,
+          updatedAt: Timestamp.now()
+        })
+      } else {
+        await updateDoc(userRef, {
+          pendingBalance: increment(amount),
+          updatedAt: Timestamp.now()
+        })
+      }
     } catch (error) {
       console.error('Error updating pending balance:', error)
-      throw new Error('Failed to update pending balance')
+      throw new Error(error instanceof Error ? error.message : 'Failed to update pending balance')
     }
   }
 
@@ -75,15 +113,34 @@ export class WalletService {
     try {
       const userRef = doc(db, 'users', userId)
 
-      await updateDoc(userRef, {
-        pendingBalance: increment(-amount),
-        walletBalance: increment(amount),
-        totalEarnings: increment(amount),
-        updatedAt: Timestamp.now()
-      })
+      // First check if user exists and has wallet fields
+      const userDoc = await getDoc(userRef)
+      if (!userDoc.exists()) {
+        throw new Error('User not found')
+      }
+
+      const userData = userDoc.data()
+
+      // Initialize wallet if fields don't exist
+      if (userData.walletBalance === undefined || userData.pendingBalance === undefined) {
+        await updateDoc(userRef, {
+          walletBalance: amount,
+          pendingBalance: 0,
+          totalEarnings: amount,
+          totalWithdrawn: 0,
+          updatedAt: Timestamp.now()
+        })
+      } else {
+        await updateDoc(userRef, {
+          pendingBalance: increment(-amount),
+          walletBalance: increment(amount),
+          totalEarnings: increment(amount),
+          updatedAt: Timestamp.now()
+        })
+      }
     } catch (error) {
       console.error('Error moving pending to wallet:', error)
-      throw new Error('Failed to move pending to wallet')
+      throw new Error(error instanceof Error ? error.message : 'Failed to move pending to wallet')
     }
   }
 
