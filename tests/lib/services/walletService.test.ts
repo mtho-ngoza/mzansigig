@@ -210,8 +210,44 @@ describe('WalletService', () => {
   })
 
   describe('updatePendingBalance', () => {
-    it('should update pending balance when payment goes into escrow', async () => {
+    it('should initialize wallet fields when they do not exist', async () => {
       const amount = 1000
+      const mockUserData = { id: mockUserId, email: 'test@example.com' }
+
+      ;(getDoc as jest.Mock).mockResolvedValue({
+        exists: () => true,
+        data: () => mockUserData
+      })
+      ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
+
+      await WalletService.updatePendingBalance(mockUserId, amount)
+
+      expect(updateDoc).toHaveBeenCalledWith(
+        mockDocRef,
+        expect.objectContaining({
+          walletBalance: 0,
+          pendingBalance: amount,
+          totalEarnings: 0,
+          totalWithdrawn: 0
+        })
+      )
+    })
+
+    it('should use increment when wallet fields already exist', async () => {
+      const amount = 1000
+      const mockUserData = {
+        id: mockUserId,
+        email: 'test@example.com',
+        walletBalance: 500,
+        pendingBalance: 200,
+        totalEarnings: 1000,
+        totalWithdrawn: 0
+      }
+
+      ;(getDoc as jest.Mock).mockResolvedValue({
+        exists: () => true,
+        data: () => mockUserData
+      })
       ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
 
       await WalletService.updatePendingBalance(mockUserId, amount)
@@ -224,16 +260,64 @@ describe('WalletService', () => {
       )
     })
 
+    it('should handle errors when user not found', async () => {
+      ;(getDoc as jest.Mock).mockResolvedValue({
+        exists: () => false
+      })
+
+      await expect(WalletService.updatePendingBalance(mockUserId, 1000)).rejects.toThrow('User not found')
+    })
+
     it('should handle errors when updating pending balance fails', async () => {
+      ;(getDoc as jest.Mock).mockResolvedValue({
+        exists: () => true,
+        data: () => ({ id: mockUserId, pendingBalance: 100 })
+      })
       ;(updateDoc as jest.Mock).mockRejectedValue(new Error('Database error'))
 
-      await expect(WalletService.updatePendingBalance(mockUserId, 1000)).rejects.toThrow('Failed to update pending balance')
+      await expect(WalletService.updatePendingBalance(mockUserId, 1000)).rejects.toThrow('Database error')
     })
   })
 
   describe('movePendingToWallet', () => {
-    it('should move funds from pending to wallet when escrow is released', async () => {
+    it('should initialize wallet fields when they do not exist', async () => {
       const amount = 800
+      const mockUserData = { id: mockUserId, email: 'test@example.com' }
+
+      ;(getDoc as jest.Mock).mockResolvedValue({
+        exists: () => true,
+        data: () => mockUserData
+      })
+      ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
+
+      await WalletService.movePendingToWallet(mockUserId, amount)
+
+      expect(updateDoc).toHaveBeenCalledWith(
+        mockDocRef,
+        expect.objectContaining({
+          walletBalance: amount,
+          pendingBalance: 0,
+          totalEarnings: amount,
+          totalWithdrawn: 0
+        })
+      )
+    })
+
+    it('should use increment when wallet fields already exist', async () => {
+      const amount = 800
+      const mockUserData = {
+        id: mockUserId,
+        email: 'test@example.com',
+        walletBalance: 500,
+        pendingBalance: 800,
+        totalEarnings: 1000,
+        totalWithdrawn: 0
+      }
+
+      ;(getDoc as jest.Mock).mockResolvedValue({
+        exists: () => true,
+        data: () => mockUserData
+      })
       ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
 
       await WalletService.movePendingToWallet(mockUserId, amount)
@@ -248,14 +332,39 @@ describe('WalletService', () => {
       )
     })
 
+    it('should handle errors when user not found', async () => {
+      ;(getDoc as jest.Mock).mockResolvedValue({
+        exists: () => false
+      })
+
+      await expect(WalletService.movePendingToWallet(mockUserId, 800)).rejects.toThrow('User not found')
+    })
+
     it('should handle errors when moving pending to wallet fails', async () => {
+      ;(getDoc as jest.Mock).mockResolvedValue({
+        exists: () => true,
+        data: () => ({ id: mockUserId, walletBalance: 100, pendingBalance: 800 })
+      })
       ;(updateDoc as jest.Mock).mockRejectedValue(new Error('Database error'))
 
-      await expect(WalletService.movePendingToWallet(mockUserId, 800)).rejects.toThrow('Failed to move pending to wallet')
+      await expect(WalletService.movePendingToWallet(mockUserId, 800)).rejects.toThrow('Database error')
     })
   })
 
   describe('getWalletBalance', () => {
+    let consoleSpy: jest.SpyInstance;
+
+    beforeEach(() => {
+      // Create a fresh spy for each test
+      consoleSpy = jest.spyOn(console, 'debug').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      // Clean up the spy
+      consoleSpy.mockRestore()
+      jest.clearAllMocks()
+    })
+
     it('should return wallet balance for user', async () => {
       const mockUserData = {
         id: mockUserId,
@@ -285,9 +394,10 @@ describe('WalletService', () => {
         totalEarnings: 5000,
         totalWithdrawn: 3000
       })
+      expect(consoleSpy).not.toHaveBeenCalled()
     })
 
-    it('should return zero balances if user not found', async () => {
+    it('should return zero balances and log debug message if user not found', async () => {
       ;(getDoc as jest.Mock).mockResolvedValue({
         exists: () => false
       })
@@ -300,9 +410,10 @@ describe('WalletService', () => {
         totalEarnings: 0,
         totalWithdrawn: 0
       })
+      expect(consoleSpy).toHaveBeenCalledWith('Error getting wallet balance:', new Error('User not found'))
     })
 
-    it('should return zero for undefined wallet fields', async () => {
+    it('should return zero for undefined wallet fields and not log debug', async () => {
       const mockUserData = {
         id: mockUserId,
         email: 'test@example.com',
@@ -327,9 +438,10 @@ describe('WalletService', () => {
         totalEarnings: 0,
         totalWithdrawn: 0
       })
+      expect(consoleSpy).not.toHaveBeenCalled()
     })
 
-    it('should handle errors gracefully', async () => {
+    it('should handle errors gracefully and log debug message', async () => {
       ;(getDoc as jest.Mock).mockRejectedValue(new Error('Database error'))
 
       const balance = await WalletService.getWalletBalance(mockUserId)
@@ -340,6 +452,7 @@ describe('WalletService', () => {
         totalEarnings: 0,
         totalWithdrawn: 0
       })
+      expect(consoleSpy).toHaveBeenCalledWith('Error getting wallet balance:', new Error('Database error'))
     })
   })
 

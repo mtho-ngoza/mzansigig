@@ -201,7 +201,7 @@ export class WalletService {
         })
       }
     } catch (error) {
-      console.error('Error initializing wallet:', error)
+      console.debug('Error initializing wallet:', error)
       throw new Error(error instanceof Error ? error.message : 'Failed to initialize wallet')
     }
   }
