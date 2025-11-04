@@ -28,6 +28,7 @@ import {
 } from '@/types/payment'
 import { FeeConfigService } from './feeConfigService'
 import { GigService } from '../database/gigService'
+import { WalletService } from './walletService'
 
 const COLLECTIONS = {
   PAYMENTS: 'payments',
@@ -247,6 +248,9 @@ export class PaymentService {
       await this.addPaymentHistory(intentData.employerId, 'payments', intentData.amount, 'completed', intentData.gigId, paymentDocRef.id, `Payment for "${gigTitle}"`)
       await this.addPaymentHistory(intentData.workerId, 'earnings', intentData.amount, 'pending', intentData.gigId, paymentDocRef.id, `Earnings from "${gigTitle}"`)
 
+      // Update worker's pending balance (funds in escrow)
+      await WalletService.updatePendingBalance(intentData.workerId, intentData.amount)
+
       return {
         id: paymentDocRef.id,
         ...paymentData,
@@ -332,9 +336,12 @@ export class PaymentService {
         paymentId,
         `Payment released for "${gigTitle}"`
       )
+
+      // Move funds from pending to wallet
+      await WalletService.movePendingToWallet(paymentData.workerId, releaseAmount)
     } catch (error) {
       console.error('Error releasing escrow:', error)
-      throw new Error('Failed to release escrow')
+      throw new Error(error instanceof Error ? error.message : 'Failed to release escrow')
     }
   }
 
@@ -437,14 +444,45 @@ export class PaymentService {
     adminNotes?: string
   ): Promise<void> {
     try {
+      const withdrawalDoc = await getDoc(doc(db, COLLECTIONS.WITHDRAWALS, withdrawalId))
+      if (!withdrawalDoc.exists()) {
+        throw new Error('Withdrawal request not found')
+      }
+
+      const withdrawalData = withdrawalDoc.data()
       const updateData: Record<string, unknown> = { status }
 
       if (status === 'processing') {
         updateData.processedAt = Timestamp.now()
       } else if (status === 'completed') {
         updateData.completedAt = Timestamp.now()
+
+        // Debit user's wallet when withdrawal is completed
+        await WalletService.debitWallet(withdrawalData.userId, withdrawalData.amount)
+
+        // Update payment history to mark as completed
+        await this.addPaymentHistory(
+          withdrawalData.userId,
+          'payments',
+          -withdrawalData.amount,
+          'completed',
+          undefined,
+          undefined,
+          `Withdrawal completed: R${withdrawalData.amount}`
+        )
       } else if (status === 'failed') {
         updateData.failureReason = failureReason
+
+        // Update payment history to mark as failed
+        await this.addPaymentHistory(
+          withdrawalData.userId,
+          'payments',
+          -withdrawalData.amount,
+          'failed',
+          undefined,
+          undefined,
+          `Withdrawal failed: ${failureReason || 'Unknown error'}`
+        )
       }
 
       if (adminNotes) {
@@ -454,7 +492,7 @@ export class PaymentService {
       await updateDoc(doc(db, COLLECTIONS.WITHDRAWALS, withdrawalId), updateData)
     } catch (error) {
       console.error('Error updating withdrawal status:', error)
-      throw new Error('Failed to update withdrawal status')
+      throw new Error(error instanceof Error ? error.message : 'Failed to update withdrawal status')
     }
   }
 

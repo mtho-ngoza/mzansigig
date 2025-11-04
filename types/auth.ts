@@ -73,6 +73,11 @@ export interface User {
   safetyPreferences?: SafetyPreferences
   verificationDocuments?: VerificationDocument[]
   lastSafetyUpdate?: Date
+  // Wallet/earnings fields
+  walletBalance?: number // Available funds that can be withdrawn
+  pendingBalance?: number // Funds held in escrow
+  totalEarnings?: number // Lifetime earnings
+  totalWithdrawn?: number // Total amount withdrawn
   createdAt: Date
   updatedAt?: Date
 }
