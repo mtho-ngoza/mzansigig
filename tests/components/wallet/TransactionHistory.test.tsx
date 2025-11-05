@@ -3,7 +3,7 @@
  */
 
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import TransactionHistory from '@/components/wallet/TransactionHistory'
 import { PaymentService } from '@/lib/services/paymentService'
@@ -125,7 +125,9 @@ describe('TransactionHistory Component', () => {
       mockUseAuth.mockReturnValue(createMockAuthContext(mockJobSeeker))
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(mockTransactions)
 
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('Transaction History')).toBeInTheDocument()
@@ -169,7 +171,11 @@ describe('TransactionHistory Component', () => {
     it('should hide loading spinner after data loads', async () => {
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(mockTransactions)
 
-      const { container } = render(<TransactionHistory />)
+      let container: HTMLElement
+      await act(async () => {
+        const rendered = render(<TransactionHistory />)
+        container = rendered.container
+      })
 
       await waitFor(() => {
         expect(container.querySelector('.animate-spin')).not.toBeInTheDocument()
@@ -183,23 +189,24 @@ describe('TransactionHistory Component', () => {
     })
 
     it('should display all transactions', async () => {
-      ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(mockTransactions)
+      (PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(mockTransactions)
 
-      render(<TransactionHistory />)
-
-      await waitFor(() => {
-        expect(screen.getByText('Payment for Plumbing Job')).toBeInTheDocument()
-        expect(screen.getByText('Withdrawal to bank account')).toBeInTheDocument()
-        expect(screen.getByText('Platform commission')).toBeInTheDocument()
-        expect(screen.getByText('Payment for Garden Maintenance')).toBeInTheDocument()
-        expect(screen.getByText('Refund for cancelled job')).toBeInTheDocument()
+      await act(async () => {
+        render(<TransactionHistory />)
       })
-    })
+         expect(screen.getByText('Payment for Plumbing Job')).toBeInTheDocument()
+         expect(screen.getByText('Withdrawal to bank account')).toBeInTheDocument()
+         expect(screen.getByText('Platform commission')).toBeInTheDocument()
+         expect(screen.getByText('Payment for Garden Maintenance')).toBeInTheDocument()
+         expect(screen.getByText('Refund for cancelled job')).toBeInTheDocument()
+       })
 
     it('should display transaction amounts correctly', async () => {
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(mockTransactions)
 
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('Payment for Plumbing Job')).toBeInTheDocument()
@@ -219,7 +226,9 @@ describe('TransactionHistory Component', () => {
     it('should display transaction status badges', async () => {
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(mockTransactions)
 
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         const completedBadges = screen.getAllByText('completed')
@@ -233,7 +242,9 @@ describe('TransactionHistory Component', () => {
     it('should display transaction type badges', async () => {
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(mockTransactions)
 
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         const earningsBadges = screen.getAllByText('earnings')
@@ -248,7 +259,9 @@ describe('TransactionHistory Component', () => {
     it('should show empty state when no transactions exist', async () => {
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue([])
 
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('No transactions found')).toBeInTheDocument()
@@ -265,7 +278,9 @@ describe('TransactionHistory Component', () => {
     it('should calculate total earnings correctly', async () => {
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(mockTransactions)
 
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('Total Earnings')).toBeInTheDocument()
@@ -281,7 +296,9 @@ describe('TransactionHistory Component', () => {
     it('should calculate total withdrawals correctly', async () => {
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(mockTransactions)
 
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('Total Withdrawals')).toBeInTheDocument()
@@ -297,7 +314,9 @@ describe('TransactionHistory Component', () => {
     it('should calculate total fees correctly', async () => {
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(mockTransactions)
 
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('Total Fees')).toBeInTheDocument()
@@ -318,7 +337,9 @@ describe('TransactionHistory Component', () => {
     })
 
     it('should filter transactions by type', async () => {
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('Payment for Plumbing Job')).toBeInTheDocument()
@@ -335,7 +356,9 @@ describe('TransactionHistory Component', () => {
     })
 
     it('should filter transactions by status', async () => {
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('Payment for Plumbing Job')).toBeInTheDocument()
@@ -351,7 +374,9 @@ describe('TransactionHistory Component', () => {
     })
 
     it('should filter transactions by search term', async () => {
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('Payment for Plumbing Job')).toBeInTheDocument()
@@ -368,7 +393,9 @@ describe('TransactionHistory Component', () => {
     })
 
     it('should clear all filters when clicking clear button', async () => {
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('Payment for Plumbing Job')).toBeInTheDocument()
@@ -416,7 +443,9 @@ describe('TransactionHistory Component', () => {
       const manyTransactions = generateMockTransactions(25)
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(manyTransactions)
 
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('Page 1 of 2')).toBeInTheDocument()
@@ -427,7 +456,9 @@ describe('TransactionHistory Component', () => {
       const manyTransactions = generateMockTransactions(25)
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(manyTransactions)
 
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('Page 1 of 2')).toBeInTheDocument()
@@ -445,7 +476,9 @@ describe('TransactionHistory Component', () => {
       const manyTransactions = generateMockTransactions(25)
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(manyTransactions)
 
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         const prevButton = screen.getByText('← Previous')
@@ -457,7 +490,9 @@ describe('TransactionHistory Component', () => {
       const manyTransactions = generateMockTransactions(25)
       ;(PaymentService.getUserPaymentHistory as jest.Mock).mockResolvedValue(manyTransactions)
 
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       // Navigate to page 2
       await waitFor(() => {
@@ -477,8 +512,16 @@ describe('TransactionHistory Component', () => {
   })
 
   describe('Error Handling', () => {
+    let consoleErrorSpy: jest.SpyInstance
+
     beforeEach(() => {
       mockUseAuth.mockReturnValue(createMockAuthContext(mockJobSeeker))
+      // Suppress console.error output for expected error tests (CI may treat console.error as test failure)
+      consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
+    })
+
+    afterEach(() => {
+      consoleErrorSpy.mockRestore()
     })
 
     it('should display error message when loading fails', async () => {
@@ -486,7 +529,9 @@ describe('TransactionHistory Component', () => {
         new Error('Network error')
       )
 
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('Failed to load transaction history')).toBeInTheDocument()
@@ -498,7 +543,9 @@ describe('TransactionHistory Component', () => {
         new Error('Network error')
       )
 
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('Transaction History')).toBeInTheDocument()
@@ -515,7 +562,9 @@ describe('TransactionHistory Component', () => {
 
     it('should call onClose when close button is clicked', async () => {
       const onClose = jest.fn()
-      render(<TransactionHistory onClose={onClose} />)
+      await act(async () => {
+        render(<TransactionHistory onClose={onClose} />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('Transaction History')).toBeInTheDocument()
@@ -528,7 +577,9 @@ describe('TransactionHistory Component', () => {
     })
 
     it('should not show close button when onClose is not provided', async () => {
-      render(<TransactionHistory />)
+      await act(async () => {
+        render(<TransactionHistory />)
+      })
 
       await waitFor(() => {
         expect(screen.getByText('Transaction History')).toBeInTheDocument()

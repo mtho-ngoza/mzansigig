@@ -92,6 +92,18 @@ function validateFirestoreRules() {
     {
       test: content.includes('match /messages/{messageId}'),
       message: 'Messages collection rules defined'
+    },
+    {
+      test: content.includes('match /verification-results/{resultId}'),
+      message: 'Verification results collection rules defined'
+    },
+    {
+      test: content.includes('match /verification-documents/{documentId}'),
+      message: 'Verification documents collection rules defined'
+    },
+    {
+      test: content.includes('match /emergency-contacts/{contactId}'),
+      message: 'Emergency contacts collection rules defined'
     }
   ];
 

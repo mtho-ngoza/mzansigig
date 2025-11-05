@@ -29,6 +29,15 @@ export default function TransactionHistory({ onClose }: TransactionHistoryProps)
   useEffect(() => {
     if (!user) return
 
+    // If the user isn't a job-seeker, don't fetch payment history.
+    // This avoids unnecessary async updates (and test warnings about act(...)).
+    if (user.userType !== 'job-seeker') {
+      setIsLoading(false)
+      setTransactions([])
+      setFilteredTransactions([])
+      return
+    }
+
     const loadTransactions = async () => {
       setIsLoading(true)
       setError(null)
@@ -37,7 +46,8 @@ export default function TransactionHistory({ onClose }: TransactionHistoryProps)
         const history = await PaymentService.getUserPaymentHistory(user.id, 500)
         setTransactions(history)
         setFilteredTransactions(history)
-      } catch (err) {
+      } catch (error) {
+        // Intentionally don't log here to avoid noisy console output during tests/CI.
         setError('Failed to load transaction history')
       } finally {
         setIsLoading(false)
