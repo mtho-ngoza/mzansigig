@@ -625,14 +625,18 @@ export class PaymentService {
       await WalletService.debitWalletAtomic(userId, amount)
       console.log('  ✅ Step 1 complete: Wallet debited successfully')
 
-      const withdrawalData = {
+      const withdrawalData: any = {
         userId,
         amount,
         currency: 'ZAR' as const,
         status: 'pending' as const,
         paymentMethodId,
-        bankDetails,
         requestedAt: Timestamp.now()
+      }
+
+      // Only include bankDetails if it's defined (Firestore doesn't accept undefined values)
+      if (bankDetails) {
+        withdrawalData.bankDetails = bankDetails
       }
 
       console.log('  → Step 2: Creating withdrawal document...')
