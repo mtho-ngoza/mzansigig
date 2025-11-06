@@ -994,13 +994,30 @@ firebase deploy --only firestore:rules,storage
 - [x] **Job seeker profile viewing** - Employers can view full applicant profiles when reviewing applications. Includes work history, skills, portfolio, languages, certifications, verification status, and trust score (defaults to 50 for new users). Profile dialog integrated into application management workflow with "View Profile" button on each application. ✅
 - [x] **Worker wallet & withdrawal system** - Digital wallet with pending (escrow) and available balances, comprehensive earnings dashboard for job seekers, secure withdrawal requests with South African bank details, automatic balance updates on payment and escrow release, role-based access (job-seekers only), with 30 comprehensive tests. ✅
 - [x] **Withdrawal balance validation** - Prevents double-spending by validating available balance and deducting funds when withdrawal is requested (not when completed). Includes automatic refund on rejection and comprehensive test coverage. ✅
-- [ ] **Payment flow improvements (Pre-Launch)** - Add payment status warnings for workers ("Don't start work until funded"), employer payment reminders when accepting applications, employer payment dashboard to track outgoing payments, admin approval UI for withdrawal requests, and bank transfer integration with South African payment gateway.
+- [ ] **Admin withdrawal approval dashboard (Phase 1 - In Progress)** - Admin dashboard to view, approve, and reject withdrawal requests. Workers see real-time status updates. Virtual deposits for MVP (no bank transfer integration yet). Essential for soft launch.
+- [ ] **Worker withdrawal history view** - Transaction history component showing all withdrawal requests with status tracking (pending/processing/completed/failed).
+- [ ] **Payment flow improvements (Pre-Launch)** - Add payment status warnings for workers ("Don't start work until funded"), employer payment reminders when accepting applications, employer payment dashboard to track outgoing payments.
 - [ ] **Application withdrawal (Pre-Launch)** - Allow job seekers to withdraw their pending applications for any reason. Gives workers control and flexibility if they find another job, change their mind, or circumstances change. Important for informal sector where opportunities can come up quickly. Also prevents workers from being stuck in unfunded applications.
 - [ ] **Browse Talent page** - Currently "Browse Talent" redirects to Browse Gigs instead of showing job seeker profiles. Employers need to proactively find workers by skills, location, ratings, verification status.
 - [ ] **Max applicants limit** - Let employers specify how many applicants they want to review (e.g., "5 applicants max"). Shows job seekers "3/5 applicants" so they know if it's worth applying. Auto-closes gig to "reviewing" when limit reached. Critical for informal work where employers typically choose from first 3-5 applicants.
 - [ ] **Firestore security rules** implementation for production
 - [ ] **Review and rating system** with trust building features
 - [ ] **Milestone-based payments** for project-based work enhancement
+
+### Post-Launch Enhancements (Month 3+)
+
+#### Automated Withdrawal System (Phase 2 - Month 3-6)
+- [ ] **3-Tier Hybrid Withdrawal System** - Implement trust-based automated withdrawals for verified users (Tier 1 & 2) while maintaining manual review for new/unverified users (Tier 3)
+- [ ] **Fraud Detection Rules Engine** - Build Firebase Cloud Functions with velocity checks, pattern analysis, and anomaly detection
+- [ ] **Admin Exception Dashboard** - Enhanced admin dashboard with risk scores, bulk actions, and fraud alerts
+- [ ] **Withdrawal Limits by Tier** - Daily/weekly limits based on trust score and verification level
+- [ ] **Bank Account Verification** - Verify bank account matches verified ID name, test deposits
+
+#### Full Automation (Phase 3 - Month 6+)
+- [ ] **ML-Based Fraud Detection** - Implement machine learning models for real-time risk scoring
+- [ ] **Automated Bank Transfer Integration** - Full integration with PayFast/Yoco batch APIs for automated transfers
+- [ ] **Advanced Analytics Dashboard** - Real-time fraud monitoring, transaction analysis, and business intelligence
+- [ ] **95%+ Automation Rate** - Achieve target of automated approval for 95%+ of withdrawals
 
 ### Medium Priority (Enhanced Features)
 - [ ] **Enhanced verification rollout** (Q2 2025) with background checks
@@ -1138,22 +1155,16 @@ ALWAYS FLAGGED FOR REVIEW:
 
 #### 🔧 **Implementation Phases:**
 
-**Phase 1 - MVP Launch (Month 1-2): MANUAL** ✅ *Current implementation is acceptable*
-- 100% manual approval for all withdrawals
+**Phase 1 - MVP Launch (Month 1-2): MANUAL** ✅ *Current focus - implementing now*
+- 100% manual approval for all withdrawals via admin dashboard
+- Admin can approve/reject withdrawal requests with one click
+- Workers see withdrawal status updates (pending → processing → completed)
+- Virtual deposits (no actual bank transfer integration yet)
 - Acceptable for soft launch with <100 active workers
-- Allows you to learn fraud patterns and establish baseline
+- Allows platform to learn fraud patterns and establish baseline
+- **Status**: In development - admin approval UI and workflow
 
-**Phase 2 - Early Scale (Month 3-6): HYBRID** 🎯 *Recommended priority*
-- Automated for Tier 1 & 2 users (80-90% of volume)
-- Manual for Tier 3 and flagged transactions
-- Implement basic fraud rules (velocity, limits, patterns)
-- Build admin dashboard for exception handling
-
-**Phase 3 - Mature Platform (Month 6+): AUTOMATED** 🚀 *Long-term goal*
-- 95%+ automated with ML fraud detection
-- Admin handles only exceptions and disputes
-- Real-time risk scoring
-- Integration with bank fraud detection APIs
+**Phase 2 & 3 moved to Post-Launch Roadmap (see Development Roadmap section below)**
 
 #### 💡 **Additional Safeguards:**
 
