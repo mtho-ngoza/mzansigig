@@ -362,19 +362,81 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                   )}
 
                   {application.status === 'accepted' && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center">
-                        <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <span className="text-green-800 font-medium">
-                          Congratulations! Your application has been accepted.
-                        </span>
+                    <>
+                      {/* Payment Warning Banner - Unfunded Work */}
+                      {application.paymentStatus !== 'paid' && application.paymentStatus !== 'in_escrow' && (
+                        <div className="bg-red-50 border-2 border-red-400 rounded-lg p-4 mb-4">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0">
+                              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                              </svg>
+                            </div>
+                            <div className="ml-3 flex-1">
+                              <h3 className="text-base font-bold text-red-900">
+                                ⚠️ PAYMENT NOT FUNDED - DO NOT START WORK
+                              </h3>
+                              <p className="mt-2 text-sm text-red-800 leading-relaxed">
+                                Your application has been accepted, but <strong>the employer has not yet funded the payment</strong>.
+                              </p>
+                              <div className="mt-3 bg-red-100 rounded p-3 border border-red-300">
+                                <p className="text-sm font-semibold text-red-900">
+                                  🛡️ For your protection: Do not begin any work until payment status shows &quot;In Escrow&quot; or &quot;Funded&quot;
+                                </p>
+                              </div>
+                              <div className="mt-2 flex items-center text-xs text-red-700">
+                                <span className="font-medium">Current Payment Status:</span>
+                                <span className="ml-2 px-2 py-1 bg-red-200 rounded">
+                                  {application.paymentStatus || 'UNPAID'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Payment Secured Banner - Work Can Begin */}
+                      {(application.paymentStatus === 'paid' || application.paymentStatus === 'in_escrow') && (
+                        <div className="bg-green-50 border-2 border-green-400 rounded-lg p-4 mb-4">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0">
+                              <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div className="ml-3 flex-1">
+                              <h3 className="text-base font-bold text-green-900">
+                                ✓ Payment Secured in Escrow - Safe to Start Work
+                              </h3>
+                              <p className="mt-2 text-sm text-green-800">
+                                Great news! The payment for this gig is now held in secure escrow. You can safely begin work on this project.
+                              </p>
+                              <div className="mt-2 flex items-center text-xs text-green-700">
+                                <span className="font-medium">Payment Status:</span>
+                                <span className="ml-2 px-2 py-1 bg-green-200 rounded font-semibold">
+                                  {application.paymentStatus === 'in_escrow' ? 'IN ESCROW' : 'PAID'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Acceptance Confirmation */}
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div className="flex items-center">
+                          <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span className="text-blue-800 font-medium">
+                            Congratulations! Your application has been accepted.
+                          </span>
+                        </div>
+                        <p className="text-blue-700 text-sm mt-2">
+                          Use the &quot;Message Employer&quot; button above to discuss project details and next steps.
+                        </p>
                       </div>
-                      <p className="text-green-700 text-sm mt-2">
-                        Use the &quot;Message Employer&quot; button above to discuss project details and next steps.
-                      </p>
-                    </div>
+                    </>
                   )}
 
                   {application.status === 'rejected' && (
