@@ -660,9 +660,10 @@ service cloud.firestore {
     }
     // ========================================
     // Default Deny All Other Collections
+    // Security by default: deny all access to undefined collections
     // ========================================
     match /{document=**} {
-      allow read, write: if true;
+      allow read, write: if false;
     }
   }
 }
