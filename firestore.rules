@@ -134,10 +134,10 @@ service cloud.firestore {
       // Employer can update application status
       allow update: if isAuthenticated() &&
                       (
-                        // Applicant updating their own pending application
+                        // Applicant updating their own pending application (including withdrawal)
                         (request.auth.uid == resource.data.applicantId &&
                          resource.data.status == 'pending' &&
-                         request.resource.data.status == 'pending') ||
+                         (request.resource.data.status == 'pending' || request.resource.data.status == 'withdrawn')) ||
                         // Employer updating application status (check gig ownership)
                         (exists(/databases/$(database)/documents/gigs/$(resource.data.gigId)) &&
                          request.auth.uid == get(/databases/$(database)/documents/gigs/$(resource.data.gigId)).data.employerId &&

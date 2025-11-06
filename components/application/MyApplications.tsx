@@ -28,6 +28,12 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [statusFilter, setStatusFilter] = useState<GigApplication['status'] | 'all'>('all')
+  const [withdrawConfirmation, setWithdrawConfirmation] = useState<{ isOpen: boolean; applicationId: string; gigTitle: string }>({
+    isOpen: false,
+    applicationId: '',
+    gigTitle: ''
+  })
+  const [withdrawing, setWithdrawing] = useState(false)
 
   useEffect(() => {
     const loadApplications = async () => {
@@ -84,6 +90,8 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
         return 'bg-purple-100 text-purple-800 border-purple-200'
       case 'rejected':
         return 'bg-red-100 text-red-800 border-red-200'
+      case 'withdrawn':
+        return 'bg-gray-100 text-gray-800 border-gray-200'
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200'
     }
@@ -122,6 +130,42 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
       style: 'currency',
       currency: 'ZAR'
     }).format(amount)
+  }
+
+  const handleWithdrawClick = (applicationId: string, gigTitle: string) => {
+    setWithdrawConfirmation({
+      isOpen: true,
+      applicationId,
+      gigTitle
+    })
+  }
+
+  const handleWithdrawConfirm = async () => {
+    try {
+      setWithdrawing(true)
+      await GigService.withdrawApplication(withdrawConfirmation.applicationId)
+
+      // Update the local state to reflect the withdrawal
+      setApplications(prevApps =>
+        prevApps.map(app =>
+          app.id === withdrawConfirmation.applicationId
+            ? { ...app, status: 'withdrawn' as const }
+            : app
+        )
+      )
+
+      // Close the dialog
+      setWithdrawConfirmation({ isOpen: false, applicationId: '', gigTitle: '' })
+    } catch (error) {
+      console.error('Error withdrawing application:', error)
+      alert('Failed to withdraw application. Please try again.')
+    } finally {
+      setWithdrawing(false)
+    }
+  }
+
+  const handleWithdrawCancel = () => {
+    setWithdrawConfirmation({ isOpen: false, applicationId: '', gigTitle: '' })
   }
 
   // Filter applications based on selected status
@@ -274,6 +318,17 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                   <div className="text-sm text-gray-600">Rejected</div>
                 </CardContent>
               </Card>
+              <Card
+                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'withdrawn' ? 'ring-2 ring-gray-600' : ''}`}
+                onClick={() => setStatusFilter('withdrawn')}
+              >
+                <CardContent className="p-4 text-center">
+                  <div className="text-2xl font-bold text-gray-600">
+                    {applications.filter(app => app.status === 'withdrawn').length}
+                  </div>
+                  <div className="text-sm text-gray-600">Withdrawn</div>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Applications */}
@@ -343,8 +398,22 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                     </div>
                   </div>
 
+                  {/* Withdraw Application Button - Only for pending applications */}
+                  {application.status === 'pending' && (
+                    <div className="mb-4">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleWithdrawClick(application.id, application.gigTitle || 'this gig')}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300"
+                      >
+                        Withdraw Application
+                      </Button>
+                    </div>
+                  )}
+
                   {/* Message Employer - Available for all application statuses */}
-                  {application.gigEmployerId && application.status !== 'rejected' && (
+                  {application.gigEmployerId && application.status !== 'rejected' && application.status !== 'withdrawn' && (
                     <div className="mb-4">
                       <QuickMessageButton
                         recipientId={application.gigEmployerId}
@@ -454,10 +523,64 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                       </p>
                     </div>
                   )}
+
+                  {application.status === 'withdrawn' && (
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center">
+                        <svg className="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span className="text-gray-800 font-medium">
+                          You withdrew this application.
+                        </span>
+                      </div>
+                      <p className="text-gray-700 text-sm mt-2">
+                        This application has been withdrawn and is no longer active. Feel free to apply to other opportunities.
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
               ))
             )}
+          </div>
+        )}
+
+        {/* Withdrawal Confirmation Dialog */}
+        {withdrawConfirmation.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <Card className="max-w-md w-full">
+              <CardHeader>
+                <CardTitle className="text-lg">Confirm Withdrawal</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 mb-4">
+                  Are you sure you want to withdraw your application for <strong>{withdrawConfirmation.gigTitle}</strong>?
+                </p>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Note:</strong> This action cannot be undone. You will need to reapply if you change your mind.
+                  </p>
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleWithdrawCancel}
+                    disabled={withdrawing}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleWithdrawConfirm}
+                    disabled={withdrawing}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    {withdrawing ? 'Withdrawing...' : 'Yes, Withdraw'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

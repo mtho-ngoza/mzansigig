@@ -386,4 +386,127 @@ describe('GigService - Application Management', () => {
       await expect(GigService.hasUserApplied(mockGigId, mockApplicantId)).rejects.toThrow();
     });
   });
+
+  describe('withdrawApplication', () => {
+    const mockPendingApplication: GigApplication = {
+      id: mockApplicationId,
+      gigId: mockGigId,
+      applicantId: mockApplicantId,
+      applicantName: 'John Doe',
+      coverLetter: 'I am interested',
+      proposedRate: 5000,
+      status: 'pending',
+      createdAt: new Date()
+    };
+
+    it('should successfully withdraw a pending application', async () => {
+      (FirestoreService.getById as jest.Mock).mockResolvedValue(mockPendingApplication);
+      (FirestoreService.update as jest.Mock).mockResolvedValue(undefined);
+
+      await GigService.withdrawApplication(mockApplicationId);
+
+      expect(FirestoreService.getById).toHaveBeenCalledWith('applications', mockApplicationId);
+      expect(FirestoreService.update).toHaveBeenCalledWith(
+        'applications',
+        mockApplicationId,
+        { status: 'withdrawn' }
+      );
+    });
+
+    it('should throw error when application is not found', async () => {
+      (FirestoreService.getById as jest.Mock).mockResolvedValue(null);
+
+      await expect(GigService.withdrawApplication(mockApplicationId)).rejects.toThrow(
+        'Application not found'
+      );
+
+      expect(FirestoreService.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw error when trying to withdraw an accepted application', async () => {
+      const acceptedApplication: GigApplication = {
+        ...mockPendingApplication,
+        status: 'accepted'
+      };
+
+      (FirestoreService.getById as jest.Mock).mockResolvedValue(acceptedApplication);
+
+      await expect(GigService.withdrawApplication(mockApplicationId)).rejects.toThrow(
+        'Cannot withdraw application with status: accepted. Only pending applications can be withdrawn.'
+      );
+
+      expect(FirestoreService.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw error when trying to withdraw a rejected application', async () => {
+      const rejectedApplication: GigApplication = {
+        ...mockPendingApplication,
+        status: 'rejected'
+      };
+
+      (FirestoreService.getById as jest.Mock).mockResolvedValue(rejectedApplication);
+
+      await expect(GigService.withdrawApplication(mockApplicationId)).rejects.toThrow(
+        'Cannot withdraw application with status: rejected. Only pending applications can be withdrawn.'
+      );
+
+      expect(FirestoreService.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw error when trying to withdraw a funded application', async () => {
+      const fundedApplication: GigApplication = {
+        ...mockPendingApplication,
+        status: 'funded'
+      };
+
+      (FirestoreService.getById as jest.Mock).mockResolvedValue(fundedApplication);
+
+      await expect(GigService.withdrawApplication(mockApplicationId)).rejects.toThrow(
+        'Cannot withdraw application with status: funded. Only pending applications can be withdrawn.'
+      );
+
+      expect(FirestoreService.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw error when trying to withdraw a completed application', async () => {
+      const completedApplication: GigApplication = {
+        ...mockPendingApplication,
+        status: 'completed'
+      };
+
+      (FirestoreService.getById as jest.Mock).mockResolvedValue(completedApplication);
+
+      await expect(GigService.withdrawApplication(mockApplicationId)).rejects.toThrow(
+        'Cannot withdraw application with status: completed. Only pending applications can be withdrawn.'
+      );
+
+      expect(FirestoreService.update).not.toHaveBeenCalled();
+    });
+
+    it('should throw error when trying to withdraw an already withdrawn application', async () => {
+      const withdrawnApplication: GigApplication = {
+        ...mockPendingApplication,
+        status: 'withdrawn'
+      };
+
+      (FirestoreService.getById as jest.Mock).mockResolvedValue(withdrawnApplication);
+
+      await expect(GigService.withdrawApplication(mockApplicationId)).rejects.toThrow(
+        'Cannot withdraw application with status: withdrawn. Only pending applications can be withdrawn.'
+      );
+
+      expect(FirestoreService.update).not.toHaveBeenCalled();
+    });
+
+    it('should handle Firestore errors when updating status', async () => {
+      (FirestoreService.getById as jest.Mock).mockResolvedValue(mockPendingApplication);
+      (FirestoreService.update as jest.Mock).mockRejectedValue(
+        new Error('Firestore update error')
+      );
+
+      await expect(GigService.withdrawApplication(mockApplicationId)).rejects.toThrow(
+        'Firestore update error'
+      );
+    });
+  });
 });
