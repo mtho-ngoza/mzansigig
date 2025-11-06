@@ -605,6 +605,16 @@ export class PaymentService {
     bankDetails?: BankAccount
   ): Promise<WithdrawalRequest> {
     try {
+      // Check if user has sufficient balance
+      const balance = await WalletService.getWalletBalance(userId)
+      if (balance.walletBalance < amount) {
+        throw new Error('Insufficient available balance for withdrawal')
+      }
+
+      // Deduct from wallet immediately to reserve funds
+      // This prevents users from requesting multiple withdrawals with same balance
+      await WalletService.debitWallet(userId, amount)
+
       const withdrawalData = {
         userId,
         amount,
@@ -627,6 +637,10 @@ export class PaymentService {
       }
     } catch (error) {
       console.debug('Error requesting withdrawal:', error)
+      // Re-throw with original message if it's a known error (like insufficient balance)
+      if (error instanceof Error && error.message.includes('Insufficient')) {
+        throw error
+      }
       throw new Error('Failed to request withdrawal')
     }
   }
@@ -651,8 +665,8 @@ export class PaymentService {
       } else if (status === 'completed') {
         updateData.completedAt = Timestamp.now()
 
-        // Debit user's wallet when withdrawal is completed
-        await WalletService.debitWallet(withdrawalData.userId, withdrawalData.amount)
+        // Note: Wallet was already debited when withdrawal was requested
+        // This status change indicates the bank transfer was successful
 
         // Update payment history to mark as completed
         await this.addPaymentHistory(
@@ -667,15 +681,21 @@ export class PaymentService {
       } else if (status === 'failed') {
         updateData.failureReason = failureReason
 
+        // Refund the amount back to wallet since withdrawal failed/rejected
+        // The balance was deducted when request was created, so we need to credit it back
+        await WalletService.creditWallet(withdrawalData.userId, withdrawalData.amount)
+
         // Update payment history to mark as failed
+        // Note: Use 'failed' status for both technical failures and admin rejections
+        // Differentiate via failureReason (e.g., "Admin rejected: insufficient documentation")
         await this.addPaymentHistory(
           withdrawalData.userId,
           'payments',
-          -withdrawalData.amount,
+          withdrawalData.amount, // Positive amount since we're refunding
           'failed',
           undefined,
           undefined,
-          `Withdrawal failed: ${failureReason || 'Unknown error'}`
+          `Withdrawal ${status}: ${failureReason || 'Request was not processed'}`
         )
       }
 
