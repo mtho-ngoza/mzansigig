@@ -1,9 +1,11 @@
 import { ReviewService } from '@/lib/database/reviewService'
 import { FirestoreService } from '@/lib/database/firestore'
-import { Review } from '@/types/gig'
+import { GigService } from '@/lib/database/gigService'
+import { Review, Gig } from '@/types/gig'
 
-// Mock FirestoreService
+// Mock FirestoreService and GigService
 jest.mock('@/lib/database/firestore')
+jest.mock('@/lib/database/gigService')
 
 describe('ReviewService', () => {
   const mockReviewId = 'review-123'
@@ -27,6 +29,24 @@ describe('ReviewService', () => {
     createdAt: new Date(),
   }
 
+  const mockGig: Gig = {
+    id: mockGigId,
+    title: 'Test Gig',
+    description: 'Test description',
+    category: 'cleaning',
+    location: 'Cape Town',
+    budget: 500,
+    duration: '1 day',
+    skillsRequired: ['cleaning'],
+    employerId: mockRevieweeId,
+    employerName: 'Test Employer',
+    status: 'completed',
+    applicants: [mockReviewerId],
+    assignedTo: mockReviewerId,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }
+
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -36,19 +56,25 @@ describe('ReviewService', () => {
       describe('when creating a review', () => {
         it('then creates review and updates user rating', async () => {
           // Given
+          const validReviewData = {
+            ...mockReviewData,
+            type: 'worker-to-employer' as const // Worker (mockReviewerId) reviewing employer (mockRevieweeId)
+          }
+          jest.mocked(GigService.getGigById).mockResolvedValue(mockGig)
           jest.mocked(FirestoreService.getWhere).mockResolvedValue([])
           jest.mocked(FirestoreService.create).mockResolvedValue(mockReviewId)
           jest.mocked(FirestoreService.update).mockResolvedValue()
 
           // When
-          const reviewId = await ReviewService.createReview(mockReviewData)
+          const reviewId = await ReviewService.createReview(validReviewData)
 
           // Then
           expect(reviewId).toBe(mockReviewId)
+          expect(GigService.getGigById).toHaveBeenCalledWith(mockGigId)
           expect(FirestoreService.create).toHaveBeenCalledWith(
             'reviews',
             expect.objectContaining({
-              ...mockReviewData,
+              ...validReviewData,
               createdAt: expect.any(Date),
             })
           )
@@ -91,19 +117,118 @@ describe('ReviewService', () => {
       })
     })
 
+    describe('given non-existent gig', () => {
+      describe('when creating review', () => {
+        it('then throws gig not found error', async () => {
+          // Given
+          jest.mocked(GigService.getGigById).mockResolvedValue(null)
+
+          // When & Then
+          await expect(ReviewService.createReview(mockReviewData)).rejects.toThrow(
+            'Gig not found'
+          )
+        })
+      })
+    })
+
+    describe('given gig is not completed', () => {
+      describe('when creating review', () => {
+        it('then throws validation error', async () => {
+          // Given
+          const incompleteGig = { ...mockGig, status: 'in-progress' as const }
+          jest.mocked(GigService.getGigById).mockResolvedValue(incompleteGig)
+
+          // When & Then
+          await expect(ReviewService.createReview(mockReviewData)).rejects.toThrow(
+            'Can only review completed gigs'
+          )
+        })
+      })
+    })
+
+    describe('given reviewer was not involved in gig', () => {
+      describe('when creating review', () => {
+        it('then throws not involved error', async () => {
+          // Given
+          const otherGig = { ...mockGig, employerId: 'other-employer', assignedTo: 'other-worker' }
+          jest.mocked(GigService.getGigById).mockResolvedValue(otherGig)
+
+          // When & Then
+          await expect(ReviewService.createReview(mockReviewData)).rejects.toThrow(
+            'You can only review gigs you were involved in'
+          )
+        })
+      })
+    })
+
+    describe('given employer with wrong review type', () => {
+      describe('when creating review', () => {
+        it('then throws invalid review type error', async () => {
+          // Given
+          const workerReviewData = { ...mockReviewData, type: 'worker-to-employer' as const, reviewerId: mockRevieweeId }
+          jest.mocked(GigService.getGigById).mockResolvedValue(mockGig)
+
+          // When & Then
+          await expect(ReviewService.createReview(workerReviewData)).rejects.toThrow(
+            'Invalid review type for employer'
+          )
+        })
+      })
+    })
+
+    describe('given worker with wrong review type', () => {
+      describe('when creating review', () => {
+        it('then throws invalid review type error', async () => {
+          // Given
+          const employerReviewData = { ...mockReviewData, type: 'employer-to-worker' as const }
+          jest.mocked(GigService.getGigById).mockResolvedValue(mockGig)
+
+          // When & Then
+          await expect(ReviewService.createReview(employerReviewData)).rejects.toThrow(
+            'Invalid review type for worker'
+          )
+        })
+      })
+    })
+
+    describe('given wrong reviewee', () => {
+      describe('when creating review', () => {
+        it('then throws wrong party error', async () => {
+          // Given
+          const wrongRevieweeData = {
+            ...mockReviewData,
+            revieweeId: 'wrong-user',
+            type: 'worker-to-employer' as const // Worker reviewing with correct type but wrong reviewee
+          }
+          jest.mocked(GigService.getGigById).mockResolvedValue(mockGig)
+
+          // When & Then
+          await expect(ReviewService.createReview(wrongRevieweeData)).rejects.toThrow(
+            'Can only review the other party involved in this gig'
+          )
+        })
+      })
+    })
+
     describe('given duplicate review exists', () => {
       describe('when creating review', () => {
         it('then throws duplicate error', async () => {
           // Given
+          const correctReviewData = {
+            ...mockReviewData,
+            type: 'worker-to-employer' as const // Correct type for worker
+          }
+          jest.mocked(GigService.getGigById).mockResolvedValue(mockGig)
           const existingReview: Review = {
             ...mockReview,
-            reviewerId: mockReviewData.reviewerId,
-            revieweeId: mockReviewData.revieweeId,
+            reviewerId: correctReviewData.reviewerId,
+            revieweeId: correctReviewData.revieweeId,
+            type: correctReviewData.type,
           }
           jest.mocked(FirestoreService.getWhere).mockResolvedValue([existingReview])
 
           // When & Then
-          await expect(ReviewService.createReview(mockReviewData)).rejects.toThrow(
+          await expect(ReviewService.createReview(correctReviewData)).rejects.toThrow(
             'You have already reviewed this user for this gig'
           )
         })

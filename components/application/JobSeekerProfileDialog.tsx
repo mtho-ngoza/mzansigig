@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { FirestoreService } from '@/lib/database/firestore'
 import { User } from '@/types/auth'
 import { TrustScoreBadge, VerificationBadge } from '@/components/safety/TrustScoreBadge'
-import { RatingDisplay } from '@/components/review'
+import { RatingDisplay, ReviewList } from '@/components/review'
 
 interface JobSeekerProfileDialogProps {
   userId: string
@@ -22,6 +22,7 @@ export default function JobSeekerProfileDialog({
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [showReviews, setShowReviews] = useState(false)
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -354,6 +355,61 @@ export default function JobSeekerProfileDialog({
                         </a>
                       )}
                     </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Reviews Section - Collapsible */}
+              {user.reviewCount && user.reviewCount > 0 && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>Reviews from Employers</CardTitle>
+                      <div className="flex items-center space-x-2">
+                        <RatingDisplay
+                          rating={user.rating}
+                          reviewCount={user.reviewCount}
+                          size="sm"
+                          showCount
+                          showLabel
+                        />
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {!showReviews ? (
+                      <div className="text-center py-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowReviews(true)}
+                          className="w-full"
+                        >
+                          View {user.reviewCount} {user.reviewCount === 1 ? 'Review' : 'Reviews'} →
+                        </Button>
+                        <p className="text-sm text-gray-500 mt-2">
+                          See what other employers are saying
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <div className="mb-4">
+                          <Button
+                            variant="ghost"
+                            onClick={() => setShowReviews(false)}
+                            size="sm"
+                            className="text-gray-600"
+                          >
+                            ← Hide Reviews
+                          </Button>
+                        </div>
+                        <ReviewList
+                          userId={userId}
+                          title=""
+                          maxInitialReviews={2}
+                          showLoadMore={true}
+                        />
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}

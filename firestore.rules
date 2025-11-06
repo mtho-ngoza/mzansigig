@@ -61,11 +61,17 @@ service cloud.firestore {
                       request.resource.data.id == userId;
 
       // Users can only update their own profile
-      allow update: if isOwner(userId) &&
-                      // Cannot change immutable fields
-                      request.resource.data.id == resource.data.id &&
-                      request.resource.data.email == resource.data.email &&
-                      request.resource.data.createdAt == resource.data.createdAt;
+      // Exception: rating and reviewCount can be updated by review system
+      allow update: if isAuthenticated() && (
+                      // Owner updating their own profile
+                      (isOwner(userId) &&
+                       // Cannot change immutable fields
+                       request.resource.data.id == resource.data.id &&
+                       request.resource.data.email == resource.data.email &&
+                       request.resource.data.createdAt == resource.data.createdAt) ||
+                      // OR anyone can update ONLY rating and reviewCount (review system)
+                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'reviewCount', 'updatedAt']))
+                    );
 
       // Users can delete their own profile
       allow delete: if isOwner(userId) || isAdmin();

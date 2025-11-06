@@ -1,5 +1,6 @@
-import { Review } from '@/types/gig'
+import { Review, Gig } from '@/types/gig'
 import { FirestoreService } from './firestore'
+import { GigService } from './gigService'
 
 /**
  * ReviewService - Handles all review and rating operations
@@ -18,6 +19,39 @@ export class ReviewService {
     // Validate rating is between 1 and 5
     if (reviewData.rating < 1 || reviewData.rating > 5) {
       throw new Error('Rating must be between 1 and 5')
+    }
+
+    // Verify gig exists and is completed
+    const gig = await GigService.getGigById(reviewData.gigId)
+    if (!gig) {
+      throw new Error('Gig not found')
+    }
+
+    if (gig.status !== 'completed') {
+      throw new Error('Can only review completed gigs')
+    }
+
+    // Verify reviewer was involved in the gig
+    const isEmployer = gig.employerId === reviewData.reviewerId
+    const isWorker = gig.assignedTo === reviewData.reviewerId
+
+    if (!isEmployer && !isWorker) {
+      throw new Error('You can only review gigs you were involved in')
+    }
+
+    // Validate review type matches the reviewer's role
+    if (isEmployer && reviewData.type !== 'employer-to-worker') {
+      throw new Error('Invalid review type for employer')
+    }
+
+    if (isWorker && reviewData.type !== 'worker-to-employer') {
+      throw new Error('Invalid review type for worker')
+    }
+
+    // Verify reviewee was the other party in the gig
+    const expectedRevieweeId = isEmployer ? gig.assignedTo : gig.employerId
+    if (reviewData.revieweeId !== expectedRevieweeId) {
+      throw new Error('Can only review the other party involved in this gig')
     }
 
     // Check if review already exists for this gig and reviewer combination

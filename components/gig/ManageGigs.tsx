@@ -8,6 +8,7 @@ import { Gig, GigApplication } from '@/types/gig'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
+import { ReviewPrompt } from '@/components/review'
 
 interface ManageGigsProps {
   onBack: () => void
@@ -28,6 +29,8 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [selectedGig, setSelectedGig] = useState<GigWithApplications | null>(null)
   const [showCompletionDialog, setShowCompletionDialog] = useState(false)
+  const [showReviewPrompt, setShowReviewPrompt] = useState(false)
+  const [completedGig, setCompletedGig] = useState<GigWithApplications | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -116,6 +119,10 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
       // Refresh gigs list
       await fetchGigs()
 
+      // Show review prompt
+      setCompletedGig(selectedGig)
+      setShowReviewPrompt(true)
+
       alert('Gig marked as completed! Payment has been released to the worker.')
     } catch (err) {
       console.error('Error completing gig:', err)
@@ -124,6 +131,16 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
       setActionLoading(null)
       setSelectedGig(null)
     }
+  }
+
+  const handleReviewSubmitted = () => {
+    setShowReviewPrompt(false)
+    setCompletedGig(null)
+  }
+
+  const handleCloseReviewPrompt = () => {
+    setShowReviewPrompt(false)
+    setCompletedGig(null)
   }
 
   const handleCancelGig = async (gigId: string) => {
@@ -379,6 +396,23 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Review Prompt Modal */}
+      {showReviewPrompt && completedGig && completedGig.acceptedApplication && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="my-8">
+            <ReviewPrompt
+              gigId={completedGig.id}
+              gigTitle={completedGig.title}
+              revieweeId={completedGig.assignedTo || completedGig.acceptedApplication.applicantId}
+              revieweeName={completedGig.acceptedApplication.applicantName}
+              reviewType="employer-to-worker"
+              onClose={handleCloseReviewPrompt}
+              onReviewSubmitted={handleReviewSubmitted}
+            />
+          </div>
         </div>
       )}
     </div>

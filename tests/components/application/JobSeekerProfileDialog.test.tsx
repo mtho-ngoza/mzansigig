@@ -14,13 +14,18 @@ jest.mock('@/components/safety/TrustScoreBadge', () => ({
   VerificationBadge: ({ level }: { level: string }) => <div data-testid="verification-badge">Verified: {level}</div>
 }))
 
-// Mock rating display
+// Mock rating display and review list
 jest.mock('@/components/review', () => ({
   RatingDisplay: ({ rating, reviewCount }: { rating?: number, reviewCount?: number }) => (
     <div data-testid="rating-display">
       {rating?.toFixed(1)} ({reviewCount} reviews)
     </div>
-  )
+  ),
+  ReviewList: ({ userId, title }: { userId: string; title?: string }) => (
+    <div data-testid="review-list">
+      {title || 'Reviews'} for {userId}
+    </div>
+  ),
 }))
 
 describe('JobSeekerProfileDialog', () => {
@@ -141,9 +146,11 @@ describe('JobSeekerProfileDialog', () => {
       await waitFor(() => {
         expect(screen.getByTestId('trust-score-badge')).toBeInTheDocument()
         expect(screen.getByTestId('trust-score-badge')).toHaveTextContent('85')
-        expect(screen.getByTestId('rating-display')).toBeInTheDocument()
-        expect(screen.getByTestId('rating-display')).toHaveTextContent('4.8')
-        expect(screen.getByTestId('rating-display')).toHaveTextContent('15 reviews')
+        // Now there are multiple rating displays (header + reviews section)
+        const ratingDisplays = screen.getAllByTestId('rating-display')
+        expect(ratingDisplays.length).toBeGreaterThanOrEqual(1)
+        expect(ratingDisplays[0]).toHaveTextContent('4.8')
+        expect(ratingDisplays[0]).toHaveTextContent('15 reviews')
         expect(screen.getByText('42 completed gigs')).toBeInTheDocument()
       })
     })
