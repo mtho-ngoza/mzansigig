@@ -5,7 +5,7 @@
  * These utilities help reset test data during local development.
  */
 
-import { collection, query, where, getDocs, deleteDoc, doc, writeBatch } from 'firebase/firestore'
+import { collection, query, where, getDocs, deleteDoc, doc, writeBatch, Query, DocumentData } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { WalletService } from './walletService'
 
@@ -89,7 +89,7 @@ export class DevUtils {
   /**
    * Execute a query and delete all matching documents
    */
-  private static async deleteQueryResults(q: any): Promise<void> {
+  private static async deleteQueryResults(q: Query<DocumentData>): Promise<void> {
     const querySnapshot = await getDocs(q)
 
     if (querySnapshot.empty) {
@@ -133,7 +133,10 @@ export class DevUtils {
 
 // Make available in browser console for development
 if (typeof window !== 'undefined' && process.env.NODE_ENV !== 'production') {
-  (window as any).devUtils = DevUtils
+  interface WindowWithDevUtils extends Window {
+    devUtils: typeof DevUtils;
+  }
+  (window as unknown as WindowWithDevUtils).devUtils = DevUtils
   console.log('💡 DevUtils loaded! Available commands:')
   console.log('   devUtils.resetUserWalletData("user-id") - Reset all wallet data')
   console.log('   devUtils.checkWalletBalance("user-id") - Check current balances')

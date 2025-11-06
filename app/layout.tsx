@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { MessagingProvider } from '@/contexts/MessagingContext'
@@ -9,8 +8,6 @@ import { PaymentProvider } from '@/contexts/PaymentContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { DevUtilsLoader } from '@/components/DevUtilsLoader'
-
-const inter = Inter({ subsets: ['latin'] })
 
 // Force dynamic rendering for the entire app
 export const dynamic = 'force-dynamic'
@@ -53,7 +50,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
       </head>
-      <body className={inter.className}>
+      <body className="font-sans">
         <DevUtilsLoader />
         <ErrorBoundary>
           <ToastProvider>

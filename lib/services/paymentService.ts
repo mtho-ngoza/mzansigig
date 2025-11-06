@@ -621,7 +621,15 @@ export class PaymentService {
       // This prevents race conditions where multiple concurrent withdrawals could exceed balance
       await WalletService.debitWalletAtomic(userId, amount)
 
-      const withdrawalData: any = {
+      const withdrawalData: {
+        userId: string;
+        amount: number;
+        currency: 'ZAR';
+        status: 'pending';
+        paymentMethodId: string;
+        requestedAt: Timestamp;
+        bankDetails?: BankAccount;
+      } = {
         userId,
         amount,
         currency: 'ZAR' as const,
