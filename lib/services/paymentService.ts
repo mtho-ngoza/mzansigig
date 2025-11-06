@@ -617,13 +617,9 @@ export class PaymentService {
     bankDetails?: BankAccount
   ): Promise<WithdrawalRequest> {
     try {
-      console.log('🔄 Starting withdrawal request:', { userId, amount, paymentMethodId })
-
       // Use atomic transaction to check balance and debit in one operation
       // This prevents race conditions where multiple concurrent withdrawals could exceed balance
-      console.log('  → Step 1: Debiting wallet atomically...')
       await WalletService.debitWalletAtomic(userId, amount)
-      console.log('  ✅ Step 1 complete: Wallet debited successfully')
 
       const withdrawalData: any = {
         userId,
@@ -639,32 +635,17 @@ export class PaymentService {
         withdrawalData.bankDetails = bankDetails
       }
 
-      console.log('  → Step 2: Creating withdrawal document...')
       const docRef = await addDoc(collection(db, COLLECTIONS.WITHDRAWALS), withdrawalData)
-      console.log('  ✅ Step 2 complete: Withdrawal document created:', docRef.id)
 
       // Add to payment history
-      console.log('  → Step 3: Adding payment history record...')
       await this.addPaymentHistory(userId, 'payments', -amount, 'pending', undefined, undefined, `Withdrawal request of R${amount}`)
-      console.log('  ✅ Step 3 complete: Payment history added')
 
-      console.log('✅ Withdrawal request completed successfully!')
       return {
         id: docRef.id,
         ...withdrawalData,
         requestedAt: new Date()
       }
     } catch (error) {
-      console.error('❌ Error requesting withdrawal:', error)
-      console.error('Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        errorType: error?.constructor?.name,
-        userId,
-        amount,
-        paymentMethodId,
-        hasBankDetails: !!bankDetails
-      })
       // Re-throw with original message if it's a known error (like insufficient balance)
       if (error instanceof Error && error.message.includes('Insufficient')) {
         throw error
