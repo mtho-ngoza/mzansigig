@@ -13,6 +13,9 @@ import ManageApplications from './application/ManageApplications'
 import ProfileManagement from './profile/ProfileManagement'
 import { MessagingHub } from '@/components/messaging'
 import PaymentDashboard from './payment/PaymentDashboard'
+import WithdrawalApprovalDashboard from './admin/WithdrawalApprovalDashboard'
+import FeeConfigManager from './admin/FeeConfigManager'
+import { isAdmin } from '@/lib/utils/adminAuth'
 
 interface DashboardProps {
   onBrowseGigs?: () => void
@@ -27,7 +30,7 @@ export default function Dashboard({
 }: DashboardProps) {
   const { user } = useAuth()
   const { totalUnreadCount } = useMessaging()
-  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'manage-gigs' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments'>('dashboard')
+  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'manage-gigs' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments' | 'admin-withdrawals' | 'admin-fees'>('dashboard')
 
   // Auto-navigate to messages if conversationId is provided
   useEffect(() => {
@@ -195,6 +198,64 @@ export default function Dashboard({
     )
   }
 
+  // Show admin withdrawal approvals page if user is on that view
+  if (currentView === 'admin-withdrawals') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <PageHeader
+          title="Withdrawal Approvals"
+          description="Review and approve worker withdrawal requests"
+          breadcrumbs={[{
+            label: 'Home',
+            onClick: onBrowseGigs || (() => {})
+          }, {
+            label: 'Dashboard',
+            onClick: () => setCurrentView('dashboard')
+          }, {
+            label: 'Withdrawal Approvals',
+            isCurrentPage: true
+          }]}
+          backButton={{
+            label: 'Back to Dashboard',
+            onClick: () => setCurrentView('dashboard')
+          }}
+        />
+        <WithdrawalApprovalDashboard />
+      </div>
+    )
+  }
+
+  // Show admin fee configuration page if user is on that view
+  if (currentView === 'admin-fees') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <PageHeader
+          title="Fee Configuration"
+          description="Manage platform fees and payment settings"
+          breadcrumbs={[{
+            label: 'Home',
+            onClick: onBrowseGigs || (() => {})
+          }, {
+            label: 'Dashboard',
+            onClick: () => setCurrentView('dashboard')
+          }, {
+            label: 'Fee Configuration',
+            isCurrentPage: true
+          }]}
+          backButton={{
+            label: 'Back to Dashboard',
+            onClick: () => setCurrentView('dashboard')
+          }}
+        />
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="px-4 py-6 sm:px-0">
+            <FeeConfigManager />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Dashboard Header */}
@@ -246,7 +307,7 @@ export default function Dashboard({
                   You&apos;re successfully logged in to South Africa&apos;s premier gig economy platform.
                 </p>
                 <div className="space-y-2">
-                  <p><strong>Account Type:</strong> {user?.userType === 'job-seeker' ? 'Job Seeker' : 'Employer'}</p>
+                  <p><strong>Account Type:</strong> {user && isAdmin(user) ? 'Admin' : user?.userType === 'job-seeker' ? 'Job Seeker' : 'Employer'}</p>
                   <p><strong>Email:</strong> {user?.email}</p>
                   <p><strong>Location:</strong> {user?.location}</p>
                 </div>
@@ -283,7 +344,42 @@ export default function Dashboard({
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-                  {user?.userType === 'job-seeker' ? (
+                  {user && isAdmin(user) ? (
+                    <>
+                      <Button
+                        className="w-full"
+                        onClick={() => setCurrentView('admin-withdrawals')}
+                      >
+                        Withdrawal Approvals
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setCurrentView('admin-fees')}
+                      >
+                        Fee Configuration
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full relative"
+                        onClick={() => setCurrentView('messages')}
+                      >
+                        Messages
+                        {totalUnreadCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                            {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
+                          </span>
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setCurrentView('profile')}
+                      >
+                        Profile
+                      </Button>
+                    </>
+                  ) : user?.userType === 'job-seeker' ? (
                     <>
                       <Button
                         className="w-full"

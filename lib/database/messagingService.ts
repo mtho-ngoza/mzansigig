@@ -78,11 +78,11 @@ export class MessagingService {
     currentUserId: string,
     otherUserId: string,
     otherUserName: string,
-    otherUserType: 'job-seeker' | 'employer',
+    otherUserType: 'job-seeker' | 'employer' | 'admin',
     gigId?: string,
     gigTitle?: string,
     currentUserName?: string,
-    currentUserType?: 'job-seeker' | 'employer'
+    currentUserType?: 'job-seeker' | 'employer' | 'admin'
   ): Promise<string> {
     try {
       // Check if conversation already exists
@@ -163,7 +163,7 @@ export class MessagingService {
     conversationId: string,
     senderId: string,
     senderName: string,
-    senderType: 'job-seeker' | 'employer',
+    senderType: 'job-seeker' | 'employer' | 'admin',
     messageInput: MessageInput
   ): Promise<string> {
     try {

@@ -745,7 +745,148 @@ export class PaymentService {
       } as WithdrawalRequest))
     } catch (error) {
       console.debug('Error fetching user withdrawals:', error)
-      return []
+      // Check if this is a Firestore index error
+      if (isFirebaseError(error) && error.code === 'failed-precondition') {
+        throw new Error('Database index required. Please contact support or check browser console for index creation link.')
+      }
+      throw new Error('Failed to fetch withdrawal history')
+    }
+  }
+
+  /**
+   * Get all withdrawal requests (admin view)
+   * @param status - Optional filter by status (pending/processing/completed/failed)
+   * @returns Promise<WithdrawalRequest[]>
+   */
+  static async getWithdrawalRequests(
+    status?: WithdrawalRequest['status']
+  ): Promise<WithdrawalRequest[]> {
+    try {
+      let q = query(
+        collection(db, COLLECTIONS.WITHDRAWALS),
+        orderBy('requestedAt', 'desc')
+      )
+
+      if (status) {
+        q = query(
+          collection(db, COLLECTIONS.WITHDRAWALS),
+          where('status', '==', status),
+          orderBy('requestedAt', 'desc')
+        )
+      }
+
+      const querySnapshot = await getDocs(q)
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        requestedAt: doc.data().requestedAt?.toDate() || new Date(),
+        processedAt: doc.data().processedAt?.toDate(),
+        completedAt: doc.data().completedAt?.toDate()
+      } as WithdrawalRequest))
+    } catch (error) {
+      console.debug('Error fetching withdrawal requests:', error)
+      throw new Error('Failed to fetch withdrawal requests')
+    }
+  }
+
+  /**
+   * Approve withdrawal (admin action)
+   * Marks withdrawal as completed and records admin approval
+   * Note: This is a virtual approval for Phase 1 - no actual bank transfer
+   * @param withdrawalId - ID of withdrawal request
+   * @param adminId - ID of admin approving the request
+   */
+  static async approveWithdrawal(
+    withdrawalId: string,
+    adminId: string
+  ): Promise<void> {
+    try {
+      const withdrawalDoc = await getDoc(doc(db, COLLECTIONS.WITHDRAWALS, withdrawalId))
+      if (!withdrawalDoc.exists()) {
+        throw new Error('Withdrawal request not found')
+      }
+
+      const withdrawalData = withdrawalDoc.data()
+
+      // Validate status
+      if (withdrawalData.status !== 'pending') {
+        throw new Error(`Cannot approve withdrawal with status: ${withdrawalData.status}`)
+      }
+
+      // Update withdrawal to completed status
+      await updateDoc(doc(db, COLLECTIONS.WITHDRAWALS, withdrawalId), {
+        status: 'completed',
+        completedAt: Timestamp.now(),
+        approvedBy: adminId,
+        adminNotes: 'Approved by admin - virtual deposit (Phase 1)'
+      })
+
+      // Update payment history
+      await this.addPaymentHistory(
+        withdrawalData.userId,
+        'payments',
+        -withdrawalData.amount,
+        'completed',
+        undefined,
+        undefined,
+        `Withdrawal approved: R${withdrawalData.amount} - Virtual deposit`
+      )
+    } catch (error) {
+      console.debug('Error approving withdrawal:', error)
+      throw new Error(error instanceof Error ? error.message : 'Failed to approve withdrawal')
+    }
+  }
+
+  /**
+   * Reject withdrawal (admin action)
+   * Marks withdrawal as failed, refunds amount to worker wallet
+   * @param withdrawalId - ID of withdrawal request
+   * @param adminId - ID of admin rejecting the request
+   * @param reason - Reason for rejection
+   */
+  static async rejectWithdrawal(
+    withdrawalId: string,
+    adminId: string,
+    reason: string
+  ): Promise<void> {
+    try {
+      const withdrawalDoc = await getDoc(doc(db, COLLECTIONS.WITHDRAWALS, withdrawalId))
+      if (!withdrawalDoc.exists()) {
+        throw new Error('Withdrawal request not found')
+      }
+
+      const withdrawalData = withdrawalDoc.data()
+
+      // Validate status
+      if (withdrawalData.status !== 'pending') {
+        throw new Error(`Cannot reject withdrawal with status: ${withdrawalData.status}`)
+      }
+
+      // Refund amount to wallet
+      await WalletService.creditWallet(withdrawalData.userId, withdrawalData.amount)
+
+      // Update withdrawal to failed status
+      await updateDoc(doc(db, COLLECTIONS.WITHDRAWALS, withdrawalId), {
+        status: 'failed',
+        completedAt: Timestamp.now(),
+        rejectedBy: adminId,
+        failureReason: `Admin rejected: ${reason}`,
+        adminNotes: reason
+      })
+
+      // Update payment history
+      await this.addPaymentHistory(
+        withdrawalData.userId,
+        'payments',
+        withdrawalData.amount, // Positive amount (refund)
+        'failed',
+        undefined,
+        undefined,
+        `Withdrawal rejected: ${reason} - Refunded R${withdrawalData.amount}`
+      )
+    } catch (error) {
+      console.debug('Error rejecting withdrawal:', error)
+      throw new Error(error instanceof Error ? error.message : 'Failed to reject withdrawal')
     }
   }
 

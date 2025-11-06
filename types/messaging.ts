@@ -3,7 +3,7 @@ export interface Message {
   conversationId: string
   senderId: string
   senderName: string
-  senderType: 'job-seeker' | 'employer'
+  senderType: 'job-seeker' | 'employer' | 'admin'
   content: string
   type: 'text' | 'file' | 'gig-update' | 'application-update'
   metadata?: {
@@ -39,7 +39,7 @@ export interface Conversation {
 export interface ConversationParticipant {
   userId: string
   userName: string
-  userType: 'job-seeker' | 'employer'
+  userType: 'job-seeker' | 'employer' | 'admin'
   profilePhoto?: string
   joinedAt: Date
   lastSeenAt?: Date

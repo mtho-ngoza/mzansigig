@@ -113,6 +113,8 @@ export interface WithdrawalRequest {
   completedAt?: Date
   failureReason?: string
   adminNotes?: string
+  approvedBy?: string // Admin user ID who approved
+  rejectedBy?: string // Admin user ID who rejected
 }
 
 export interface PaymentConfig {

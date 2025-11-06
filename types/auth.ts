@@ -43,7 +43,7 @@ export interface User {
   coordinates?: Coordinates
   locationData?: UserLocation
   locationPreferences?: LocationPreferences
-  userType: 'job-seeker' | 'employer'
+  userType: 'job-seeker' | 'employer' | 'admin'
   workSector?: 'professional' | 'informal'
   idNumber?: string
   rating?: number
@@ -113,7 +113,7 @@ export interface RegisterData {
   phone: string
   location: string
   coordinates?: Coordinates
-  userType: 'job-seeker' | 'employer'
+  userType: 'job-seeker' | 'employer' | 'admin'
   workSector?: 'professional' | 'informal'
   idNumber: string
 }

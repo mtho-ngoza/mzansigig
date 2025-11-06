@@ -16,7 +16,7 @@ interface MessagingContextType extends MessagingState {
   startConversation: (
     otherUserId: string,
     otherUserName: string,
-    otherUserType: 'job-seeker' | 'employer',
+    otherUserType: 'job-seeker' | 'employer' | 'admin',
     gigId?: string,
     gigTitle?: string
   ) => Promise<string>
@@ -120,7 +120,7 @@ export function MessagingProvider({ children }: { children: React.ReactNode }) {
   const startConversation = useCallback(async (
     otherUserId: string,
     otherUserName: string,
-    otherUserType: 'job-seeker' | 'employer',
+    otherUserType: 'job-seeker' | 'employer' | 'admin',
     gigId?: string,
     gigTitle?: string
   ): Promise<string> => {

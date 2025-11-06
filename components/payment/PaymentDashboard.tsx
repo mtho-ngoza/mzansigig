@@ -10,7 +10,7 @@ import PaymentMethodList from './PaymentMethodList'
 import PaymentMethodForm from './PaymentMethodForm'
 import EarningsAnalytics from './EarningsAnalytics'
 import WithdrawalForm from './WithdrawalForm'
-import WithdrawalHistory from './WithdrawalHistory'
+import WithdrawalHistory from '../wallet/WithdrawalHistory'
 import PaymentHistory from './PaymentHistory'
 
 interface PaymentDashboardProps {
