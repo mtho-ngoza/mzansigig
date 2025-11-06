@@ -18,7 +18,7 @@ interface ApplicationFormProps {
 }
 
 interface ApplicationFormData {
-  coverLetter: string
+  message: string
   proposedRate: string
   experience: string
   availability: string
@@ -33,7 +33,7 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
   const [errors, setErrors] = useState<Partial<ApplicationFormData>>({})
   const [workerEarnings, setWorkerEarnings] = useState<number>(gig.budget)
   const [formData, setFormData] = useState<ApplicationFormData>({
-    coverLetter: '',
+    message: '',
     proposedRate: gig.budget.toString(),
     experience: '',
     availability: '',
@@ -65,16 +65,16 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
   const getFieldConfig = () => {
     if (isPhysicalWork) {
       return {
-        mainFieldLabel: 'Tell us about yourself',
-        mainFieldPlaceholder: `Why are you the right person for this ${gig.category.toLowerCase()} job? For example:\n• How long have you been doing this work?\n• What tools or equipment do you have?\n• When are you available to start?\n• Any special experience with similar jobs?`,
+        mainFieldLabel: 'Brief Message (Optional)',
+        mainFieldPlaceholder: `Add a quick note if you'd like (optional).\nFor example: "I'm available this week and have my own tools."`,
         showExperience: true,
         showAvailability: true,
         showEquipment: gig.category === 'Construction' || gig.category === 'Cleaning'
       }
     } else {
       return {
-        mainFieldLabel: 'Cover Letter',
-        mainFieldPlaceholder: 'Tell the employer why you&apos;re the right person for this job. Mention your relevant experience, skills, and what you can deliver...',
+        mainFieldLabel: 'Message (Optional)',
+        mainFieldPlaceholder: 'Add a brief message if you have something specific to mention (optional)...',
         showExperience: false,
         showAvailability: false,
         showEquipment: false
@@ -94,12 +94,9 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
   const validateForm = (): boolean => {
     const newErrors: Partial<ApplicationFormData> = {}
 
-    if (!formData.coverLetter.trim()) {
-      newErrors.coverLetter = isPhysicalWork ? 'Please tell us about yourself' : 'Cover letter is required'
-    } else if (formData.coverLetter.length < (isPhysicalWork ? 20 : 50)) {
-      newErrors.coverLetter = isPhysicalWork ?
-        'Please provide at least 20 characters about yourself' :
-        'Cover letter must be at least 50 characters'
+    // Message is optional, but if provided must be at least 10 characters
+    if (formData.message.trim() && formData.message.trim().length < 10) {
+      newErrors.message = 'Message must be at least 10 characters if provided'
     }
 
     if (!formData.proposedRate.trim()) {
@@ -139,8 +136,8 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
         setIsSubmitting(false)
         return
       }
-      // Combine all responses into cover letter for storage
-      let combinedMessage = formData.coverLetter.trim()
+      // Combine all responses into message for storage
+      let combinedMessage = formData.message.trim()
 
       if (isPhysicalWork) {
         const additionalInfo = []
@@ -158,7 +155,11 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
         }
 
         if (additionalInfo.length > 0) {
-          combinedMessage += '\n\n' + additionalInfo.join('\n')
+          if (combinedMessage) {
+            combinedMessage += '\n\n' + additionalInfo.join('\n')
+          } else {
+            combinedMessage = additionalInfo.join('\n')
+          }
         }
       }
 
@@ -166,7 +167,7 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
         gigId: gig.id,
         applicantId: user.id,
         applicantName: `${user.firstName} ${user.lastName}`,
-        coverLetter: combinedMessage,
+        message: combinedMessage || undefined, // Only include if not empty
         proposedRate: parseFloat(formData.proposedRate)
       }
 
@@ -177,7 +178,7 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
       } else {
         success('Application submitted successfully!')
         setFormData({
-          coverLetter: '',
+          message: '',
           proposedRate: workerEarnings.toString(),
           experience: '',
           availability: '',
@@ -248,24 +249,24 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Main Application Field */}
             <div>
-              <label htmlFor="coverLetter" className="block text-sm font-medium text-gray-700 mb-2">
-                {fieldConfig.mainFieldLabel} *
+              <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">
+                {fieldConfig.mainFieldLabel}
               </label>
               <textarea
-                id="coverLetter"
-                rows={isPhysicalWork ? 6 : 8}
+                id="message"
+                rows={4}
                 placeholder={fieldConfig.mainFieldPlaceholder}
-                value={formData.coverLetter}
-                onChange={(e) => handleInputChange('coverLetter', e.target.value)}
+                value={formData.message}
+                onChange={(e) => handleInputChange('message', e.target.value)}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                  errors.coverLetter ? 'border-red-500' : ''
+                  errors.message ? 'border-red-500' : ''
                 }`}
               />
-              {errors.coverLetter && (
-                <p className="mt-1 text-sm text-red-600">{errors.coverLetter}</p>
+              {errors.message && (
+                <p className="mt-1 text-sm text-red-600">{errors.message}</p>
               )}
               <p className="mt-1 text-sm text-gray-500">
-                {formData.coverLetter.length}/{isPhysicalWork ? 500 : 1000} characters (minimum {isPhysicalWork ? 20 : 50})
+                Your profile shows your skills, experience, and reviews. Add a brief message only if needed.
               </p>
             </div>
 

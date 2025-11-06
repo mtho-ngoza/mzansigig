@@ -62,7 +62,7 @@ describe('ManageGigs', () => {
     gigId: 'gig-2',
     applicantId: 'worker-123',
     applicantName: 'Test Worker',
-    coverLetter: 'I am interested',
+    message: 'I am interested',
     proposedRate: 4500,
     status: 'accepted',
     paymentId: 'payment-123',

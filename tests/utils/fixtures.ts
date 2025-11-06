@@ -52,7 +52,7 @@ export const mockPendingApplication: GigApplication = {
   gigId: 'gig-1',
   applicantId: 'worker-1',
   applicantName: 'Test Worker',
-  coverLetter: 'I am interested in this position...',
+  message: 'I am interested in this position...',
   proposedRate: 4500,
   status: 'pending',
   createdAt: new Date('2025-01-05'),

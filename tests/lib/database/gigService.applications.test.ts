@@ -28,7 +28,7 @@ describe('GigService - Application Management', () => {
           gigId: mockGigId,
           applicantId: 'user-1',
           applicantName: 'John Doe',
-          coverLetter: 'I am interested',
+          message: 'I am interested',
           proposedRate: 5000,
           status: 'pending',
           createdAt: new Date()
@@ -38,7 +38,7 @@ describe('GigService - Application Management', () => {
           gigId: mockGigId,
           applicantId: 'user-2',
           applicantName: 'Jane Smith',
-          coverLetter: 'I have experience',
+          message: 'I have experience',
           proposedRate: 5500,
           status: 'pending',
           createdAt: new Date()
@@ -82,7 +82,7 @@ describe('GigService - Application Management', () => {
         gigId: mockGigId,
         applicantId: mockApplicantId,
         applicantName: 'John Doe',
-        coverLetter: 'I am interested',
+        message: 'I am interested',
         proposedRate: 5000,
         status: 'pending',
         createdAt: new Date()
@@ -107,7 +107,7 @@ describe('GigService - Application Management', () => {
         gigId: mockGigId,
         applicantId: mockApplicantId,
         applicantName: 'John Doe',
-        coverLetter: 'I am interested',
+        message: 'I am interested',
         proposedRate: 5000,
         status: 'pending',
         createdAt: new Date()
@@ -136,7 +136,7 @@ describe('GigService - Application Management', () => {
         gigId: mockGigId,
         applicantId: mockApplicantId,
         applicantName: 'John Doe',
-        coverLetter: 'I am interested',
+        message: 'I am interested',
         proposedRate: 5000,
         status: 'pending',
         createdAt: new Date()
@@ -147,7 +147,7 @@ describe('GigService - Application Management', () => {
         gigId: mockGigId,
         applicantId: 'other-user',
         applicantName: 'Jane Smith',
-        coverLetter: 'I want this job',
+        message: 'I want this job',
         proposedRate: 4500,
         status: 'pending',
         createdAt: new Date()
@@ -192,7 +192,7 @@ describe('GigService - Application Management', () => {
         gigId: mockGigId,
         applicantId: mockApplicantId,
         applicantName: 'John Doe',
-        coverLetter: 'I am interested in this opportunity',
+        message: 'I am interested in this opportunity',
         proposedRate: 5000
       };
 
@@ -230,7 +230,7 @@ describe('GigService - Application Management', () => {
           gigId: mockGigId,
           applicantId: 'user-1',
           applicantName: 'John Doe',
-          coverLetter: 'I am interested',
+          message: 'I am interested',
           proposedRate: 5000,
           status: 'pending',
           createdAt: new Date()
@@ -260,7 +260,7 @@ describe('GigService - Application Management', () => {
           gigId: 'gig-1',
           applicantId: mockApplicantId,
           applicantName: 'John Doe',
-          coverLetter: 'I am interested',
+          message: 'I am interested',
           proposedRate: 5000,
           status: 'pending',
           createdAt: new Date()
@@ -290,7 +290,7 @@ describe('GigService - Application Management', () => {
           gigId: mockGigId,
           applicantId: mockApplicantId,
           applicantName: 'John Doe',
-          coverLetter: 'I am interested',
+          message: 'I am interested',
           proposedRate: 5000,
           status: 'pending',
           createdAt: new Date()
@@ -300,7 +300,7 @@ describe('GigService - Application Management', () => {
           gigId: mockGigId,
           applicantId: 'other-user',
           applicantName: 'Jane Smith',
-          coverLetter: 'I want this job',
+          message: 'I want this job',
           proposedRate: 4500,
           status: 'pending',
           createdAt: new Date()
@@ -328,7 +328,7 @@ describe('GigService - Application Management', () => {
           gigId: mockGigId,
           applicantId: 'other-user-1',
           applicantName: 'Jane Smith',
-          coverLetter: 'I want this job',
+          message: 'I want this job',
           proposedRate: 4500,
           status: 'pending',
           createdAt: new Date()
@@ -338,7 +338,7 @@ describe('GigService - Application Management', () => {
           gigId: mockGigId,
           applicantId: 'other-user-2',
           applicantName: 'Bob Johnson',
-          coverLetter: 'I have experience',
+          message: 'I have experience',
           proposedRate: 5500,
           status: 'pending',
           createdAt: new Date()
@@ -367,7 +367,7 @@ describe('GigService - Application Management', () => {
           gigId: mockGigId,
           applicantId: mockApplicantId,
           applicantName: 'John Doe',
-          coverLetter: 'I am interested',
+          message: 'I am interested',
           proposedRate: 5000,
           status: 'rejected',
           createdAt: new Date()
@@ -396,7 +396,7 @@ describe('GigService - Application Management', () => {
       gigId: mockGigId,
       applicantId: mockApplicantId,
       applicantName: 'John Doe',
-      coverLetter: 'I am interested',
+      message: 'I am interested',
       proposedRate: 5000,
       status: 'pending',
       createdAt: new Date()

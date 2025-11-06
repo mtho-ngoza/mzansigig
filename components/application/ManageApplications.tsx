@@ -434,14 +434,16 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                     )}
                   </div>
 
-                  <div className="mb-6">
-                    <span className="text-sm text-gray-500 block mb-2">Cover Letter:</span>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-sm text-gray-700">
-                        {application.coverLetter}
-                      </p>
+                  {application.message && (
+                    <div className="mb-6">
+                      <span className="text-sm text-gray-500 block mb-2">Application Message:</span>
+                      <div className="bg-gray-50 p-4 rounded-lg">
+                        <p className="text-sm text-gray-700">
+                          {application.message}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {application.status === 'pending' && (
                     <div className="flex flex-wrap gap-3">

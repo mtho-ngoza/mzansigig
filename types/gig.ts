@@ -28,7 +28,7 @@ export interface GigApplication {
   gigId: string
   applicantId: string
   applicantName: string
-  coverLetter: string
+  message?: string // Optional brief message from applicant
   proposedRate: number
   status: 'pending' | 'accepted' | 'rejected' | 'funded' | 'completed' | 'withdrawn'
   paymentStatus?: 'unpaid' | 'paid' | 'in_escrow' | 'released' | 'disputed'
