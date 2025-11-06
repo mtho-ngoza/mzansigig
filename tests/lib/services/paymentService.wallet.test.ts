@@ -22,6 +22,8 @@ jest.mock('firebase/firestore', () => ({
   where: jest.fn(),
   orderBy: jest.fn(),
   doc: jest.fn(),
+  // runTransaction removed to force fallback path in processPayment
+  increment: jest.fn((val) => ({ __increment: val })),
   Timestamp: {
     now: jest.fn(() => ({ toDate: () => new Date() }))
   }
@@ -251,8 +253,153 @@ describe('PaymentService - Wallet Integration', () => {
     })
   })
 
+  describe('Escrow Integration: processPayment → releaseEscrow', () => {
+    it('should correctly update pendingBalance when payment processed, then move to wallet when escrow released', async () => {
+      // SETUP: Mock for processPayment
+      const mockPaymentMethodDoc = {
+        exists: () => true,
+        id: 'pm-123',
+        data: () => ({
+          type: 'card',
+          provider: 'payfast',
+          isDefault: true,
+          isVerified: true
+        })
+      }
+
+      const mockIntentDoc = {
+        exists: () => true,
+        data: () => ({
+          gigId: mockGigId,
+          employerId: mockEmployerId,
+          workerId: mockWorkerId,
+          amount: mockAmount,
+          currency: 'ZAR',
+          paymentMethodId: 'pm-123',
+          type: 'fixed',
+          status: 'created'
+        })
+      }
+
+      const mockGig = {
+        id: mockGigId,
+        title: 'Test Gig',
+        budget: mockAmount,
+        employerId: mockEmployerId
+      }
+
+      // Setup mocks for processPayment
+      ;(getDoc as jest.Mock)
+        .mockResolvedValueOnce(mockIntentDoc) // First call for payment intent
+        .mockResolvedValueOnce(mockPaymentMethodDoc) // Second call for payment method
+      ;(doc as jest.Mock).mockReturnValue('mock-doc-ref')
+      ;(addDoc as jest.Mock).mockResolvedValue({ id: 'payment-123' })
+      ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
+      ;(GigService.getGigById as jest.Mock).mockResolvedValue(mockGig)
+      ;(WalletService.updatePendingBalance as jest.Mock).mockResolvedValue(undefined)
+
+      // STEP 1: Process payment (should add to pendingBalance)
+      const payment = await PaymentService.processPayment('intent-123')
+
+      expect(payment.id).toBe('payment-123')
+      expect(WalletService.updatePendingBalance).toHaveBeenCalledWith(mockWorkerId, mockAmount)
+
+      // STEP 2: Verify analytics shows pending balance
+      ;(WalletService.getWalletBalance as jest.Mock).mockResolvedValue({
+        walletBalance: 0,
+        pendingBalance: mockAmount,
+        totalEarnings: 0,
+        totalWithdrawn: 0
+      })
+      ;(getDocs as jest.Mock).mockResolvedValue({ empty: false, docs: [] })
+
+      const analyticsAfterPayment = await PaymentService.getUserPaymentAnalytics(mockWorkerId)
+      expect(analyticsAfterPayment.pendingBalance).toBe(mockAmount)
+      expect(analyticsAfterPayment.availableBalance).toBe(0)
+
+      // STEP 3: Release escrow (should move from pending to wallet)
+      const mockPaymentDoc = {
+        exists: () => true,
+        data: () => ({
+          gigId: mockGigId,
+          employerId: mockEmployerId,
+          workerId: mockWorkerId,
+          amount: mockAmount,
+          status: 'processing',
+          escrowStatus: 'funded'
+        })
+      }
+
+      ;(getDoc as jest.Mock).mockResolvedValue(mockPaymentDoc)
+      ;(WalletService.movePendingToWallet as jest.Mock).mockResolvedValue(undefined)
+
+      await PaymentService.releaseEscrow('payment-123')
+
+      expect(WalletService.movePendingToWallet).toHaveBeenCalledWith(mockWorkerId, mockAmount)
+
+      // STEP 4: Verify analytics shows correct balances after escrow release
+      ;(WalletService.getWalletBalance as jest.Mock).mockResolvedValue({
+        walletBalance: mockAmount,
+        pendingBalance: 0,
+        totalEarnings: mockAmount,
+        totalWithdrawn: 0
+      })
+
+      const analyticsAfterRelease = await PaymentService.getUserPaymentAnalytics(mockWorkerId)
+      expect(analyticsAfterRelease.availableBalance).toBe(mockAmount)
+      expect(analyticsAfterRelease.pendingBalance).toBe(0)
+      expect(analyticsAfterRelease.totalEarnings).toBe(mockAmount)
+    })
+  })
+
+  describe('requestWithdrawal', () => {
+    it('should use atomic transaction to debit wallet when requesting withdrawal', async () => {
+      ;(WalletService.debitWalletAtomic as jest.Mock).mockResolvedValue(undefined)
+      ;(addDoc as jest.Mock).mockResolvedValue({ id: 'withdrawal-123' })
+
+      await PaymentService.requestWithdrawal(mockWorkerId, 500, 'pm-123')
+
+      expect(WalletService.debitWalletAtomic).toHaveBeenCalledWith(mockWorkerId, 500)
+    })
+
+    it('should reject withdrawal if balance is insufficient (atomic check)', async () => {
+      ;(WalletService.debitWalletAtomic as jest.Mock).mockRejectedValue(new Error('Insufficient balance'))
+
+      await expect(PaymentService.requestWithdrawal(mockWorkerId, 500, 'pm-123')).rejects.toThrow('Insufficient balance')
+
+      expect(addDoc).not.toHaveBeenCalled()
+    })
+
+    it('should prevent race condition with concurrent withdrawals (atomic transaction)', async () => {
+      // Simulate race condition: Two concurrent requests for R600 each with R1000 balance
+      // Only first should succeed, second should fail
+
+      let callCount = 0
+      ;(WalletService.debitWalletAtomic as jest.Mock).mockImplementation(async (userId: string, amount: number) => {
+        callCount++
+        if (callCount === 1) {
+          // First withdrawal succeeds
+          return Promise.resolve()
+        } else {
+          // Second withdrawal fails - balance already depleted
+          return Promise.reject(new Error('Insufficient balance'))
+        }
+      })
+      ;(addDoc as jest.Mock).mockResolvedValue({ id: 'withdrawal-123' })
+
+      // First withdrawal succeeds
+      await expect(PaymentService.requestWithdrawal(mockWorkerId, 600, 'pm-123')).resolves.toBeDefined()
+
+      // Second concurrent withdrawal fails (atomic check prevents overdraft)
+      await expect(PaymentService.requestWithdrawal(mockWorkerId, 600, 'pm-123')).rejects.toThrow('Insufficient balance')
+
+      // Verify atomic method was called twice
+      expect(WalletService.debitWalletAtomic).toHaveBeenCalledTimes(2)
+    })
+  })
+
   describe('updateWithdrawalStatus', () => {
-    it('should debit wallet when withdrawal is completed', async () => {
+    it('should not debit wallet when withdrawal is completed (already debited on request)', async () => {
       const mockWithdrawalDoc = {
         exists: () => true,
         data: () => ({
@@ -268,14 +415,14 @@ describe('PaymentService - Wallet Integration', () => {
       ;(doc as jest.Mock).mockReturnValue('withdrawal-doc')
       ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
       ;(addDoc as jest.Mock).mockResolvedValue({ id: 'history-123' })
-      ;(WalletService.debitWallet as jest.Mock).mockResolvedValue(undefined)
 
       await PaymentService.updateWithdrawalStatus('withdrawal-123', 'completed')
 
-      expect(WalletService.debitWallet).toHaveBeenCalledWith(mockWorkerId, 500)
+      // Wallet should NOT be debited since it was already debited when request was created
+      expect(WalletService.debitWallet).not.toHaveBeenCalled()
     })
 
-    it('should not debit wallet when withdrawal fails', async () => {
+    it('should refund wallet when withdrawal fails', async () => {
       const mockWithdrawalDoc = {
         exists: () => true,
         data: () => ({
@@ -291,10 +438,37 @@ describe('PaymentService - Wallet Integration', () => {
       ;(doc as jest.Mock).mockReturnValue('withdrawal-doc')
       ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
       ;(addDoc as jest.Mock).mockResolvedValue({ id: 'history-123' })
+      ;(WalletService.creditWallet as jest.Mock).mockResolvedValue(undefined)
 
-      await PaymentService.updateWithdrawalStatus('withdrawal-123', 'failed', 'Insufficient funds')
+      await PaymentService.updateWithdrawalStatus('withdrawal-123', 'failed', 'Bank transfer failed')
 
-      expect(WalletService.debitWallet).not.toHaveBeenCalled()
+      // Wallet should be credited (refunded) since withdrawal failed
+      expect(WalletService.creditWallet).toHaveBeenCalledWith(mockWorkerId, 500)
+    })
+
+    it('should refund wallet when withdrawal is rejected by admin', async () => {
+      const mockWithdrawalDoc = {
+        exists: () => true,
+        data: () => ({
+          userId: mockWorkerId,
+          amount: 500,
+          currency: 'ZAR',
+          status: 'pending',
+          paymentMethodId: 'pm-123'
+        })
+      }
+
+      ;(getDoc as jest.Mock).mockResolvedValue(mockWithdrawalDoc)
+      ;(doc as jest.Mock).mockReturnValue('withdrawal-doc')
+      ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
+      ;(addDoc as jest.Mock).mockResolvedValue({ id: 'history-123' })
+      ;(WalletService.creditWallet as jest.Mock).mockResolvedValue(undefined)
+
+      // Use 'failed' status with failureReason to indicate admin rejection
+      await PaymentService.updateWithdrawalStatus('withdrawal-123', 'failed', 'Admin rejected: insufficient documentation')
+
+      // Wallet should be credited (refunded) since withdrawal was rejected
+      expect(WalletService.creditWallet).toHaveBeenCalledWith(mockWorkerId, 500)
     })
 
     it('should not debit wallet when withdrawal is processing', async () => {
@@ -325,7 +499,7 @@ describe('PaymentService - Wallet Integration', () => {
       await expect(PaymentService.updateWithdrawalStatus('withdrawal-999', 'completed')).rejects.toThrow('Withdrawal request not found')
     })
 
-    it('should handle errors when debiting wallet fails', async () => {
+    it('should handle errors when crediting wallet fails during refund', async () => {
       const mockWithdrawalDoc = {
         exists: () => true,
         data: () => ({
@@ -341,9 +515,87 @@ describe('PaymentService - Wallet Integration', () => {
       ;(doc as jest.Mock).mockReturnValue('withdrawal-doc')
       ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
       ;(addDoc as jest.Mock).mockResolvedValue({ id: 'history-123' })
-      ;(WalletService.debitWallet as jest.Mock).mockRejectedValue(new Error('Insufficient balance'))
+      ;(WalletService.creditWallet as jest.Mock).mockRejectedValue(new Error('Wallet update failed'))
 
-      await expect(PaymentService.updateWithdrawalStatus('withdrawal-123', 'completed')).rejects.toThrow('Insufficient balance')
+      await expect(PaymentService.updateWithdrawalStatus('withdrawal-123', 'failed', 'Bank transfer failed')).rejects.toThrow('Wallet update failed')
+    })
+  })
+
+  describe('getUserPaymentAnalytics', () => {
+    it('should fetch real wallet balance from user document', async () => {
+      const mockWalletBalance = {
+        walletBalance: 500,
+        pendingBalance: 200,
+        totalEarnings: 1000,
+        totalWithdrawn: 300
+      }
+
+      ;(WalletService.getWalletBalance as jest.Mock).mockResolvedValue(mockWalletBalance)
+      ;(getDocs as jest.Mock).mockResolvedValue({
+        empty: false,
+        docs: []
+      })
+
+      const analytics = await PaymentService.getUserPaymentAnalytics(mockWorkerId)
+
+      expect(WalletService.getWalletBalance).toHaveBeenCalledWith(mockWorkerId)
+      expect(analytics.availableBalance).toBe(500)
+      expect(analytics.pendingBalance).toBe(200)
+      expect(analytics.totalEarnings).toBe(1000)
+      expect(analytics.totalWithdrawn).toBe(300)
+    })
+
+    it('should reflect updated balance after withdrawal', async () => {
+      const initialBalance = {
+        walletBalance: 1000,
+        pendingBalance: 0,
+        totalEarnings: 1000,
+        totalWithdrawn: 0
+      }
+
+      const balanceAfterWithdrawal = {
+        walletBalance: 500, // 1000 - 500 withdrawn
+        pendingBalance: 0,
+        totalEarnings: 1000,
+        totalWithdrawn: 500
+      }
+
+      // Initial analytics
+      ;(WalletService.getWalletBalance as jest.Mock).mockResolvedValueOnce(initialBalance)
+      ;(getDocs as jest.Mock).mockResolvedValue({ empty: false, docs: [] })
+
+      const analyticsBeforeWithdrawal = await PaymentService.getUserPaymentAnalytics(mockWorkerId)
+      expect(analyticsBeforeWithdrawal.availableBalance).toBe(1000)
+      expect(analyticsBeforeWithdrawal.totalWithdrawn).toBe(0)
+
+      // Simulate withdrawal (uses atomic method now)
+      ;(WalletService.debitWalletAtomic as jest.Mock).mockResolvedValue(undefined)
+      ;(addDoc as jest.Mock).mockResolvedValue({ id: 'withdrawal-123' })
+      await PaymentService.requestWithdrawal(mockWorkerId, 500, 'pm-123')
+
+      // Analytics after withdrawal should show updated balance
+      ;(WalletService.getWalletBalance as jest.Mock).mockResolvedValueOnce(balanceAfterWithdrawal)
+      const analyticsAfterWithdrawal = await PaymentService.getUserPaymentAnalytics(mockWorkerId)
+
+      expect(analyticsAfterWithdrawal.availableBalance).toBe(500)
+      expect(analyticsAfterWithdrawal.totalWithdrawn).toBe(500)
+    })
+
+    it('should return zero balances when wallet not initialized', async () => {
+      ;(WalletService.getWalletBalance as jest.Mock).mockResolvedValue({
+        walletBalance: 0,
+        pendingBalance: 0,
+        totalEarnings: 0,
+        totalWithdrawn: 0
+      })
+      ;(getDocs as jest.Mock).mockResolvedValue({ empty: false, docs: [] })
+
+      const analytics = await PaymentService.getUserPaymentAnalytics(mockWorkerId)
+
+      expect(analytics.availableBalance).toBe(0)
+      expect(analytics.pendingBalance).toBe(0)
+      expect(analytics.totalEarnings).toBe(0)
+      expect(analytics.totalWithdrawn).toBe(0)
     })
   })
 })

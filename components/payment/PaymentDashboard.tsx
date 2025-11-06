@@ -10,6 +10,7 @@ import PaymentMethodList from './PaymentMethodList'
 import PaymentMethodForm from './PaymentMethodForm'
 import EarningsAnalytics from './EarningsAnalytics'
 import WithdrawalForm from './WithdrawalForm'
+import WithdrawalHistory from './WithdrawalHistory'
 import PaymentHistory from './PaymentHistory'
 
 interface PaymentDashboardProps {
@@ -18,8 +19,8 @@ interface PaymentDashboardProps {
 
 export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
   const { user } = useAuth()
-  const { analytics, formatCurrency } = usePayment()
-  const [currentView, setCurrentView] = useState<'overview' | 'methods' | 'add-method' | 'withdraw' | 'history' | 'analytics'>('overview')
+  const { analytics, formatCurrency, refreshAnalytics } = usePayment()
+  const [currentView, setCurrentView] = useState<'overview' | 'methods' | 'add-method' | 'withdraw' | 'withdrawals' | 'history' | 'analytics'>('overview')
 
   const renderViewContent = () => {
     switch (currentView) {
@@ -43,9 +44,16 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
       case 'withdraw':
         return (
           <WithdrawalForm
+            onSuccess={async () => {
+              await refreshAnalytics()
+              setCurrentView('overview')
+            }}
             onCancel={() => setCurrentView('overview')}
           />
         )
+
+      case 'withdrawals':
+        return <WithdrawalHistory />
 
       case 'history':
         return <PaymentHistory />
@@ -65,7 +73,7 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
                     <div>
                       <p className="text-sm font-medium text-gray-600">Available Balance</p>
                       <p className="text-2xl font-bold text-green-600">
-                        {formatCurrency(analytics?.totalEarnings || 0)}
+                        {formatCurrency(analytics?.availableBalance || 0)}
                       </p>
                     </div>
                     <div className="text-3xl">💰</div>
@@ -77,9 +85,9 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Pending</p>
+                      <p className="text-sm font-medium text-gray-600">Pending (Escrow)</p>
                       <p className="text-2xl font-bold text-orange-600">
-                        {formatCurrency(analytics?.pendingPayments || 0)}
+                        {formatCurrency(analytics?.pendingBalance || 0)}
                       </p>
                     </div>
                     <div className="text-3xl">⏳</div>
@@ -134,6 +142,15 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
                   >
                     <span className="text-2xl">💸</span>
                     <span>Withdraw Funds</span>
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    className="h-20 flex flex-col items-center justify-center space-y-2"
+                    onClick={() => setCurrentView('withdrawals')}
+                  >
+                    <span className="text-2xl">💰</span>
+                    <span>My Withdrawals</span>
                   </Button>
 
                   <Button
@@ -222,6 +239,7 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
       case 'methods': return 'Payment Methods'
       case 'add-method': return 'Add Payment Method'
       case 'withdraw': return 'Withdraw Funds'
+      case 'withdrawals': return 'My Withdrawals'
       case 'history': return 'Payment History'
       case 'analytics': return 'Earnings Analytics'
       default: return 'Payment Dashboard'
@@ -233,6 +251,7 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
       case 'methods': return 'Manage your payment methods and preferences'
       case 'add-method': return 'Add a new payment method to your account'
       case 'withdraw': return 'Withdraw your earnings to your bank account'
+      case 'withdrawals': return 'View your pending and completed withdrawal requests'
       case 'history': return 'View all your payment and earning transactions'
       case 'analytics': return 'Detailed insights into your earnings and performance'
       default: return 'Manage payments, earnings, and withdrawals'

@@ -38,6 +38,7 @@ interface PaymentContextType extends PaymentState {
 
   // Withdrawals
   requestWithdrawal: (amount: number, paymentMethodId: string, bankDetails?: BankAccount) => Promise<WithdrawalRequest>
+  refreshWithdrawals: () => Promise<void>
 
   // Analytics
   refreshAnalytics: () => Promise<void>
@@ -122,7 +123,7 @@ function paymentReducer(state: PaymentState, action: PaymentAction): PaymentStat
   }
 }
 
-const PaymentContext = createContext<PaymentContextType | undefined>(undefined)
+export const PaymentContext = createContext<PaymentContextType | undefined>(undefined)
 
 interface PaymentProviderProps {
   children: ReactNode
@@ -154,14 +155,16 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
       // Fix any multiple default payment methods first
       await PaymentService.fixMultipleDefaultPaymentMethods(user.id)
 
-      // Load payment methods and analytics in parallel
-      const [paymentMethods, analytics] = await Promise.all([
+      // Load payment methods, analytics, and withdrawals in parallel
+      const [paymentMethods, analytics, withdrawals] = await Promise.all([
         PaymentService.getUserPaymentMethods(user.id),
-        PaymentService.getUserPaymentAnalytics(user.id)
+        PaymentService.getUserPaymentAnalytics(user.id),
+        PaymentService.getUserWithdrawals(user.id)
       ])
 
       dispatch({ type: 'SET_PAYMENT_METHODS', payload: paymentMethods })
       dispatch({ type: 'SET_ANALYTICS', payload: analytics })
+      dispatch({ type: 'SET_WITHDRAWALS', payload: withdrawals })
       dispatch({ type: 'SET_ERROR', payload: null })
     } catch (error) {
       console.error('Error loading payment data:', error)
@@ -348,7 +351,30 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
 
     try {
       dispatch({ type: 'SET_LOADING', payload: true })
-      const withdrawal = await PaymentService.requestWithdrawal(user.id, amount, paymentMethodId, bankDetails)
+
+      // If new bank details provided, save them as a payment method first
+      let actualPaymentMethodId = paymentMethodId
+      if (bankDetails && paymentMethodId === 'new') {
+        const newPaymentMethod = await PaymentService.addPaymentMethod(user.id, {
+          type: 'bank' as const,
+          provider: 'eft',
+          bankName: bankDetails.bankName,
+          accountNumber: bankDetails.accountNumber,
+          accountLast4: bankDetails.accountNumber.slice(-4),
+          accountHolder: bankDetails.accountHolder,
+          accountType: bankDetails.accountType,
+          branchCode: bankDetails.branchCode,
+          isDefault: false,
+          isVerified: false
+        })
+        actualPaymentMethodId = newPaymentMethod.id
+
+        // Refresh payment methods to show the newly added one
+        await refreshPaymentMethods()
+      }
+
+      // Request withdrawal with saved payment method (no need to pass bankDetails anymore)
+      const withdrawal = await PaymentService.requestWithdrawal(user.id, amount, actualPaymentMethodId, undefined)
       dispatch({ type: 'ADD_WITHDRAWAL', payload: withdrawal })
 
       // Refresh analytics
@@ -372,6 +398,17 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
     try {
       const analytics = await PaymentService.getUserPaymentAnalytics(user.id)
       dispatch({ type: 'SET_ANALYTICS', payload: analytics })
+    } catch (error: any) {
+      dispatch({ type: 'SET_ERROR', payload: error.message })
+    }
+  }
+
+  const refreshWithdrawals = async () => {
+    if (!user) return
+
+    try {
+      const withdrawals = await PaymentService.getUserWithdrawals(user.id)
+      dispatch({ type: 'SET_WITHDRAWALS', payload: withdrawals })
     } catch (error: any) {
       dispatch({ type: 'SET_ERROR', payload: error.message })
     }
@@ -401,6 +438,7 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
     createMilestone,
     updateMilestoneStatus,
     requestWithdrawal,
+    refreshWithdrawals,
     refreshAnalytics,
     calculateFees,
     calculateGigFees,

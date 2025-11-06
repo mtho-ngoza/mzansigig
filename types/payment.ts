@@ -1,7 +1,7 @@
 export interface PaymentMethod {
   id: string
   type: 'card' | 'bank' | 'mobile_money' | 'eft'
-  provider: 'payfast' | 'ozow' | 'yoco' | 'stripe' | 'manual'
+  provider: 'payfast' | 'ozow' | 'yoco' | 'stripe' | 'manual' | 'eft'
 
   // Card details (for card type)
   cardLast4?: string
@@ -14,6 +14,9 @@ export interface PaymentMethod {
   bankName?: string
   accountType?: 'cheque' | 'savings'
   accountLast4?: string
+  accountHolder?: string // Full name on account
+  accountNumber?: string // Full account number (only store for bank/eft types)
+  branchCode?: string // Required for South African banks
 
   // Mobile money details
   mobileProvider?: 'vodacom' | 'mtn' | 'cell_c' | 'telkom'
@@ -162,6 +165,9 @@ export interface FeeBreakdown {
 export interface PaymentAnalytics {
   totalEarnings: number
   totalPaid: number
+  totalWithdrawn: number
+  availableBalance: number
+  pendingBalance: number
   pendingPayments: number
   completedGigs: number
   averageGigValue: number
