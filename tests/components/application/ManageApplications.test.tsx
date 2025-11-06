@@ -368,8 +368,7 @@ describe('ManageApplications', () => {
         render(<ManageApplications />)
 
         await waitFor(() => {
-          const elements = screen.getAllByText(/Applied by/i)
-          expect(elements.length).toBeGreaterThan(0)
+          expect(screen.getByText('Applied by Jane Smith')).toBeInTheDocument()
         })
 
         expect(screen.queryByText('💳 Payment Obligations Dashboard')).not.toBeInTheDocument()
@@ -447,8 +446,7 @@ describe('ManageApplications', () => {
         render(<ManageApplications />)
 
         await waitFor(() => {
-          const elements = screen.getAllByText(/Applied by/i)
-          expect(elements.length).toBeGreaterThan(0)
+          expect(screen.getByText('Applied by Bob Johnson')).toBeInTheDocument()
         })
 
         expect(screen.queryByText('⚠️ Payment Required - Please Fund This Project')).not.toBeInTheDocument()
