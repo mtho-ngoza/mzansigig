@@ -1,8 +1,42 @@
-import { doc, updateDoc, getDoc, increment, Timestamp } from 'firebase/firestore'
+import { doc, updateDoc, getDoc, increment, Timestamp, runTransaction } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { User } from '@/types/auth'
 
 export class WalletService {
+  /**
+   * Atomically check balance and debit wallet (prevents race conditions)
+   * This is the SAFE way to handle withdrawals with concurrent requests
+   */
+  static async debitWalletAtomic(userId: string, amount: number): Promise<void> {
+    const userRef = doc(db, 'users', userId)
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const userDoc = await transaction.get(userRef)
+
+        if (!userDoc.exists()) {
+          throw new Error('User not found')
+        }
+
+        const userData = userDoc.data() as User
+        const currentBalance = userData.walletBalance || 0
+
+        if (currentBalance < amount) {
+          throw new Error('Insufficient balance')
+        }
+
+        // Atomic update - balance check and debit happen together
+        transaction.update(userRef, {
+          walletBalance: increment(-amount),
+          totalWithdrawn: increment(amount),
+          updatedAt: Timestamp.now()
+        })
+      })
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to debit wallet')
+    }
+  }
+
   /**
    * Credit worker's wallet when escrow is released
    */

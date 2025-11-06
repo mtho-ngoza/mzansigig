@@ -992,7 +992,8 @@ firebase deploy --only firestore:rules,storage
 - [x] **Manage Gigs dashboard & completion workflow** - Employers can view all posted gigs, track application counts, assign workers, mark gigs as complete, and cancel gigs. Comprehensive tests included. Current workflow: Accept application → (Optional) Make payment → Mark complete → Payment released. ✅
 - [x] **Job seeker profile viewing** - Employers can view full applicant profiles when reviewing applications. Includes work history, skills, portfolio, languages, certifications, verification status, and trust score (defaults to 50 for new users). Profile dialog integrated into application management workflow with "View Profile" button on each application. ✅
 - [x] **Worker wallet & withdrawal system** - Digital wallet with pending (escrow) and available balances, comprehensive earnings dashboard for job seekers, secure withdrawal requests with South African bank details, automatic balance updates on payment and escrow release, role-based access (job-seekers only), with 30 comprehensive tests. ✅
-- [ ] **Payment flow improvements (Pre-Launch)** - Add payment status warnings for workers ("Don't start work until funded"), employer payment reminders when accepting applications, employer payment dashboard to track outgoing payments, and admin approval workflow for withdrawal requests.
+- [x] **Withdrawal balance validation** - Prevents double-spending by validating available balance and deducting funds when withdrawal is requested (not when completed). Includes automatic refund on rejection and comprehensive test coverage. ✅
+- [ ] **Payment flow improvements (Pre-Launch)** - Add payment status warnings for workers ("Don't start work until funded"), employer payment reminders when accepting applications, employer payment dashboard to track outgoing payments, admin approval UI for withdrawal requests, and bank transfer integration with South African payment gateway.
 - [ ] **Application withdrawal (Pre-Launch)** - Allow job seekers to withdraw their pending applications for any reason. Gives workers control and flexibility if they find another job, change their mind, or circumstances change. Important for informal sector where opportunities can come up quickly. Also prevents workers from being stuck in unfunded applications.
 - [ ] **Browse Talent page** - Currently "Browse Talent" redirects to Browse Gigs instead of showing job seeker profiles. Employers need to proactively find workers by skills, location, ratings, verification status.
 - [ ] **Max applicants limit** - Let employers specify how many applicants they want to review (e.g., "5 applicants max"). Shows job seekers "3/5 applicants" so they know if it's worth applying. Auto-closes gig to "reviewing" when limit reached. Critical for informal work where employers typically choose from first 3-5 applicants.
@@ -1029,6 +1030,34 @@ firebase deploy --only firestore:rules,storage
 - **No review/approval step**: No formal review process or dispute resolution before marking gig complete. For MVP, parties can communicate via messaging. Formal dispute system can be added later.
 - **No milestone payments**: Only single payment supported. Milestone-based payments (e.g., 50% deposit upfront, 50% on completion) would be valuable for larger projects but not blocking for launch. Most gigs in informal sector are small, single-payment jobs.
 - **No deposit/partial payment options**: Some workers may want upfront deposits before starting. Can be added as milestone feature post-launch.
+
+### Withdrawal System Implementation Status
+
+#### ✅ **IMPLEMENTED (Balance Tracking & Validation)**
+- **Balance validation**: System checks if worker has sufficient available balance before allowing withdrawal request
+- **Balance deduction on request**: When worker requests withdrawal, amount is immediately deducted from `walletBalance` to prevent double-spending
+- **Refund on rejection**: If admin rejects withdrawal request, amount is automatically refunded back to worker's wallet
+- **Multiple withdrawal prevention**: Workers cannot request more withdrawals than their available balance (fixes critical vulnerability)
+- **Comprehensive tests**: Full test coverage for balance validation and refund scenarios
+
+**Current Flow:**
+1. Worker requests withdrawal → System validates and deducts balance (reserves funds)
+2. Request goes to "pending" status → Worker cannot use these funds for other withdrawals
+3. Admin reviews → Either approves (proceeds to bank transfer) or rejects (funds refunded)
+
+#### ⏳ **PENDING (Actual Bank Transfer Integration - Pre-Launch Required)**
+- **Admin approval interface**: UI for admins to review and approve/reject withdrawal requests
+- **Bank transfer integration**: Actual EFT/bank transfer to worker's account (requires payment gateway/banking partner)
+- **Payment gateway setup**: Integration with South African payment provider (PayFast, PayGate, Yoco, or bank API)
+- **Transaction confirmation**: Webhook/callback handling from payment provider to confirm successful transfer
+- **Withdrawal history for workers**: Full transaction history showing completed/failed/pending withdrawals
+
+**Required Before Go-Live:**
+1. Choose and integrate South African payment gateway for EFT transfers
+2. Implement admin withdrawal approval dashboard
+3. Set up webhook handlers for payment confirmation
+4. Test end-to-end flow with real bank accounts (use test mode first)
+5. Verify all edge cases (failed transfers, network timeouts, etc.)
 
 ## 🔐 Firebase Security
 

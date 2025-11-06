@@ -30,7 +30,7 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
   const [useExistingMethod, setUseExistingMethod] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const availableBalance = analytics?.totalEarnings || 0
+  const availableBalance = analytics?.availableBalance || 0
   const minWithdrawal = 50
 
   const bankOptions = [
@@ -188,7 +188,7 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
                         <option value="">Select a bank account</option>
                         {eligibleMethods.map((method) => (
                           <option key={method.id} value={method.id}>
-                            {method.bankName} ending in {method.accountLast4} ({method.accountType})
+                            {method.accountHolder ? `${method.accountHolder} - ` : ''}{method.bankName} ending in {method.accountLast4} ({method.accountType})
                           </option>
                         ))}
                       </select>
@@ -212,7 +212,7 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
                   />
                   <div className="flex-1">
                     <div className="font-medium text-gray-900">Add new bank account</div>
-                    <div className="text-sm text-gray-600">Enter bank details for this withdrawal</div>
+                    <div className="text-sm text-gray-600">Your bank details will be saved securely for future withdrawals</div>
                   </div>
                 </label>
 

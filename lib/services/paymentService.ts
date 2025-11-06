@@ -424,10 +424,8 @@ export class PaymentService {
         createdAt: Timestamp.now()
       })
 
-      // 5) Update worker pending balance via WalletService (tests mock this function)
-      if (typeof WalletService.updatePendingBalance === 'function') {
-        await WalletService.updatePendingBalance(intentData.workerId, intentData.amount)
-      }
+      // 5) Update worker pending balance via WalletService
+      await WalletService.updatePendingBalance(intentData.workerId, intentData.amount)
 
       return {
         id: paymentId,
@@ -605,6 +603,10 @@ export class PaymentService {
     bankDetails?: BankAccount
   ): Promise<WithdrawalRequest> {
     try {
+      // Use atomic transaction to check balance and debit in one operation
+      // This prevents race conditions where multiple concurrent withdrawals could exceed balance
+      await WalletService.debitWalletAtomic(userId, amount)
+
       const withdrawalData = {
         userId,
         amount,
@@ -627,6 +629,10 @@ export class PaymentService {
       }
     } catch (error) {
       console.debug('Error requesting withdrawal:', error)
+      // Re-throw with original message if it's a known error (like insufficient balance)
+      if (error instanceof Error && error.message.includes('Insufficient')) {
+        throw error
+      }
       throw new Error('Failed to request withdrawal')
     }
   }
@@ -651,8 +657,8 @@ export class PaymentService {
       } else if (status === 'completed') {
         updateData.completedAt = Timestamp.now()
 
-        // Debit user's wallet when withdrawal is completed
-        await WalletService.debitWallet(withdrawalData.userId, withdrawalData.amount)
+        // Note: Wallet was already debited when withdrawal was requested
+        // This status change indicates the bank transfer was successful
 
         // Update payment history to mark as completed
         await this.addPaymentHistory(
@@ -667,15 +673,21 @@ export class PaymentService {
       } else if (status === 'failed') {
         updateData.failureReason = failureReason
 
+        // Refund the amount back to wallet since withdrawal failed/rejected
+        // The balance was deducted when request was created, so we need to credit it back
+        await WalletService.creditWallet(withdrawalData.userId, withdrawalData.amount)
+
         // Update payment history to mark as failed
+        // Note: Use 'failed' status for both technical failures and admin rejections
+        // Differentiate via failureReason (e.g., "Admin rejected: insufficient documentation")
         await this.addPaymentHistory(
           withdrawalData.userId,
           'payments',
-          -withdrawalData.amount,
+          withdrawalData.amount, // Positive amount since we're refunding
           'failed',
           undefined,
           undefined,
-          `Withdrawal failed: ${failureReason || 'Unknown error'}`
+          `Withdrawal ${status}: ${failureReason || 'Request was not processed'}`
         )
       }
 
@@ -687,6 +699,28 @@ export class PaymentService {
     } catch (error) {
       console.debug('Error updating withdrawal status:', error)
       throw new Error(error instanceof Error ? error.message : 'Failed to update withdrawal status')
+    }
+  }
+
+  static async getUserWithdrawals(userId: string): Promise<WithdrawalRequest[]> {
+    try {
+      const q = query(
+        collection(db, COLLECTIONS.WITHDRAWALS),
+        where('userId', '==', userId),
+        orderBy('requestedAt', 'desc')
+      )
+
+      const querySnapshot = await getDocs(q)
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+        requestedAt: doc.data().requestedAt?.toDate() || new Date(),
+        processedAt: doc.data().processedAt?.toDate(),
+        completedAt: doc.data().completedAt?.toDate()
+      } as WithdrawalRequest))
+    } catch (error) {
+      console.debug('Error fetching user withdrawals:', error)
+      return []
     }
   }
 
@@ -740,12 +774,18 @@ export class PaymentService {
   // Analytics
   static async getUserPaymentAnalytics(userId: string): Promise<PaymentAnalytics> {
     try {
+      // Get actual wallet balance from user document
+      const walletBalance = await WalletService.getWalletBalance(userId)
+
       const history = await this.getUserPaymentHistory(userId, 1000)
 
       const earnings = history.filter(h => h.type === 'earnings' && h.status === 'completed')
       const payments = history.filter(h => h.type === 'payments' && h.status === 'completed')
 
-      const totalEarnings = earnings.reduce((sum, h) => sum + h.amount, 0)
+      const totalEarnings = walletBalance.totalEarnings
+      const totalWithdrawn = walletBalance.totalWithdrawn
+      const availableBalance = walletBalance.walletBalance
+      const pendingBalance = walletBalance.pendingBalance
       const totalPaid = payments.reduce((sum, h) => sum + h.amount, 0)
       const pendingPayments = history.filter(h => h.status === 'pending').reduce((sum, h) => sum + h.amount, 0)
 
@@ -769,6 +809,9 @@ export class PaymentService {
       return {
         totalEarnings,
         totalPaid,
+        totalWithdrawn,
+        availableBalance,
+        pendingBalance,
         pendingPayments,
         completedGigs,
         averageGigValue,
@@ -781,6 +824,9 @@ export class PaymentService {
       return {
         totalEarnings: 0,
         totalPaid: 0,
+        totalWithdrawn: 0,
+        availableBalance: 0,
+        pendingBalance: 0,
         pendingPayments: 0,
         completedGigs: 0,
         averageGigValue: 0,

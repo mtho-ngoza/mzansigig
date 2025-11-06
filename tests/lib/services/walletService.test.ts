@@ -15,6 +15,7 @@ jest.mock('firebase/firestore', () => ({
   doc: jest.fn(),
   updateDoc: jest.fn(),
   getDoc: jest.fn(),
+  runTransaction: jest.fn(),
   increment: jest.fn((amount) => amount),
   Timestamp: {
     now: jest.fn(() => ({ toDate: () => new Date() }))
@@ -206,6 +207,141 @@ describe('WalletService', () => {
       })
 
       await expect(WalletService.debitWallet(mockUserId, 50)).rejects.toThrow('Insufficient balance')
+    })
+  })
+
+  describe('debitWalletAtomic', () => {
+    const { runTransaction } = require('firebase/firestore')
+
+    it('should atomically check balance and debit wallet in single transaction', async () => {
+      const amount = 200
+      const mockUserData = {
+        id: mockUserId,
+        walletBalance: 500,
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        phone: '+27123456789',
+        location: 'Cape Town',
+        userType: 'job-seeker' as const,
+        createdAt: new Date()
+      }
+
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => mockUserData
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
+      })
+
+      await WalletService.debitWalletAtomic(mockUserId, amount)
+
+      expect(runTransaction).toHaveBeenCalledWith(db, expect.any(Function))
+      expect(mockTransaction.get).toHaveBeenCalled()
+      expect(mockTransaction.update).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          walletBalance: -amount,
+          totalWithdrawn: amount
+        })
+      )
+    })
+
+    it('should reject if insufficient balance (atomic check within transaction)', async () => {
+      const mockUserData = {
+        id: mockUserId,
+        walletBalance: 100,
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        phone: '+27123456789',
+        location: 'Cape Town',
+        userType: 'job-seeker' as const,
+        createdAt: new Date()
+      }
+
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => mockUserData
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
+      })
+
+      await expect(WalletService.debitWalletAtomic(mockUserId, 200)).rejects.toThrow('Insufficient balance')
+      expect(mockTransaction.update).not.toHaveBeenCalled()
+    })
+
+    it('should prevent race condition with concurrent withdrawals', async () => {
+      // Simulate two concurrent requests trying to withdraw R600 each from R1000 balance
+      const mockUserData = {
+        id: mockUserId,
+        walletBalance: 1000,
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User',
+        phone: '+27123456789',
+        location: 'Cape Town',
+        userType: 'job-seeker' as const,
+        createdAt: new Date()
+      }
+
+      let transactionCount = 0
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        transactionCount++
+
+        if (transactionCount === 1) {
+          // First transaction: balance is 1000, withdraw 600 succeeds
+          const mockTransaction = {
+            get: jest.fn().mockResolvedValue({
+              exists: () => true,
+              data: () => mockUserData
+            }),
+            update: jest.fn()
+          }
+          return await callback(mockTransaction)
+        } else {
+          // Second transaction: balance is now 400 (after first withdrawal), withdraw 600 fails
+          const mockTransaction = {
+            get: jest.fn().mockResolvedValue({
+              exists: () => true,
+              data: () => ({ ...mockUserData, walletBalance: 400 })
+            }),
+            update: jest.fn()
+          }
+          return await callback(mockTransaction)
+        }
+      })
+
+      // First withdrawal succeeds
+      await expect(WalletService.debitWalletAtomic(mockUserId, 600)).resolves.toBeUndefined()
+
+      // Second concurrent withdrawal fails (insufficient balance after first)
+      await expect(WalletService.debitWalletAtomic(mockUserId, 600)).rejects.toThrow('Insufficient balance')
+    })
+
+    it('should throw error if user not found', async () => {
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => false
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
+      })
+
+      await expect(WalletService.debitWalletAtomic(mockUserId, 200)).rejects.toThrow('User not found')
     })
   })
 
