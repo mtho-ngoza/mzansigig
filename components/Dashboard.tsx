@@ -15,6 +15,7 @@ import { MessagingHub } from '@/components/messaging'
 import PaymentDashboard from './payment/PaymentDashboard'
 import WithdrawalApprovalDashboard from './admin/WithdrawalApprovalDashboard'
 import FeeConfigManager from './admin/FeeConfigManager'
+import BrowseTalent from './BrowseTalent'
 import { isAdmin } from '@/lib/utils/adminAuth'
 
 interface DashboardProps {
@@ -30,7 +31,7 @@ export default function Dashboard({
 }: DashboardProps) {
   const { user } = useAuth()
   const { totalUnreadCount } = useMessaging()
-  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'manage-gigs' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments' | 'admin-withdrawals' | 'admin-fees'>('dashboard')
+  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'manage-gigs' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments' | 'admin-withdrawals' | 'admin-fees' | 'browse-talent'>('dashboard')
 
   // Auto-navigate to messages if conversationId is provided
   useEffect(() => {
@@ -80,6 +81,12 @@ export default function Dashboard({
       case 'payments':
         breadcrumbs.push({
           label: 'Payments',
+          isCurrentPage: true
+        })
+        break
+      case 'browse-talent':
+        breadcrumbs.push({
+          label: 'Browse Talent',
           isCurrentPage: true
         })
         break
@@ -195,6 +202,13 @@ export default function Dashboard({
   if (currentView === 'payments') {
     return (
       <PaymentDashboard onBack={() => setCurrentView('dashboard')} />
+    )
+  }
+
+  // Show browse talent page if user is on that view
+  if (currentView === 'browse-talent') {
+    return (
+      <BrowseTalent onBack={() => setCurrentView('dashboard')} />
     )
   }
 
@@ -458,7 +472,7 @@ export default function Dashboard({
                       <Button
                         variant="outline"
                         className="w-full"
-                        onClick={onBrowseGigs}
+                        onClick={() => setCurrentView('browse-talent')}
                       >
                         Browse Talent
                       </Button>
