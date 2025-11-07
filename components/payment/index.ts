@@ -1,4 +1,5 @@
 export { default as PaymentDashboard } from './PaymentDashboard'
+export { default as EmployerPaymentDashboard } from './EmployerPaymentDashboard'
 export { default as PaymentDialog } from './PaymentDialog'
 export { default as PaymentMethodForm } from './PaymentMethodForm'
 export { default as PaymentMethodList } from './PaymentMethodList'

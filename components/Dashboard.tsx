@@ -13,6 +13,7 @@ import ManageApplications from './application/ManageApplications'
 import ProfileManagement from './profile/ProfileManagement'
 import { MessagingHub } from '@/components/messaging'
 import PaymentDashboard from './payment/PaymentDashboard'
+import EmployerPaymentDashboard from './payment/EmployerPaymentDashboard'
 import WithdrawalApprovalDashboard from './admin/WithdrawalApprovalDashboard'
 import FeeConfigManager from './admin/FeeConfigManager'
 import BrowseTalent from './BrowseTalent'
@@ -200,6 +201,13 @@ export default function Dashboard({
 
   // Show payments page if user is on that view
   if (currentView === 'payments') {
+    // Show employer-specific payment dashboard for employers
+    if (user?.userType === 'employer') {
+      return (
+        <EmployerPaymentDashboard onBack={() => setCurrentView('dashboard')} />
+      )
+    }
+    // Show worker payment dashboard for job seekers
     return (
       <PaymentDashboard onBack={() => setCurrentView('dashboard')} />
     )
