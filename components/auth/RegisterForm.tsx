@@ -52,6 +52,11 @@ export function RegisterForm() {
     if (!formData.phone) newErrors.phone = 'Phone number is required'
     if (!formData.location) newErrors.location = 'Location is required'
 
+    // Work Sector validation for job-seekers
+    if (formData.userType === 'job-seeker' && !formData.workSector) {
+      newErrors.workSector = 'Please select your work type'
+    }
+
     // ID Number validation
     if (!formData.idNumber) {
       newErrors.idNumber = 'SA ID Number is required'
@@ -204,10 +209,11 @@ export function RegisterForm() {
       />
 
       <div className="space-y-1">
-        <label className="block text-sm font-medium text-gray-700">
+        <label htmlFor="userType" className="block text-sm font-medium text-gray-700">
           Account Type
         </label>
         <select
+          id="userType"
           name="userType"
           value={formData.userType}
           onChange={handleChange}
@@ -221,21 +227,26 @@ export function RegisterForm() {
 
       {formData.userType === 'job-seeker' && (
         <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">
-            Type of Work <span className="text-gray-500">(Optional)</span>
+          <label htmlFor="workSector" className="block text-sm font-medium text-gray-700">
+            Type of Work *
           </label>
           <select
+            id="workSector"
             name="workSector"
             value={formData.workSector || ''}
             onChange={handleChange}
-            className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className={`flex h-10 w-full rounded-md border ${errors.workSector ? 'border-red-500' : 'border-gray-300'} bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500`}
+            required
           >
             <option value="">Choose your work type</option>
             <option value="professional">Professional Services (IT, Design, Marketing, Writing)</option>
             <option value="informal">Hands-on Work (Cleaning, Construction, Maintenance, Transport)</option>
           </select>
+          {errors.workSector && (
+            <p className="text-xs text-red-600 mt-1">{errors.workSector}</p>
+          )}
           <p className="text-xs text-gray-600 mt-1">
-            This helps us customize your experience. You can change this later in your profile.
+            This helps us customize your experience and show you the right profile fields.
           </p>
         </div>
       )}
