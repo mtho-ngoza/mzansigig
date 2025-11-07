@@ -21,31 +21,77 @@ The platform is **production-ready** with all core features implemented and test
 
 ---
 
+### ✅ RESOLVED (Code Quality Improvements - Completed)
+
+#### 1. **Location Constants Consolidation** ✅ RESOLVED
+**Resolution Date**: 2025-11-07
+**Commits**: `b5ac3d3`
+
+**What Was Done**:
+- Consolidated SA_LOCATIONS from 2 separate files to single source in `types/location.ts`
+- Updated imports in `PostGigForm.tsx` and `BasicInfoForm.tsx`
+- Eliminated code duplication
+
+**Files Changed**:
+- `types/location.ts` - Added SA_LOCATIONS constant (lines 127-143)
+- `components/gig/PostGigForm.tsx` - Removed duplicate, added import
+- `components/profile/BasicInfoForm.tsx` - Removed duplicate, added import
+
+---
+
+#### 2. **Edit Gig Functionality** ✅ RESOLVED
+**Resolution Date**: 2025-11-07
+**Commits**: `7f58e96`
+
+**What Was Done**:
+- Modified PostGigForm to support both create and edit modes
+- Added useEffect to pre-fill form data when editing
+- Updated submit handler to handle both create/update operations
+- Modified ManageGigs to show edit form conditionally
+- Full edit functionality without code duplication
+
+**Files Changed**:
+- `components/gig/PostGigForm.tsx` - Added edit mode support
+- `components/gig/ManageGigs.tsx` - Integrated edit functionality
+
+---
+
+#### 3. **Direct Payment Dialog** ✅ RESOLVED
+**Resolution Date**: 2025-11-07
+**Commits**: `eac4e1b`
+
+**What Was Done**:
+- Replaced page redirect with in-page payment dialog
+- Added payment success handler with obligation refresh
+- Seamless UX without navigation disruption
+
+**Files Changed**:
+- `components/payment/EmployerPaymentDashboard.tsx` - Integrated PaymentDialog
+
+---
+
+#### 4. **Toast Notifications** ✅ RESOLVED
+**Resolution Date**: 2025-11-07
+**Commits**: `4e233e0`
+
+**What Was Done**:
+- Replaced 12 browser alert() calls with toast notifications
+- Consistent UX across application
+- Better visual feedback for users
+
+**Files Changed**:
+- `components/application/MyApplications.tsx` (1 alert → toast)
+- `components/profile/ProfilePhotoUpload.tsx` (2 alerts → toasts)
+- `components/profile/PortfolioManager.tsx` (3 alerts → toasts)
+- `components/gig/ManageGigs.tsx` (6 alerts → toasts)
+
+---
+
 ### 🟡 MEDIUM PRIORITY (Should Fix Before Launch)
 
-#### 1. **Location Selection Enhancement**
-**Current Status**: Hardcoded dropdown with 12 cities
-**Files**:
-- `components/gig/PostGigForm.tsx:55`
-- `components/profile/BasicInfoForm.tsx:15`
-
-**Current Implementation**:
-```typescript
-const SA_LOCATIONS = [
-  'Cape Town', 'Johannesburg', 'Durban', 'Pretoria',
-  'Port Elizabeth', 'Bloemfontein', 'East London',
-  'Pietermaritzburg', 'Kimberley', 'Polokwane',
-  'Nelspruit', 'Rustenburg', 'Remote/Online', 'Other'
-]
-```
-
-**Issues**:
-- ❌ Code duplication (defined in 2 files)
-- ❌ No search/autocomplete functionality
-- ❌ Limited to major cities only
-- ❌ No suburb/township support
-
-**Impact**: Medium - Users in smaller towns/townships must select "Other" or nearest major city
+#### 1. **Location Search with Autocomplete**
+**Current Status**: Basic dropdown with 12 cities (Phase 1 consolidation ✅ complete)
+**Phase 2 Enhancement**: Add search/autocomplete functionality
 
 **Infrastructure Already Built**:
 - ✅ `LocationService` with GPS detection
@@ -54,61 +100,16 @@ const SA_LOCATIONS = [
 - ✅ Geolocation API integration
 
 **Recommended Solution**:
-1. **Phase 1** (Pre-Launch): Consolidate SA_LOCATIONS to single source (types/location.ts)
-2. **Phase 2** (Month 1-2): Implement location search with autocomplete
-   - Option A: Google Places API (~R500-2000/month)
-   - Option B: Custom SA location database
-   - Add suburb/township support (critical for informal sector)
-   - Integrate existing LocationService for GPS
-
-**README Acknowledgment**: ✅ Already documented as "hardcoded for MVP"
-
----
-
-#### 2. **Edit Gig Functionality**
-**Current Status**: Placeholder only
-**File**: `components/gig/ManageGigs.tsx:169`
-
-**Current Implementation**:
-```typescript
-const handleEditGig = (gigId: string) => {
-  // TODO: Implement edit functionality
-  alert('Edit functionality coming soon!')
-}
-```
-
-**Impact**: Medium - Employers cannot edit posted gigs after creation
-
-**Workaround**: Employers can cancel and repost gigs
-
-**Recommended Solution**:
-- Create EditGigForm component (similar to PostGigForm)
-- Add edit mode to ManageGigs
-- Validate changes don't break existing applications
-- **Timeline**: 2-3 days development + testing
+- Implement location search with autocomplete
+  - Option A: Google Places API (~R500-2000/month)
+  - Option B: Custom SA location database
+- Add suburb/township support (critical for informal sector)
+- Integrate existing LocationService for GPS
+- **Timeline**: Month 1-2 post-launch
 
 ---
 
 ### 🟢 LOW PRIORITY (Nice to Have, Post-Launch)
-
-#### 3. **Direct Payment from Employer Dashboard**
-**Current Status**: Redirect instead of dialog
-**File**: `components/payment/EmployerPaymentDashboard.tsx:166`
-
-**Current Implementation**:
-```typescript
-onClick={() => {
-  // TODO: Open payment dialog for this application
-  window.location.href = `/application/${obligation.application.id}`
-}}
-```
-
-**Impact**: Low - Works but less seamless UX
-
-**Recommended Solution**:
-- Integrate existing PaymentDialog component
-- Open payment modal directly from obligations list
-- **Timeline**: 1-2 hours
 
 ---
 
@@ -162,32 +163,29 @@ onClick={() => {
 
 ## 🔧 Technical Debt & Code Quality
 
-### Code Duplication
+### ✅ Code Duplication - RESOLVED
 
-#### SA_LOCATIONS Duplication
-**Issue**: Location list defined in 2 separate files
-**Files**:
-- `components/gig/PostGigForm.tsx:55`
-- `components/profile/BasicInfoForm.tsx:15`
-
-**Solution**: Move to `types/location.ts` as single source of truth
+#### SA_LOCATIONS Duplication ✅ RESOLVED
+**Status**: Fixed in commit `b5ac3d3`
+**Resolution**: Consolidated to `types/location.ts` as single source of truth
+**Files Updated**:
+- `types/location.ts` - Added SA_LOCATIONS constant
+- `components/gig/PostGigForm.tsx` - Removed duplicate, added import
+- `components/profile/BasicInfoForm.tsx` - Removed duplicate, added import
 
 ---
 
-### UX Improvements
+### ✅ UX Improvements - RESOLVED
 
-#### Alert() Calls
-**Issue**: 12 instances of browser alert() instead of modern toast notifications
+#### Alert() Calls ✅ RESOLVED
+**Status**: Fixed in commit `4e233e0`
+**Resolution**: Replaced all 12 browser alert() calls with toast notifications
 
-**Files with alert()**:
-- `components/application/MyApplications.tsx` (1)
-- `components/profile/ProfilePhotoUpload.tsx` (2)
-- `components/profile/PortfolioManager.tsx` (3)
-- `components/gig/ManageGigs.tsx` (6)
-
-**Solution**: Replace with existing ToastContext
-**Priority**: Low - Functional but not polished
-**Timeline**: 2-3 hours
+**Files Updated**:
+- `components/application/MyApplications.tsx` (1 alert → toast)
+- `components/profile/ProfilePhotoUpload.tsx` (2 alerts → toasts)
+- `components/profile/PortfolioManager.tsx` (3 alerts → toasts)
+- `components/gig/ManageGigs.tsx` (6 alerts → toasts)
 
 ---
 
@@ -234,24 +232,24 @@ onClick={() => {
 
 ## 📋 Immediate Pre-Launch TODO
 
-### Code Improvements (Recommended)
+### Code Improvements ✅ COMPLETED
 
-1. **Consolidate Location Constants** (30 mins)
-   - Move SA_LOCATIONS to types/location.ts
-   - Update imports in PostGigForm and BasicInfoForm
+1. ✅ **Consolidate Location Constants** - DONE (commit `b5ac3d3`)
+   - Moved SA_LOCATIONS to types/location.ts
+   - Updated imports in PostGigForm and BasicInfoForm
 
-2. **Replace Alerts with Toasts** (2-3 hours)
-   - Update 12 alert() calls to use ToastContext
-   - Improve UX consistency
+2. ✅ **Replace Alerts with Toasts** - DONE (commit `4e233e0`)
+   - Updated 12 alert() calls to use ToastContext
+   - Improved UX consistency
 
-3. **Implement Edit Gig** (2-3 days)
-   - Create EditGigForm component
-   - Add edit mode to ManageGigs
-   - Full testing
+3. ✅ **Implement Edit Gig** - DONE (commit `7f58e96`)
+   - Modified PostGigForm to support edit mode
+   - Added edit mode to ManageGigs
+   - Full functionality with form reuse
 
-4. **Add Direct Payment Dialog** (1-2 hours)
-   - Integrate PaymentDialog in EmployerPaymentDashboard
-   - Remove window.location redirects
+4. ✅ **Add Direct Payment Dialog** - DONE (commit `eac4e1b`)
+   - Integrated PaymentDialog in EmployerPaymentDashboard
+   - Removed window.location redirects
 
 ### Infrastructure Setup (Required)
 

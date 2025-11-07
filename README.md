@@ -253,22 +253,24 @@ npm run test:ci
 
 ## ⚠️ Known Limitations (MVP)
 
-### Minor Gaps (Non-Blocking for Launch)
+### Recently Resolved ✅
+- ✅ **Location Constants**: Consolidated to single source in types/location.ts
+- ✅ **Edit Gig**: Full edit functionality implemented
+- ✅ **Payment UX**: Direct payment dialog (no redirects)
+- ✅ **User Feedback**: Replaced browser alerts with toast notifications
 
-1. **Location Selection**: Hardcoded dropdown with 12 major cities
-   - Current: Users select from predefined list or "Other"
+### Planned Enhancements
+
+1. **Location Search**: Enhanced location selection with autocomplete
+   - Current: Dropdown with 12 major cities + "Other"
    - Future: Location search with autocomplete (Month 1-2)
    - Infrastructure ready: LocationService, GPS integration built
 
-2. **Edit Gig**: Not yet implemented
-   - Current: Employers can cancel and repost
-   - Future: Full edit functionality (2-3 days development)
-
-3. **Enhanced Verification**: Marked as "Coming Q2 2025"
+2. **Enhanced Verification**: Marked as "Coming Q2 2025"
    - Basic ID verification ✅ Working
    - Background checks: Planned
 
-4. **Premium Verification**: Marked as "Coming Later"
+3. **Premium Verification**: Marked as "Coming Later"
    - Employment history verification: Planned
 
 📄 **[Complete Gap Analysis & Roadmap](./GAPS_AND_ENHANCEMENTS.md)**
