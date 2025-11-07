@@ -19,7 +19,7 @@ describe('UserService - Job Seeker Management', () => {
     lastName: 'Doe',
     phone: '+27123456789',
     location: 'Johannesburg',
-    coordinates: { lat: -26.2041, lng: 28.0473 },
+    coordinates: { latitude: -26.2041, longitude: 28.0473 },
     userType: 'job-seeker',
     workSector: 'informal',
     skills: ['Plumbing', 'Electrical'],
@@ -41,7 +41,7 @@ describe('UserService - Job Seeker Management', () => {
     lastName: 'Smith',
     phone: '+27987654321',
     location: 'Cape Town',
-    coordinates: { lat: -33.9249, lng: 18.4241 },
+    coordinates: { latitude: -33.9249, longitude: 18.4241 },
     userType: 'job-seeker',
     workSector: 'professional',
     skills: ['Painting', 'Carpentry'],
@@ -217,7 +217,7 @@ describe('UserService - Job Seeker Management', () => {
     });
 
     it('should return job seekers within radius sorted by distance', async () => {
-      const userCoordinates: Coordinates = { lat: -26.2041, lng: 28.0473 }; // Johannesburg
+      const userCoordinates: Coordinates = { latitude: -26.2041, longitude: 28.0473 }; // Johannesburg
 
       const result = await UserService.getJobSeekersNearLocation(userCoordinates, 5000);
 
@@ -232,7 +232,7 @@ describe('UserService - Job Seeker Management', () => {
     });
 
     it('should exclude job seekers outside radius', async () => {
-      const userCoordinates: Coordinates = { lat: -26.2041, lng: 28.0473 }; // Johannesburg
+      const userCoordinates: Coordinates = { latitude: -26.2041, longitude: 28.0473 }; // Johannesburg
 
       const result = await UserService.getJobSeekersNearLocation(userCoordinates, 1);
 
@@ -245,7 +245,7 @@ describe('UserService - Job Seeker Management', () => {
       const jobSeekerNoCoords = { ...mockJobSeeker1, id: 'user-4', coordinates: undefined };
       (FirestoreService.getAll as jest.Mock).mockResolvedValue([jobSeekerNoCoords, mockJobSeeker2]);
 
-      const userCoordinates: Coordinates = { lat: -26.2041, lng: 28.0473 };
+      const userCoordinates: Coordinates = { latitude: -26.2041, longitude: 28.0473 };
       const result = await UserService.getJobSeekersNearLocation(userCoordinates, 5000);
 
       expect(result.find(u => u.id === 'user-4')).toBeUndefined();

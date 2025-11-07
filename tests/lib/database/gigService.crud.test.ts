@@ -429,6 +429,13 @@ describe('GigService - CRUD Operations', () => {
         it('then creates application without updating gig applicants array', async () => {
           // Given
           const applicationId = 'app-123'
+          const mockGig = {
+            id: mockGigId,
+            status: 'open' as const,
+            employerId: mockEmployerId
+          }
+          jest.mocked(FirestoreService.getById).mockResolvedValue(mockGig)
+          jest.mocked(FirestoreService.getWhere).mockResolvedValue([]) // No existing applications
           jest.mocked(FirestoreService.create).mockResolvedValue(applicationId)
 
           // When

@@ -175,7 +175,8 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
       'open': { label: 'Open', className: 'bg-green-100 text-green-800' },
       'in-progress': { label: 'In Progress', className: 'bg-blue-100 text-blue-800' },
       'completed': { label: 'Completed', className: 'bg-gray-100 text-gray-800' },
-      'cancelled': { label: 'Cancelled', className: 'bg-red-100 text-red-800' }
+      'cancelled': { label: 'Cancelled', className: 'bg-red-100 text-red-800' },
+      'reviewing': { label: 'Reviewing', className: 'bg-yellow-100 text-yellow-800' }
     }
 
     const badge = badges[status]

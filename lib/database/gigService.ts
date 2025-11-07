@@ -270,6 +270,25 @@ export class GigService {
   static async createApplication(
     applicationData: Omit<GigApplication, 'id' | 'createdAt' | 'status'>
   ): Promise<string> {
+    // Check if gig exists and get its maxApplicants setting
+    const gig = await FirestoreService.getById<Gig>('gigs', applicationData.gigId);
+    if (!gig) {
+      throw new Error('Gig not found');
+    }
+
+    // Check if gig is still open
+    if (gig.status !== 'open') {
+      throw new Error(`Cannot apply to gig with status: ${gig.status}`);
+    }
+
+    // If maxApplicants is set, check if limit is reached
+    if (gig.maxApplicants) {
+      const currentApplicationCount = await this.getApplicationCountByGig(applicationData.gigId);
+      if (currentApplicationCount >= gig.maxApplicants) {
+        throw new Error('This gig has reached its maximum number of applicants');
+      }
+    }
+
     const application = {
       ...applicationData,
       createdAt: new Date(),
@@ -277,6 +296,14 @@ export class GigService {
     };
 
     const applicationId = await FirestoreService.create('applications', application);
+
+    // Auto-close gig if max applicants reached
+    if (gig.maxApplicants) {
+      const newApplicationCount = await this.getApplicationCountByGig(applicationData.gigId);
+      if (newApplicationCount >= gig.maxApplicants) {
+        await this.updateGig(applicationData.gigId, { status: 'reviewing' });
+      }
+    }
 
     // Note: We don't need to update the gig's applicants array since we can query
     // applications by gigId. This also avoids permission issues when job seekers apply.

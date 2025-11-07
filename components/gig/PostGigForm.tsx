@@ -22,6 +22,7 @@ interface GigFormData {
   duration: string
   skillsRequired: string
   deadline: string
+  maxApplicants: string
 }
 
 const CATEGORIES = [
@@ -81,7 +82,8 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
     budget: '',
     duration: '',
     skillsRequired: '',
-    deadline: ''
+    deadline: '',
+    maxApplicants: ''
   })
 
   // Determine if this is an informal work category
@@ -178,6 +180,16 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
       newErrors.skillsRequired = 'At least one skill is required'
     }
 
+    // Validate max applicants (optional, but must be valid positive integer if provided)
+    if (formData.maxApplicants.trim()) {
+      const maxApplicants = parseInt(formData.maxApplicants)
+      if (isNaN(maxApplicants) || maxApplicants <= 0) {
+        newErrors.maxApplicants = 'Max applicants must be a positive number'
+      } else if (maxApplicants > 100) {
+        newErrors.maxApplicants = 'Max applicants cannot exceed 100'
+      }
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -222,7 +234,8 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
         employerName: `${user.firstName} ${user.lastName}`,
         applicants: [],
         status: 'open' as const,
-        ...(formData.deadline && { deadline: new Date(formData.deadline) })
+        ...(formData.deadline && { deadline: new Date(formData.deadline) }),
+        ...(formData.maxApplicants.trim() && { maxApplicants: parseInt(formData.maxApplicants) })
       }
 
       await GigService.createGig(gigData)
@@ -239,7 +252,8 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
           budget: '',
           duration: '',
           skillsRequired: '',
-          deadline: ''
+          deadline: '',
+          maxApplicants: ''
         })
       }
     } catch (error) {
@@ -418,21 +432,45 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
             </p>
           </div>
 
-          {/* Deadline (Optional) */}
-          <div>
-            <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-2">
-              Application Deadline (Optional)
-            </label>
-            <Input
-              id="deadline"
-              type="date"
-              value={formData.deadline}
-              onChange={(e) => handleInputChange('deadline', e.target.value)}
-              min={new Date().toISOString().split('T')[0]}
-            />
-            <p className="mt-1 text-sm text-gray-500">
-              When should applications close? Leave empty for no deadline.
-            </p>
+          {/* Deadline and Max Applicants */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 mb-2">
+                Application Deadline (Optional)
+              </label>
+              <Input
+                id="deadline"
+                type="date"
+                value={formData.deadline}
+                onChange={(e) => handleInputChange('deadline', e.target.value)}
+                min={new Date().toISOString().split('T')[0]}
+              />
+              <p className="mt-1 text-sm text-gray-500">
+                When should applications close?
+              </p>
+            </div>
+
+            <div>
+              <label htmlFor="maxApplicants" className="block text-sm font-medium text-gray-700 mb-2">
+                Max Applicants (Optional)
+              </label>
+              <Input
+                id="maxApplicants"
+                type="number"
+                placeholder="e.g., 5"
+                value={formData.maxApplicants}
+                onChange={(e) => handleInputChange('maxApplicants', e.target.value)}
+                className={errors.maxApplicants ? 'border-red-500' : ''}
+                min="1"
+                max="100"
+              />
+              {errors.maxApplicants && (
+                <p className="mt-1 text-sm text-red-600">{errors.maxApplicants}</p>
+              )}
+              <p className="mt-1 text-sm text-gray-500">
+                Limit the number of applications you review
+              </p>
+            </div>
           </div>
 
           {/* Actions */}

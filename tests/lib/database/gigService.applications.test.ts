@@ -196,6 +196,12 @@ describe('GigService - Application Management', () => {
         proposedRate: 5000
       };
 
+      const mockGig = {
+        id: mockGigId,
+        status: 'open' as const
+      };
+      (FirestoreService.getById as jest.Mock).mockResolvedValue(mockGig);
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue([]); // No existing applications
       (FirestoreService.create as jest.Mock).mockResolvedValue(mockApplicationId);
 
       const result = await GigService.createApplication(applicationData);
@@ -209,13 +215,10 @@ describe('GigService - Application Management', () => {
         })
       );
 
-      // Should NOT call getGigById or updateGig
-      expect(FirestoreService.getById).not.toHaveBeenCalled();
-      expect(FirestoreService.update).not.toHaveBeenCalledWith(
-        'gigs',
-        expect.any(String),
-        expect.anything()
-      );
+      // Should call getById to validate gig but not update it
+      expect(FirestoreService.getById).toHaveBeenCalledWith('gigs', mockGigId);
+      // Should NOT update gig (since no maxApplicants limit)
+      expect(FirestoreService.update).not.toHaveBeenCalled();
     });
   });
 

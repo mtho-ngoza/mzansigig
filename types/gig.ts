@@ -12,7 +12,7 @@ export interface Gig {
   skillsRequired: string[]
   employerId: string
   employerName: string
-  status: 'open' | 'in-progress' | 'completed' | 'cancelled'
+  status: 'open' | 'in-progress' | 'completed' | 'cancelled' | 'reviewing'
   applicants: string[]
   assignedTo?: string
   createdAt: Date
@@ -20,6 +20,7 @@ export interface Gig {
   deadline?: Date
   isRemote?: boolean
   maxTravelDistance?: number
+  maxApplicants?: number // Maximum number of applicants employer wants to review
 }
 
 export interface GigApplication {

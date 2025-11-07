@@ -663,13 +663,23 @@ export default function PublicGigBrowser({
                   )}
 
                   <div className="flex justify-between items-center">
-                    {currentUser ? (
-                      <span className="text-sm text-gray-500">
-                        {applicationCounts[gig.id] || 0} applicants
-                      </span>
-                    ) : (
-                      <span></span>
-                    )}
+                    <div className="flex items-center space-x-2">
+                      {gig.maxApplicants ? (
+                        <span className={`text-sm font-medium ${
+                          (applicationCounts[gig.id] || 0) >= gig.maxApplicants
+                            ? 'text-orange-600'
+                            : 'text-gray-700'
+                        }`}>
+                          {applicationCounts[gig.id] || 0}/{gig.maxApplicants} applicants
+                        </span>
+                      ) : currentUser ? (
+                        <span className="text-sm text-gray-500">
+                          {applicationCounts[gig.id] || 0} applicants
+                        </span>
+                      ) : (
+                        <span></span>
+                      )}
+                    </div>
                     <div className="flex items-center space-x-2">
                       {currentUser && currentUser.id !== gig.employerId && (
                         <QuickMessageButton
@@ -686,10 +696,17 @@ export default function PublicGigBrowser({
                       <Button
                         size="sm"
                         onClick={() => handleApplyClick(gig)}
-                        disabled={!!(currentUser && userAppliedGigs.has(gig.id))}
+                        disabled={
+                          !!(currentUser && userAppliedGigs.has(gig.id)) ||
+                          gig.status === 'reviewing' ||
+                          !!(gig.maxApplicants && (applicationCounts[gig.id] || 0) >= gig.maxApplicants)
+                        }
                         variant={currentUser && userAppliedGigs.has(gig.id) ? 'outline' : 'primary'}
                       >
-                        {currentUser && userAppliedGigs.has(gig.id) ? 'Already Applied' : (currentUser ? 'Apply' : 'Apply Now')}
+                        {currentUser && userAppliedGigs.has(gig.id) ? 'Already Applied' :
+                         gig.status === 'reviewing' ? 'Under Review' :
+                         gig.maxApplicants && (applicationCounts[gig.id] || 0) >= gig.maxApplicants ? 'Limit Reached' :
+                         (currentUser ? 'Apply' : 'Apply Now')}
                       </Button>
                     </div>
                   </div>
