@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
@@ -8,8 +8,10 @@ import { GigService } from '@/lib/database/gigService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { SA_LOCATIONS } from '@/types/location'
+import { Gig } from '@/types/gig'
 
 interface PostGigFormProps {
+  editGig?: Gig
   onSuccess?: () => void
   onCancel?: () => void
 }
@@ -53,7 +55,7 @@ const DURATIONS = [
   'Ongoing'
 ]
 
-export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
+export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFormProps) {
   const { success, error: showError } = useToast()
   const { user } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -69,6 +71,23 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
     deadline: '',
     maxApplicants: ''
   })
+
+  // Populate form when editing
+  useEffect(() => {
+    if (editGig) {
+      setFormData({
+        title: editGig.title,
+        description: editGig.description,
+        category: editGig.category,
+        location: editGig.location,
+        budget: editGig.budget.toString(),
+        duration: editGig.duration,
+        skillsRequired: editGig.skillsRequired.join(', '),
+        deadline: editGig.deadline ? (editGig.deadline instanceof Date ? editGig.deadline.toISOString().split('T')[0] : editGig.deadline) : '',
+        maxApplicants: editGig.maxApplicants?.toString() || ''
+      })
+    }
+  }, [editGig])
 
   // Determine if this is an informal work category
   const isInformalWork = ['Construction', 'Transportation', 'Cleaning', 'Healthcare', 'Other'].includes(formData.category)
@@ -222,11 +241,13 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
         ...(formData.maxApplicants.trim() && { maxApplicants: parseInt(formData.maxApplicants) })
       }
 
-      await GigService.createGig(gigData)
-
-      if (onSuccess) {
-        onSuccess()
+      if (editGig) {
+        // Update existing gig
+        await GigService.updateGig(editGig.id, gigData)
+        success('Gig updated successfully!')
       } else {
+        // Create new gig
+        await GigService.createGig(gigData)
         success('Gig posted successfully!')
         setFormData({
           title: '',
@@ -240,9 +261,13 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
           maxApplicants: ''
         })
       }
+
+      if (onSuccess) {
+        onSuccess()
+      }
     } catch (error) {
-      console.error('Error posting gig:', error)
-      showError('Failed to post gig. Please try again.')
+      console.error(`Error ${editGig ? 'updating' : 'posting'} gig:`, error)
+      showError(`Failed to ${editGig ? 'update' : 'post'} gig. Please try again.`)
     } finally {
       setIsSubmitting(false)
     }
@@ -251,7 +276,7 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
   return (
     <Card className="max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle className="text-2xl">Post a New Gig</CardTitle>
+        <CardTitle className="text-2xl">{editGig ? 'Edit Gig' : 'Post a New Gig'}</CardTitle>
         <p className="text-gray-600">
           Share your project details to find the right talent for your needs.
         </p>
@@ -474,7 +499,9 @@ export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
               disabled={isSubmitting}
               isLoading={isSubmitting}
             >
-              {isSubmitting ? 'Posting...' : 'Post Gig'}
+              {isSubmitting
+                ? (editGig ? 'Updating...' : 'Posting...')
+                : (editGig ? 'Update Gig' : 'Post Gig')}
             </Button>
           </div>
         </form>

@@ -10,6 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Loading } from '@/components/ui/Loading'
 import { ReviewPrompt } from '@/components/review'
+import PostGigForm from './PostGigForm'
 
 interface ManageGigsProps {
   onBack: () => void
@@ -33,6 +34,7 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
   const [showCompletionDialog, setShowCompletionDialog] = useState(false)
   const [showReviewPrompt, setShowReviewPrompt] = useState(false)
   const [completedGig, setCompletedGig] = useState<GigWithApplications | null>(null)
+  const [editingGig, setEditingGig] = useState<Gig | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -167,9 +169,25 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
     }
   }
 
-  const handleEditGig = (gigId: string) => {
-    // TODO: Implement edit functionality
-    warning('Edit functionality coming soon!')
+  const handleEditGig = async (gigId: string) => {
+    try {
+      const gig = await GigService.getGigById(gigId)
+      if (gig) {
+        setEditingGig(gig)
+      }
+    } catch (error) {
+      console.error('Error fetching gig for edit:', error)
+      showError('Failed to load gig details. Please try again.')
+    }
+  }
+
+  const handleEditSuccess = async () => {
+    setEditingGig(null)
+    await fetchGigs()
+  }
+
+  const handleEditCancel = () => {
+    setEditingGig(null)
   }
 
   const getStatusBadge = (status: Gig['status']) => {
@@ -227,6 +245,19 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
     } catch {
       return 'N/A';
     }
+  }
+
+  // Show edit form if editing
+  if (editingGig) {
+    return (
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        <PostGigForm
+          editGig={editingGig}
+          onSuccess={handleEditSuccess}
+          onCancel={handleEditCancel}
+        />
+      </div>
+    )
   }
 
   if (loading) {
