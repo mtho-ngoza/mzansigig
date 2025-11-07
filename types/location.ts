@@ -123,3 +123,21 @@ export const RADIUS_OPTIONS = [
   { value: 100, label: '100 km' },
   { value: 500, label: 'Anywhere in SA' }
 ]
+
+// Location options for dropdowns (used in forms)
+export const SA_LOCATIONS = [
+  'Cape Town',
+  'Johannesburg',
+  'Durban',
+  'Pretoria',
+  'Port Elizabeth',
+  'Bloemfontein',
+  'East London',
+  'Pietermaritzburg',
+  'Kimberley',
+  'Polokwane',
+  'Nelspruit',
+  'Rustenburg',
+  'Remote/Online',
+  'Other'
+] as const

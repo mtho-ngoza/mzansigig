@@ -7,27 +7,11 @@ import { Input } from '@/components/ui/Input'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProfileService } from '@/lib/database/profileService'
 import { useToast } from '@/contexts/ToastContext'
+import { SA_LOCATIONS } from '@/types/location'
 
 interface BasicInfoFormProps {
   onBack?: () => void
 }
-
-const SA_LOCATIONS = [
-  'Cape Town',
-  'Johannesburg',
-  'Durban',
-  'Pretoria',
-  'Port Elizabeth',
-  'Bloemfontein',
-  'East London',
-  'Pietermaritzburg',
-  'Kimberley',
-  'Polokwane',
-  'Nelspruit',
-  'Rustenburg',
-  'Remote/Online',
-  'Other'
-]
 
 export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
   const { success, error: showError } = useToast()

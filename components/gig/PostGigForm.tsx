@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { GigService } from '@/lib/database/gigService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
+import { SA_LOCATIONS } from '@/types/location'
 
 interface PostGigFormProps {
   onSuccess?: () => void
@@ -50,23 +51,6 @@ const DURATIONS = [
   '3-6 months',
   '6+ months',
   'Ongoing'
-]
-
-const SA_LOCATIONS = [
-  'Cape Town',
-  'Johannesburg',
-  'Durban',
-  'Pretoria',
-  'Port Elizabeth',
-  'Bloemfontein',
-  'East London',
-  'Pietermaritzburg',
-  'Kimberley',
-  'Polokwane',
-  'Nelspruit',
-  'Rustenburg',
-  'Remote/Online',
-  'Other'
 ]
 
 export default function PostGigForm({ onSuccess, onCancel }: PostGigFormProps) {
