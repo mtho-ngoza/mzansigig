@@ -233,4 +233,133 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
       expect(GigService.createApplication).not.toHaveBeenCalled()
     })
   })
+
+  describe('Profile Pre-fill Functionality', () => {
+    const mockPhysicalGig: Gig = {
+      ...mockGig,
+      category: 'Construction',
+      title: 'Home Renovation',
+      description: 'Need skilled builder for renovation'
+    }
+
+    it('should pre-fill experience and equipment from user profile', async () => {
+      const mockUserWithProfile = {
+        ...mockUser,
+        experienceYears: '5-10' as const,
+        equipmentOwnership: 'fully-equipped' as const
+      }
+
+      ;(useAuth as jest.Mock).mockReturnValue({ user: mockUserWithProfile })
+      ;(GigService.hasUserApplied as jest.Mock).mockResolvedValue(false)
+
+      render(<ApplicationForm gig={mockPhysicalGig} onSuccess={mockOnSuccess} />)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/Years of Experience/i)).toBeInTheDocument()
+      })
+
+      // Check that experience is pre-filled
+      const experienceSelect = screen.getByLabelText(/Years of Experience/i) as HTMLSelectElement
+      expect(experienceSelect.value).toBe('5-10')
+
+      // Check that equipment is pre-filled
+      const equipmentSelect = screen.getByLabelText(/Do you have your own tools/i) as HTMLSelectElement
+      expect(equipmentSelect.value).toBe('fully-equipped')
+
+      // Check for pre-fill indicators
+      expect(screen.getByText(/pre-filled some information from your profile/i)).toBeInTheDocument()
+      expect(screen.getAllByText(/✓ Pre-filled from your profile/i)).toHaveLength(2)
+    })
+
+    it('should allow overriding pre-filled values', async () => {
+      const mockUserWithProfile = {
+        ...mockUser,
+        experienceYears: '1-3' as const,
+        equipmentOwnership: 'partially-equipped' as const
+      }
+
+      ;(useAuth as jest.Mock).mockReturnValue({ user: mockUserWithProfile })
+      ;(GigService.hasUserApplied as jest.Mock).mockResolvedValue(false)
+      ;(GigService.createApplication as jest.Mock).mockResolvedValue('app-123')
+
+      render(<ApplicationForm gig={mockPhysicalGig} onSuccess={mockOnSuccess} />)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/Years of Experience/i)).toBeInTheDocument()
+      })
+
+      // Change experience to different value
+      const experienceSelect = screen.getByLabelText(/Years of Experience/i)
+      fireEvent.change(experienceSelect, { target: { value: '10-plus' } })
+
+      // Change equipment to different value
+      const equipmentSelect = screen.getByLabelText(/Do you have your own tools/i)
+      fireEvent.change(equipmentSelect, { target: { value: 'fully-equipped' } })
+
+      // Fill required field
+      const proposedRateInput = screen.getByLabelText(/Proposed Rate/i)
+      fireEvent.change(proposedRateInput, { target: { value: '5000' } })
+
+      // Submit
+      const submitButton = screen.getByRole('button', { name: /Submit Application/i })
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(GigService.createApplication).toHaveBeenCalled()
+      })
+
+      // Check that the overridden values were submitted
+      const createCall = (GigService.createApplication as jest.Mock).mock.calls[0][0]
+      expect(createCall.message).toContain('Experience: 10 to +')
+      expect(createCall.message).toContain('Tools/Equipment: fully equipped')
+    })
+
+    it('should not show pre-fill banner for users without profile data', async () => {
+      const mockUserWithoutProfile = {
+        ...mockUser
+        // No experienceYears or equipmentOwnership
+      }
+
+      ;(useAuth as jest.Mock).mockReturnValue({ user: mockUserWithoutProfile })
+      ;(GigService.hasUserApplied as jest.Mock).mockResolvedValue(false)
+
+      render(<ApplicationForm gig={mockPhysicalGig} onSuccess={mockOnSuccess} />)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/Years of Experience/i)).toBeInTheDocument()
+      })
+
+      // Should not show pre-fill banner
+      expect(screen.queryByText(/pre-filled some information from your profile/i)).not.toBeInTheDocument()
+
+      // Should not show pre-fill checkmarks
+      expect(screen.queryByText(/✓ Pre-filled from your profile/i)).not.toBeInTheDocument()
+    })
+
+    it('should not show physical work fields for non-physical gigs', async () => {
+      const mockUserWithProfile = {
+        ...mockUser,
+        experienceYears: '5-10' as const,
+        equipmentOwnership: 'fully-equipped' as const
+      }
+
+      ;(useAuth as jest.Mock).mockReturnValue({ user: mockUserWithProfile })
+      ;(GigService.hasUserApplied as jest.Mock).mockResolvedValue(false)
+
+      render(<ApplicationForm gig={mockGig} onSuccess={mockOnSuccess} />)
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/Message \(Optional\)/i)).toBeInTheDocument()
+      })
+
+      // Should not show experience dropdown
+      expect(screen.queryByLabelText(/Years of Experience/i)).not.toBeInTheDocument()
+
+      // Should not show equipment dropdown
+      expect(screen.queryByLabelText(/Do you have your own tools/i)).not.toBeInTheDocument()
+
+      // Should not show pre-fill banner
+      expect(screen.queryByText(/pre-filled some information from your profile/i)).not.toBeInTheDocument()
+    })
+  })
 })

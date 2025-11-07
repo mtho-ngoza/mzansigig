@@ -353,6 +353,87 @@ describe('JobSeekerProfileDialog', () => {
     })
   })
 
+  describe('Informal Worker Fields', () => {
+    it('should display experience years for informal workers', async () => {
+      const informalUser: User = {
+        ...mockUser,
+        workSector: 'informal',
+        experienceYears: '5-10'
+      }
+
+      ;(FirestoreService.getById as jest.Mock).mockResolvedValue(informalUser)
+
+      render(
+        <JobSeekerProfileDialog
+          userId="user-123"
+          isOpen={true}
+          onClose={mockOnClose}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('John Doe')).toBeInTheDocument()
+      })
+
+      expect(screen.getByText(/Years of Experience:/i)).toBeInTheDocument()
+      expect(screen.getByText(/5-10 years/i)).toBeInTheDocument()
+    })
+
+    it('should display equipment ownership for informal workers', async () => {
+      const informalUser: User = {
+        ...mockUser,
+        workSector: 'informal',
+        equipmentOwnership: 'fully-equipped'
+      }
+
+      ;(FirestoreService.getById as jest.Mock).mockResolvedValue(informalUser)
+
+      render(
+        <JobSeekerProfileDialog
+          userId="user-123"
+          isOpen={true}
+          onClose={mockOnClose}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('John Doe')).toBeInTheDocument()
+      })
+
+      expect(screen.getByText(/Tools & Equipment:/i)).toBeInTheDocument()
+      expect(screen.getByText(/Has all necessary tools/i)).toBeInTheDocument()
+    })
+
+
+    it('should not display informal worker fields if not present', async () => {
+      const professionalUser: User = {
+        ...mockUser,
+        workSector: 'professional'
+        // No experienceYears or equipmentOwnership
+      }
+
+      ;(FirestoreService.getById as jest.Mock).mockResolvedValue(professionalUser)
+
+      render(
+        <JobSeekerProfileDialog
+          userId="user-123"
+          isOpen={true}
+          onClose={mockOnClose}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('John Doe')).toBeInTheDocument()
+      })
+
+      // Should not show years of experience (informal worker field)
+      expect(screen.queryByText(/Years of Experience:/i)).not.toBeInTheDocument()
+
+      // Should not show tools & equipment
+      expect(screen.queryByText(/Tools & Equipment:/i)).not.toBeInTheDocument()
+    })
+  })
+
   describe('Dialog Behavior', () => {
     it('should not render when isOpen is false', () => {
       render(
