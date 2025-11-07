@@ -336,4 +336,214 @@ describe('ManageApplications', () => {
       expect(firstButton).toHaveClass('hover:text-primary-700')
     })
   })
+
+  describe('Payment Flow Improvements', () => {
+    describe('Payment Obligations Dashboard', () => {
+      it('should display payment obligations dashboard when there are accepted unfunded applications', async () => {
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('💳 Payment Obligations Dashboard')).toBeInTheDocument()
+        })
+
+        expect(screen.getByText(/You have 1 accepted application awaiting payment/i)).toBeInTheDocument()
+        expect(screen.getByText('Applications Awaiting Payment')).toBeInTheDocument()
+        expect(screen.getByText('Total Payment Obligations')).toBeInTheDocument()
+      })
+
+      it('should not display payment dashboard when no accepted unfunded applications', async () => {
+        const allFundedApplications = [
+          {
+            ...mockApplications[0],
+            status: 'funded' as const,
+            paymentStatus: 'in_escrow' as const
+          }
+        ]
+
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve(allFundedApplications)
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          const elements = screen.getAllByText(/Applied by/i)
+          expect(elements.length).toBeGreaterThan(0)
+        })
+
+        expect(screen.queryByText('💳 Payment Obligations Dashboard')).not.toBeInTheDocument()
+      })
+
+      it('should show correct count of unfunded applications in dashboard', async () => {
+        const multipleUnfundedApps = [
+          mockApplications2[0], // accepted, unfunded
+          {
+            ...mockApplications[0],
+            id: 'app-3',
+            status: 'accepted' as const,
+            paymentStatus: 'unpaid' as const
+          }
+        ]
+
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([multipleUnfundedApps[1]])
+          if (gigId === 'gig-2') return Promise.resolve([multipleUnfundedApps[0]])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText(/You have 2 accepted applications awaiting payment/i)).toBeInTheDocument()
+        })
+      })
+
+      it('should filter to accepted applications when View Unfunded Applications is clicked', async () => {
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('View Unfunded Applications →')).toBeInTheDocument()
+        })
+
+        const viewButton = screen.getByText('View Unfunded Applications →')
+        fireEvent.click(viewButton)
+
+        // Should apply accepted filter
+        await waitFor(() => {
+          // The accepted filter card should be highlighted
+          const acceptedCards = screen.getAllByText('Accepted')
+          expect(acceptedCards.length).toBeGreaterThan(0)
+        })
+      })
+    })
+
+    describe('Payment Warning Banner for Employers', () => {
+      it('should display payment warning banner for accepted unfunded applications', async () => {
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('⚠️ Payment Required - Please Fund This Project')).toBeInTheDocument()
+        })
+
+        expect(screen.getByText(/You've accepted/i)).toBeInTheDocument()
+        expect(screen.getByText(/but payment hasn't been funded yet/i)).toBeInTheDocument()
+      })
+
+      it('should not display payment warning for funded applications', async () => {
+        const fundedApplications = [
+          {
+            ...mockApplications2[0],
+            status: 'funded' as const,
+            paymentStatus: 'in_escrow' as const
+          }
+        ]
+
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-2') return Promise.resolve(fundedApplications)
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          const elements = screen.getAllByText(/Applied by/i)
+          expect(elements.length).toBeGreaterThan(0)
+        })
+
+        expect(screen.queryByText('⚠️ Payment Required - Please Fund This Project')).not.toBeInTheDocument()
+      })
+
+      it('should show Fund Payment Now button in warning banner', async () => {
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          const fundButtons = screen.getAllByText(/💳 Fund Payment Now/i)
+          expect(fundButtons.length).toBeGreaterThan(0)
+        })
+      })
+
+      it('should display payment secured message for funded applications', async () => {
+        const fundedApplications = [
+          {
+            ...mockApplications2[0],
+            status: 'funded' as const,
+            paymentStatus: 'in_escrow' as const
+          }
+        ]
+
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-2') return Promise.resolve(fundedApplications)
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('✓ Payment Secured')).toBeInTheDocument()
+        })
+      })
+    })
+
+    describe('Auto Payment Prompt After Acceptance', () => {
+      beforeEach(() => {
+        jest.useFakeTimers()
+        ;(GigService.updateApplicationStatus as jest.Mock).mockResolvedValue(undefined)
+      })
+
+      afterEach(() => {
+        jest.useRealTimers()
+      })
+
+      it('should open payment dialog automatically after accepting an application', async () => {
+        const { act } = await import('@testing-library/react')
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('Accept Application')).toBeInTheDocument()
+        })
+
+        const acceptButton = screen.getByText('Accept Application')
+        fireEvent.click(acceptButton)
+
+        await waitFor(() => {
+          expect(GigService.updateApplicationStatus).toHaveBeenCalledWith('app-1', 'accepted')
+        })
+
+        // Fast-forward the setTimeout with act()
+        await act(async () => {
+          jest.advanceTimersByTime(500)
+        })
+
+        await waitFor(() => {
+          expect(screen.getByText('Payment Dialog')).toBeInTheDocument()
+        })
+      })
+
+      it('should not open payment dialog when rejecting an application', async () => {
+        const { act } = await import('@testing-library/react')
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('Reject Application')).toBeInTheDocument()
+        })
+
+        const rejectButton = screen.getByText('Reject Application')
+        fireEvent.click(rejectButton)
+
+        await waitFor(() => {
+          expect(GigService.updateApplicationStatus).toHaveBeenCalledWith('app-1', 'rejected')
+        })
+
+        await act(async () => {
+          jest.advanceTimersByTime(500)
+        })
+
+        // Payment dialog should not appear
+        expect(screen.queryByText('Payment Dialog')).not.toBeInTheDocument()
+      })
+    })
+  })
 })

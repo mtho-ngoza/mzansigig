@@ -342,6 +342,22 @@ export class GigService {
     await FirestoreService.update('applications', applicationId, updateData);
   }
 
+  // Withdraw application (job seeker can withdraw their pending application)
+  static async withdrawApplication(applicationId: string): Promise<void> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    // Only allow withdrawal of pending applications
+    if (application.status !== 'pending') {
+      throw new Error(`Cannot withdraw application with status: ${application.status}. Only pending applications can be withdrawn.`);
+    }
+
+    await FirestoreService.update('applications', applicationId, { status: 'withdrawn' });
+  }
+
   // Review operations
   static async createReview(reviewData: Omit<Review, 'id' | 'createdAt'>): Promise<string> {
     const review = {

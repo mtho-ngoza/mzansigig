@@ -29,7 +29,7 @@ export interface GigApplication {
   applicantName: string
   coverLetter: string
   proposedRate: number
-  status: 'pending' | 'accepted' | 'rejected' | 'funded' | 'completed'
+  status: 'pending' | 'accepted' | 'rejected' | 'funded' | 'completed' | 'withdrawn'
   paymentStatus?: 'unpaid' | 'paid' | 'in_escrow' | 'released' | 'disputed'
   paymentId?: string // Reference to the payment record
   createdAt: Date

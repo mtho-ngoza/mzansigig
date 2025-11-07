@@ -102,6 +102,17 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
       const actionText = status === 'accepted' ? 'accepted' : 'rejected'
       success(`Application ${actionText} successfully!`)
 
+      // If accepted, immediately prompt for payment
+      if (status === 'accepted') {
+        const acceptedApp = applications.find(app => app.id === applicationId)
+        if (acceptedApp) {
+          // Small delay to let the success message show
+          setTimeout(() => {
+            setShowPaymentDialog({ isOpen: true, application: { ...acceptedApp, status: 'accepted' } })
+          }, 500)
+        }
+      }
+
     } catch (error) {
       showError('Failed to update application status. Please try again.')
     } finally {
@@ -207,6 +218,68 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
               Review and manage applications received for your posted gigs.
             </p>
           </div>
+
+          {/* Payment Obligations Dashboard */}
+          {(() => {
+            const acceptedUnfunded = applications.filter(
+              app => app.status === 'accepted' && (!app.paymentStatus || app.paymentStatus === 'unpaid')
+            )
+            const totalOwed = acceptedUnfunded.reduce((sum, app) => sum + app.proposedRate, 0)
+
+            return acceptedUnfunded.length > 0 && (
+              <Card className="mb-6 border-2 border-orange-300 bg-orange-50">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center mr-3">
+                        <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg text-orange-900">
+                          💳 Payment Obligations Dashboard
+                        </CardTitle>
+                        <p className="text-sm text-orange-700 mt-1">
+                          You have {acceptedUnfunded.length} accepted {acceptedUnfunded.length === 1 ? 'application' : 'applications'} awaiting payment
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      size="sm"
+                      onClick={() => setStatusFilter('accepted')}
+                      className="bg-orange-600 hover:bg-orange-700"
+                    >
+                      View Unfunded Applications →
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-white rounded-lg p-4 border border-orange-200">
+                      <div className="text-sm text-gray-600 mb-1">Applications Awaiting Payment</div>
+                      <div className="text-2xl font-bold text-orange-900">{acceptedUnfunded.length}</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 border border-orange-200">
+                      <div className="text-sm text-gray-600 mb-1">Total Payment Obligations</div>
+                      <div className="text-2xl font-bold text-orange-900">{formatCurrency(totalOwed)}</div>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 border border-orange-200">
+                      <div className="text-sm text-gray-600 mb-1">Payment Protection</div>
+                      <div className="text-sm font-medium text-green-700 mt-2">
+                        🔒 All payments held in secure escrow until work completion
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 bg-orange-100 border border-orange-300 rounded-lg p-3">
+                    <p className="text-sm text-orange-900">
+                      <strong>Action Required:</strong> Fund these accepted applications to allow workers to begin. Workers are instructed not to start work until payment is secured.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })()}
         </div>
 
         {/* Applications List */}
@@ -402,57 +475,103 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                   )}
 
                   {(application.status === 'accepted' || application.status === 'funded') && (
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <svg className="w-5 h-5 text-green-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <div className="flex flex-col">
-                            <span className="text-green-800 font-medium">
-                              {application.status === 'funded'
-                                ? `✅ Project Funded - ${application.applicantName} can begin work`
-                                : `Application accepted - Contact ${application.applicantName} to begin the project`}
-                            </span>
-                            {application.paymentStatus && application.paymentStatus !== 'unpaid' && (
-                              <span className="text-sm text-green-700 mt-1">
-                                Payment Status: {application.paymentStatus === 'in_escrow' ? '🔒 In Escrow' :
-                                                application.paymentStatus === 'paid' ? '✅ Paid' :
-                                                application.paymentStatus === 'released' ? '✅ Released' :
-                                                application.paymentStatus === 'disputed' ? '⚠️ Disputed' :
-                                                application.paymentStatus}
-                              </span>
-                            )}
+                    <>
+                      {/* Payment Warning - Unfunded Application */}
+                      {application.status === 'accepted' && (!application.paymentStatus || application.paymentStatus === 'unpaid') && (
+                        <div className="bg-orange-50 border-2 border-orange-400 rounded-lg p-4 mb-4">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0">
+                              <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </div>
+                            <div className="ml-3 flex-1">
+                              <h3 className="text-base font-bold text-orange-900">
+                                ⚠️ Payment Required - Please Fund This Project
+                              </h3>
+                              <p className="mt-2 text-sm text-orange-800">
+                                You&apos;ve accepted <strong>{application.applicantName}</strong>&apos;s application, but payment hasn&apos;t been funded yet.
+                              </p>
+                              <div className="mt-3 bg-orange-100 rounded p-3 border border-orange-300">
+                                <p className="text-sm font-semibold text-orange-900">
+                                  💡 Secure the worker and ensure project success by funding payment now. The funds will be held safely in escrow until work is completed.
+                                </p>
+                              </div>
+                              <div className="mt-4">
+                                <Button
+                                  size="sm"
+                                  onClick={() => setShowPaymentDialog({ isOpen: true, application })}
+                                  className="bg-orange-600 hover:bg-orange-700 font-semibold"
+                                >
+                                  💳 Fund Payment Now ({formatCurrency(application.proposedRate)})
+                                </Button>
+                              </div>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex space-x-2">
-                          {(!application.paymentStatus || application.paymentStatus === 'unpaid') ? (
-                            <Button
+                      )}
+
+                      {/* Status Banner */}
+                      <div className={`border rounded-lg p-4 ${
+                        application.status === 'funded' ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <svg className={`w-5 h-5 mr-2 ${
+                              application.status === 'funded' ? 'text-green-600' : 'text-blue-600'
+                            }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div className="flex flex-col">
+                              <span className={`font-medium ${
+                                application.status === 'funded' ? 'text-green-800' : 'text-blue-800'
+                              }`}>
+                                {application.status === 'funded'
+                                  ? `✅ Project Funded - ${application.applicantName} can begin work`
+                                  : `Application accepted - Contact ${application.applicantName} to begin the project`}
+                              </span>
+                              {application.paymentStatus && application.paymentStatus !== 'unpaid' && (
+                                <span className={`text-sm mt-1 ${
+                                  application.status === 'funded' ? 'text-green-700' : 'text-blue-700'
+                                }`}>
+                                  Payment Status: {application.paymentStatus === 'in_escrow' ? '🔒 In Escrow' :
+                                                  application.paymentStatus === 'paid' ? '✅ Paid' :
+                                                  application.paymentStatus === 'released' ? '✅ Released' :
+                                                  application.paymentStatus === 'disputed' ? '⚠️ Disputed' :
+                                                  application.paymentStatus}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            {(!application.paymentStatus || application.paymentStatus === 'unpaid') ? (
+                              <Button
+                                size="sm"
+                                onClick={() => setShowPaymentDialog({ isOpen: true, application })}
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
+                                💳 Make Payment
+                              </Button>
+                            ) : (
+                              <span className="px-3 py-2 bg-green-100 text-green-800 text-sm rounded-lg font-medium">
+                                ✓ Payment Secured
+                              </span>
+                            )}
+                            <QuickMessageButton
+                              recipientId={application.applicantId}
+                              recipientName={application.applicantName}
+                              recipientType="job-seeker"
+                              gigId={application.gigId}
+                              gigTitle={application.gigTitle}
                               size="sm"
-                              onClick={() => setShowPaymentDialog({ isOpen: true, application })}
-                              className="bg-blue-600 hover:bg-blue-700"
+                              onConversationStart={onMessageConversationStart}
                             >
-                              💳 Make Payment
-                            </Button>
-                          ) : (
-                            <span className="px-3 py-2 bg-blue-100 text-blue-800 text-sm rounded-lg font-medium">
-                              Payment Completed
-                            </span>
-                          )}
-                          <QuickMessageButton
-                            recipientId={application.applicantId}
-                            recipientName={application.applicantName}
-                            recipientType="job-seeker"
-                            gigId={application.gigId}
-                            gigTitle={application.gigTitle}
-                            size="sm"
-                            onConversationStart={onMessageConversationStart}
-                          >
-                            Contact Worker
-                          </QuickMessageButton>
+                              Contact Worker
+                            </QuickMessageButton>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </>
                   )}
 
                   {application.status === 'rejected' && (
