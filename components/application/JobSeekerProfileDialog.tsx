@@ -173,7 +173,7 @@ export default function JobSeekerProfileDialog({
               </Card>
 
               {/* Skills & Experience */}
-              {(user.skills && user.skills.length > 0) || user.experience || user.hourlyRate !== undefined || user.availability && (
+              {((user.skills && user.skills.length > 0) || user.experience || user.experienceYears || user.equipmentOwnership || user.hourlyRate !== undefined || user.availability) && (
                 <Card>
                   <CardHeader>
                     <CardTitle>Skills & Experience</CardTitle>
@@ -199,6 +199,30 @@ export default function JobSeekerProfileDialog({
                       <div>
                         <span className="text-sm text-gray-500 block mb-2">Experience:</span>
                         <p className="text-gray-700">{user.experience}</p>
+                      </div>
+                    )}
+
+                    {user.experienceYears && (
+                      <div>
+                        <span className="text-sm text-gray-500 block mb-2">Years of Experience:</span>
+                        <p className="text-gray-700">
+                          {user.experienceYears === 'less-than-1' && 'Less than 1 year'}
+                          {user.experienceYears === '1-3' && '1-3 years'}
+                          {user.experienceYears === '3-5' && '3-5 years'}
+                          {user.experienceYears === '5-10' && '5-10 years'}
+                          {user.experienceYears === '10-plus' && '10+ years'}
+                        </p>
+                      </div>
+                    )}
+
+                    {user.equipmentOwnership && (
+                      <div>
+                        <span className="text-sm text-gray-500 block mb-2">Tools & Equipment:</span>
+                        <p className="text-gray-700">
+                          {user.equipmentOwnership === 'fully-equipped' && '✓ Has all necessary tools'}
+                          {user.equipmentOwnership === 'partially-equipped' && 'Has some tools'}
+                          {user.equipmentOwnership === 'no-equipment' && 'Needs tools provided'}
+                        </p>
                       </div>
                     )}
 

@@ -60,6 +60,9 @@ export interface User {
   languages?: string[]
   education?: string
   certifications?: string[]
+  // Informal worker specific fields
+  experienceYears?: 'less-than-1' | '1-3' | '3-5' | '5-10' | '10-plus'
+  equipmentOwnership?: 'fully-equipped' | 'partially-equipped' | 'no-equipment'
   socialLinks?: {
     linkedin?: string
     website?: string

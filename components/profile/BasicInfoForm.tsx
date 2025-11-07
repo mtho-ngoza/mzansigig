@@ -33,6 +33,8 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
   const { success, error: showError } = useToast()
   const { user, refreshUser } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [showWorkSectorWarning, setShowWorkSectorWarning] = useState(false)
+  const [pendingWorkSector, setPendingWorkSector] = useState<string>('')
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -40,6 +42,7 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
     phone: user?.phone || '',
     location: user?.location || '',
     bio: user?.bio || '',
+    workSector: user?.workSector || '',
     socialLinks: {
       linkedin: user?.socialLinks?.linkedin || '',
       website: user?.socialLinks?.website || '',
@@ -64,6 +67,28 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
     }
   }
 
+  const handleWorkSectorChange = (newValue: string) => {
+    // If workSector is being changed and user has existing data, show warning
+    if (user.workSector && user.workSector !== newValue) {
+      setPendingWorkSector(newValue)
+      setShowWorkSectorWarning(true)
+    } else {
+      // First time setting or no change
+      setFormData(prev => ({ ...prev, workSector: newValue }))
+    }
+  }
+
+  const confirmWorkSectorChange = () => {
+    setFormData(prev => ({ ...prev, workSector: pendingWorkSector }))
+    setShowWorkSectorWarning(false)
+    setPendingWorkSector('')
+  }
+
+  const cancelWorkSectorChange = () => {
+    setShowWorkSectorWarning(false)
+    setPendingWorkSector('')
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
@@ -80,6 +105,24 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
         phone: formData.phone.trim(),
         location: formData.location,
         bio: formData.bio.trim()
+      }
+
+      // Add workSector only for job-seekers
+      if (user.userType === 'job-seeker' && formData.workSector) {
+        updateData.workSector = formData.workSector
+
+        // If workSector changed, clear old profile fields to prevent orphaned data
+        if (user.workSector && user.workSector !== formData.workSector) {
+          if (user.workSector === 'professional') {
+            // Switching FROM professional TO informal - clear professional fields
+            updateData.experience = ''
+            updateData.education = ''
+          } else if (user.workSector === 'informal') {
+            // Switching FROM informal TO professional - clear informal fields
+            updateData.experienceYears = ''
+            updateData.equipmentOwnership = ''
+          }
+        }
       }
 
       // Only add socialLinks if there are any
@@ -207,6 +250,29 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
                 </div>
               </div>
 
+              {/* Work Sector - Job Seekers Only */}
+              {user.userType === 'job-seeker' && (
+                <div>
+                  <label htmlFor="workSector" className="block text-sm font-medium text-gray-700 mb-2">
+                    Type of Work *
+                  </label>
+                  <select
+                    id="workSector"
+                    value={formData.workSector}
+                    onChange={(e) => handleWorkSectorChange(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    required
+                  >
+                    <option value="">Select your work type</option>
+                    <option value="professional">Professional Services (IT, Design, Marketing, Writing)</option>
+                    <option value="informal">Hands-on Work (Cleaning, Construction, Maintenance, Transport)</option>
+                  </select>
+                  <p className="mt-1 text-sm text-gray-500">
+                    This determines which profile fields are shown to you
+                  </p>
+                </div>
+              )}
+
               {/* Bio */}
               <div>
                 <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
@@ -297,6 +363,53 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Work Sector Change Confirmation Modal */}
+      {showWorkSectorWarning && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              ⚠️ Confirm Work Type Change
+            </h3>
+            <p className="text-gray-600 mb-4">
+              Changing your work type from <strong>{user.workSector === 'professional' ? 'Professional' : 'Hands-on Work'}</strong> to <strong>{pendingWorkSector === 'professional' ? 'Professional' : 'Hands-on Work'}</strong> will reset your experience profile fields.
+            </p>
+            <p className="text-gray-600 mb-4">
+              The following data will be cleared:
+            </p>
+            <ul className="list-disc list-inside text-gray-600 mb-6 space-y-1">
+              {user.workSector === 'professional' ? (
+                <>
+                  <li>Experience Level</li>
+                  <li>Education</li>
+                </>
+              ) : (
+                <>
+                  <li>Years of Experience</li>
+                  <li>Tools & Equipment</li>
+                </>
+              )}
+            </ul>
+            <p className="text-sm text-gray-500 mb-6">
+              You can re-enter your information after saving this change.
+            </p>
+            <div className="flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={cancelWorkSectorChange}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={confirmWorkSectorChange}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Confirm Change
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -58,6 +58,18 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
     loadWorkerEarnings()
   }, [gig.budget, calculateGigFees])
 
+  // Pre-fill experience, availability, and equipment from user profile
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        experience: user.experienceYears || prev.experience,
+        availability: user.availability || prev.availability,
+        equipment: user.equipmentOwnership || prev.equipment
+      }))
+    }
+  }, [user])
+
   // Determine if this is a physical/informal work category
   const isPhysicalWork = ['Construction', 'Transportation', 'Cleaning', 'Healthcare'].includes(gig.category)
 
@@ -272,9 +284,17 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
 
             {/* Quick Questions for Physical Work */}
             {isPhysicalWork && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Experience */}
-                <div>
+              <>
+                {(user?.experienceYears || user?.availability || user?.equipmentOwnership) && (
+                  <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <p className="text-sm text-green-800">
+                      💡 <strong>Great news!</strong> We&apos;ve pre-filled some information from your profile to save you time. You can update these if needed for this specific gig.
+                    </p>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Experience */}
+                  <div>
                   <label htmlFor="experience" className="block text-sm font-medium text-gray-700 mb-2">
                     Years of Experience
                   </label>
@@ -291,6 +311,9 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
                     <option value="5-10">5-10 years</option>
                     <option value="10-plus">10+ years</option>
                   </select>
+                  {user?.experienceYears && formData.experience === user.experienceYears && (
+                    <p className="mt-1 text-xs text-green-600">✓ Pre-filled from your profile</p>
+                  )}
                 </div>
 
                 {/* Availability */}
@@ -310,6 +333,9 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
                     <option value="within-month">Within a month</option>
                     <option value="flexible">Flexible</option>
                   </select>
+                  {user?.availability && formData.availability === user.availability && (
+                    <p className="mt-1 text-xs text-green-600">✓ Pre-filled from your profile</p>
+                  )}
                 </div>
 
                 {/* Equipment (for Construction/Cleaning) */}
@@ -329,9 +355,13 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
                       <option value="partially-equipped">I have some tools</option>
                       <option value="no-equipment">No, I need tools provided</option>
                     </select>
+                    {user?.equipmentOwnership && formData.equipment === user.equipmentOwnership && (
+                      <p className="mt-1 text-xs text-green-600">✓ Pre-filled from your profile</p>
+                    )}
                   </div>
                 )}
-              </div>
+                </div>
+              </>
             )}
 
             {/* Proposed Rate */}
