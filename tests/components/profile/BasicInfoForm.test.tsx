@@ -80,14 +80,30 @@ describe('BasicInfoForm', () => {
       expect(workSectorSelect.value).toBe('professional')
     })
 
-    it('should allow changing work sector', () => {
+    it('should allow changing work sector with confirmation', async () => {
       render(<BasicInfoForm onBack={mockOnBack} />)
 
       const workSectorSelect = screen.getByLabelText(/Type of Work/i) as HTMLSelectElement
 
+      // Initial value
+      expect(workSectorSelect.value).toBe('professional')
+
+      // Change work sector
       fireEvent.change(workSectorSelect, { target: { value: 'informal' } })
 
-      expect(workSectorSelect.value).toBe('informal')
+      // Should show confirmation modal
+      await waitFor(() => {
+        expect(screen.getByText(/Confirm Work Type Change/i)).toBeInTheDocument()
+      })
+
+      // Confirm the change
+      const confirmButton = screen.getByRole('button', { name: /Confirm Change/i })
+      fireEvent.click(confirmButton)
+
+      // Value should now be changed
+      await waitFor(() => {
+        expect(workSectorSelect.value).toBe('informal')
+      })
     })
 
     it('should include workSector in update when changed', async () => {
@@ -96,6 +112,20 @@ describe('BasicInfoForm', () => {
       const workSectorSelect = screen.getByLabelText(/Type of Work/i)
       fireEvent.change(workSectorSelect, { target: { value: 'informal' } })
 
+      // Wait for modal and confirm
+      await waitFor(() => {
+        expect(screen.getByText(/Confirm Work Type Change/i)).toBeInTheDocument()
+      })
+
+      const confirmButton = screen.getByRole('button', { name: /Confirm Change/i })
+      fireEvent.click(confirmButton)
+
+      // Wait for modal to close
+      await waitFor(() => {
+        expect(screen.queryByText(/Confirm Work Type Change/i)).not.toBeInTheDocument()
+      })
+
+      // Submit the form
       const submitButton = screen.getByRole('button', { name: /Save Changes/i })
       fireEvent.click(submitButton)
 
@@ -103,7 +133,9 @@ describe('BasicInfoForm', () => {
         expect(ProfileService.updateProfile).toHaveBeenCalledWith(
           'user-123',
           expect.objectContaining({
-            workSector: 'informal'
+            workSector: 'informal',
+            experience: '',  // Professional field cleared
+            education: ''    // Professional field cleared
           })
         )
       })
@@ -135,6 +167,106 @@ describe('BasicInfoForm', () => {
       render(<BasicInfoForm onBack={mockOnBack} />)
 
       expect(screen.getByText(/This determines which profile fields are shown to you/i)).toBeInTheDocument()
+    })
+
+    it('should show confirmation modal when changing work sector', async () => {
+      render(<BasicInfoForm onBack={mockOnBack} />)
+
+      const workSectorSelect = screen.getByLabelText(/Type of Work/i)
+
+      // Change from professional to informal
+      fireEvent.change(workSectorSelect, { target: { value: 'informal' } })
+
+      // Should show confirmation modal
+      await waitFor(() => {
+        expect(screen.getByText(/Confirm Work Type Change/i)).toBeInTheDocument()
+        expect(screen.getByText(/Experience Level/i)).toBeInTheDocument()
+        expect(screen.getByText(/Education/i)).toBeInTheDocument()
+      })
+    })
+
+    it('should cancel work sector change when clicking cancel', async () => {
+      render(<BasicInfoForm onBack={mockOnBack} />)
+
+      const workSectorSelect = screen.getByLabelText(/Type of Work/i) as HTMLSelectElement
+
+      // Change from professional to informal
+      fireEvent.change(workSectorSelect, { target: { value: 'informal' } })
+
+      await waitFor(() => {
+        expect(screen.getByText(/Confirm Work Type Change/i)).toBeInTheDocument()
+      })
+
+      // Click cancel on modal (there are two Cancel buttons - form and modal)
+      const cancelButtons = screen.getAllByRole('button', { name: /Cancel/i })
+      const modalCancelButton = cancelButtons[cancelButtons.length - 1] // Modal button is added last
+      fireEvent.click(modalCancelButton)
+
+      // Modal should close and workSector should remain 'professional'
+      await waitFor(() => {
+        expect(screen.queryByText(/Confirm Work Type Change/i)).not.toBeInTheDocument()
+      })
+
+      expect(workSectorSelect.value).toBe('professional')
+    })
+
+    it('should confirm work sector change and clear old fields', async () => {
+      render(<BasicInfoForm onBack={mockOnBack} />)
+
+      const workSectorSelect = screen.getByLabelText(/Type of Work/i)
+
+      // Change from professional to informal
+      fireEvent.change(workSectorSelect, { target: { value: 'informal' } })
+
+      await waitFor(() => {
+        expect(screen.getByText(/Confirm Work Type Change/i)).toBeInTheDocument()
+      })
+
+      // Click confirm
+      const confirmButton = screen.getByRole('button', { name: /Confirm Change/i })
+      fireEvent.click(confirmButton)
+
+      // Modal should close
+      await waitFor(() => {
+        expect(screen.queryByText(/Confirm Work Type Change/i)).not.toBeInTheDocument()
+      })
+
+      // Now submit the form
+      const submitButton = screen.getByRole('button', { name: /Save Changes/i })
+      fireEvent.click(submitButton)
+
+      await waitFor(() => {
+        expect(ProfileService.updateProfile).toHaveBeenCalledWith(
+          'user-123',
+          expect.objectContaining({
+            workSector: 'informal',
+            experience: '',  // Professional field cleared
+            education: ''    // Professional field cleared
+          })
+        )
+      })
+    })
+
+    it('should not show confirmation modal for first-time work sector selection', () => {
+      const userWithoutWorkSector = {
+        ...mockJobSeekerUser,
+        workSector: undefined
+      }
+
+      ;(useAuth as jest.Mock).mockReturnValue({
+        user: userWithoutWorkSector,
+        refreshUser: mockRefreshUser
+      })
+
+      render(<BasicInfoForm onBack={mockOnBack} />)
+
+      const workSectorSelect = screen.getByLabelText(/Type of Work/i)
+
+      // Select work sector for first time
+      fireEvent.change(workSectorSelect, { target: { value: 'informal' } })
+
+      // Should NOT show confirmation modal
+      expect(screen.queryByText(/Confirm Work Type Change/i)).not.toBeInTheDocument()
     })
   })
 
