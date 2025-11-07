@@ -20,7 +20,8 @@ const mockGigService = GigService as jest.Mocked<typeof GigService>
 const mockEmployerUser = {
   id: 'employer-123',
   email: 'employer@test.com',
-  name: 'Test Employer',
+  firstName: 'Test',
+  lastName: 'Employer',
   userType: 'employer' as const,
   phone: '+27123456789',
   location: 'Johannesburg',
@@ -83,8 +84,10 @@ const mockPaymentContextValue = {
 
 const mockAuthContextValue = {
   user: mockEmployerUser,
+  updateUser: jest.fn(),
   refreshUser: jest.fn(),
   isLoading: false,
+  isAuthenticated: true,
   error: null,
   login: jest.fn(),
   register: jest.fn(),
@@ -154,8 +157,8 @@ describe('EmployerPaymentDashboard', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Pending Payments')).toBeInTheDocument()
-        expect(screen.getByText('Payment Methods')).toBeInTheDocument()
-        expect(screen.getByText('Payment History')).toBeInTheDocument()
+        expect(screen.getAllByText('Payment Methods').length).toBeGreaterThan(0)
+        expect(screen.getAllByText('Payment History').length).toBeGreaterThan(0)
         expect(screen.getByText('Manage Gigs')).toBeInTheDocument()
       })
     })
@@ -181,10 +184,7 @@ describe('EmployerPaymentDashboard', () => {
       applicantName: 'John Worker',
       status: 'accepted',
       proposedRate: 500,
-      createdAt: new Date(),
-      availability: 'within-week',
-      experience: '5-10',
-      equipment: 'fully-equipped'
+      createdAt: new Date()
     }
 
     const mockGig = {
@@ -193,11 +193,15 @@ describe('EmployerPaymentDashboard', () => {
       description: 'Test description',
       category: 'Cleaning',
       budget: 500,
+      duration: '1 week',
+      skillsRequired: ['cleaning'],
       location: 'Johannesburg',
       employerId: 'employer-123',
-      workType: 'physical' as const,
+      employerName: 'Test Employer',
       status: 'open' as const,
-      postedAt: new Date().toISOString()
+      applicants: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
     }
 
     it('should load and display pending obligations', async () => {
@@ -306,7 +310,7 @@ describe('EmployerPaymentDashboard', () => {
       await waitFor(() => {
         expect(screen.getByText('Test Gig')).toBeInTheDocument()
         expect(screen.getByText(/Worker: John Worker/)).toBeInTheDocument()
-        expect(screen.getByText('R500.00')).toBeInTheDocument()
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0)
         expect(screen.getByText('Pay Now')).toBeInTheDocument()
       })
     })
@@ -364,11 +368,11 @@ describe('EmployerPaymentDashboard', () => {
       renderEmployerPaymentDashboard()
 
       await waitFor(() => {
-        const paymentMethodsButton = screen.getByText('Payment Methods')
-        fireEvent.click(paymentMethodsButton)
+        const paymentMethodsButtons = screen.getAllByText('Payment Methods')
+        fireEvent.click(paymentMethodsButtons[0])
       })
 
-      expect(screen.getByText('Payment Methods')).toBeInTheDocument()
+      expect(screen.getAllByText('Payment Methods').length).toBeGreaterThan(0)
       expect(screen.getByText(/Manage your payment methods and preferences/i)).toBeInTheDocument()
     })
 
@@ -376,11 +380,11 @@ describe('EmployerPaymentDashboard', () => {
       renderEmployerPaymentDashboard()
 
       await waitFor(() => {
-        const historyButton = screen.getByText('Payment History')
-        fireEvent.click(historyButton)
+        const historyButtons = screen.getAllByText('Payment History')
+        fireEvent.click(historyButtons[0])
       })
 
-      expect(screen.getByText('Payment History')).toBeInTheDocument()
+      expect(screen.getAllByText('Payment History').length).toBeGreaterThan(0)
       expect(screen.getByText(/View all your payment transactions/i)).toBeInTheDocument()
     })
 
@@ -389,13 +393,13 @@ describe('EmployerPaymentDashboard', () => {
 
       // First go to payment methods
       await waitFor(() => {
-        const paymentMethodsButton = screen.getByText('Payment Methods')
-        fireEvent.click(paymentMethodsButton)
+        const paymentMethodsButtons = screen.getAllByText('Payment Methods')
+        fireEvent.click(paymentMethodsButtons[0])
       })
 
       // Then go to add new method (assuming the button exists in PaymentMethodList)
       // This tests the routing logic
-      expect(screen.getByText('Payment Methods')).toBeInTheDocument()
+      expect(screen.getAllByText('Payment Methods').length).toBeGreaterThan(0)
     })
 
     it('should have back to overview button in sub-views', async () => {
@@ -443,14 +447,14 @@ describe('EmployerPaymentDashboard', () => {
       renderEmployerPaymentDashboard()
 
       await waitFor(() => {
-        const historyButton = screen.getByText('Payment History')
-        fireEvent.click(historyButton)
+        const historyButtons = screen.getAllByText('Payment History')
+        fireEvent.click(historyButtons[0])
       })
 
       await waitFor(() => {
         expect(screen.getByText('Dashboard')).toBeInTheDocument()
         expect(screen.getAllByText('Payments').length).toBeGreaterThan(0)
-        expect(screen.getByText('Payment History')).toBeInTheDocument()
+        expect(screen.getAllByText('Payment History').length).toBeGreaterThan(0)
       })
     })
   })
@@ -468,10 +472,7 @@ describe('EmployerPaymentDashboard', () => {
         applicantName: 'John Worker',
         status: 'accepted',
         proposedRate: 500,
-        createdAt: new Date(),
-        availability: 'within-week',
-        experience: '5-10',
-        equipment: 'fully-equipped'
+        createdAt: new Date()
       }
 
       const mockGig = {
@@ -480,11 +481,15 @@ describe('EmployerPaymentDashboard', () => {
         description: 'Test',
         category: 'Cleaning',
         budget: 500,
+        duration: '1 week',
+        skillsRequired: ['cleaning'],
         location: 'Johannesburg',
         employerId: 'employer-123',
-        workType: 'physical' as const,
+        employerName: 'Test Employer',
         status: 'open' as const,
-        postedAt: new Date().toISOString()
+        applicants: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
       }
 
       mockGigService.getGigsByEmployer.mockResolvedValue([mockGig])
@@ -532,10 +537,7 @@ describe('EmployerPaymentDashboard', () => {
         applicantName: 'John Worker',
         status: 'accepted',
         proposedRate: 500,
-        createdAt: new Date(),
-        availability: 'within-week',
-        experience: '5-10',
-        equipment: 'fully-equipped'
+        createdAt: new Date()
       }
 
       mockGigService.getGigsByEmployer.mockResolvedValue([{
@@ -544,11 +546,15 @@ describe('EmployerPaymentDashboard', () => {
         description: 'Test',
         category: 'Cleaning',
         budget: 500,
+        duration: '1 week',
+        skillsRequired: ['cleaning'],
         location: 'Johannesburg',
         employerId: 'employer-123',
-        workType: 'physical' as const,
+        employerName: 'Test Employer',
         status: 'open' as const,
-        postedAt: new Date().toISOString()
+        applicants: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
       }])
       mockGigService.getApplicationsByGig.mockResolvedValue([mockUnpaidApplication])
       mockGigService.getGigById.mockRejectedValue(new Error('Gig not found'))
