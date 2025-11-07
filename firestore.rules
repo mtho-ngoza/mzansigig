@@ -124,7 +124,7 @@ service cloud.firestore {
 
       // Only authenticated job seekers can create applications
       allow create: if isAuthenticated() &&
-                      hasRequiredFields(['gigId', 'applicantId', 'coverLetter', 'proposedRate']) &&
+                      hasRequiredFields(['gigId', 'applicantId', 'proposedRate']) &&
                       request.resource.data.applicantId == request.auth.uid &&
                       request.resource.data.status == 'pending' &&
                       // Verify the gig exists

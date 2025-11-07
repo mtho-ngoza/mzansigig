@@ -420,7 +420,7 @@ describe('GigService - CRUD Operations', () => {
       applicantId: mockApplicantId,
       applicantName: 'Test Applicant',
       employerId: mockEmployerId,
-      coverLetter: 'I am interested in this position',
+      message: 'I am interested in this position',
       proposedRate: 4500,
     }
 

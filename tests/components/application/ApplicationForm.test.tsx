@@ -84,15 +84,15 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
 
       // Wait for form to load
       await waitFor(() => {
-        expect(screen.getByLabelText(/Cover Letter/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/Message \(Optional\)/i)).toBeInTheDocument()
       })
 
-      // Fill in form
-      const coverLetterInput = screen.getByLabelText(/Cover Letter/i)
+      // Fill in form (message is now optional, but we'll provide one for this test)
+      const messageInput = screen.getByLabelText(/Message \(Optional\)/i)
       const proposedRateInput = screen.getByLabelText(/Proposed Rate/i)
 
-      fireEvent.change(coverLetterInput, {
-        target: { value: 'I am very interested in this opportunity and have extensive experience' }
+      fireEvent.change(messageInput, {
+        target: { value: 'I am very interested in this opportunity' }
       })
       fireEvent.change(proposedRateInput, { target: { value: '4500' } })
 
@@ -124,15 +124,15 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
 
       // Wait for form to load
       await waitFor(() => {
-        expect(screen.getByLabelText(/Cover Letter/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/Message \(Optional\)/i)).toBeInTheDocument()
       })
 
-      // Fill in form
-      const coverLetterInput = screen.getByLabelText(/Cover Letter/i)
+      // Fill in form (message is optional, but we'll provide one)
+      const messageInput = screen.getByLabelText(/Message \(Optional\)/i)
       const proposedRateInput = screen.getByLabelText(/Proposed Rate/i)
 
-      fireEvent.change(coverLetterInput, {
-        target: { value: 'I am very interested in this opportunity and have extensive experience' }
+      fireEvent.change(messageInput, {
+        target: { value: 'I am very interested in this opportunity' }
       })
       fireEvent.change(proposedRateInput, { target: { value: '4500' } })
 
@@ -148,13 +148,13 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
       // Should NOT show error
       expect(mockError).not.toHaveBeenCalledWith('You have already applied to this gig')
 
-      // Should create application
+      // Should create application with message field
       await waitFor(() => {
         expect(GigService.createApplication).toHaveBeenCalledWith({
           gigId: 'gig-123',
           applicantId: 'user-123',
           applicantName: 'John Doe',
-          coverLetter: 'I am very interested in this opportunity and have extensive experience',
+          message: 'I am very interested in this opportunity',
           proposedRate: 4500
         })
       })
@@ -170,14 +170,14 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
       render(<ApplicationForm gig={mockGig} onSuccess={mockOnSuccess} />)
 
       await waitFor(() => {
-        expect(screen.getByLabelText(/Cover Letter/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/Message \(Optional\)/i)).toBeInTheDocument()
       })
 
-      const coverLetterInput = screen.getByLabelText(/Cover Letter/i)
+      const messageInput = screen.getByLabelText(/Message \(Optional\)/i)
       const proposedRateInput = screen.getByLabelText(/Proposed Rate/i)
 
-      fireEvent.change(coverLetterInput, {
-        target: { value: 'I have 5 years of experience in web development and would love to work on this project' }
+      fireEvent.change(messageInput, {
+        target: { value: 'I have experience in web development' }
       })
       fireEvent.change(proposedRateInput, { target: { value: '5000' } })
 
@@ -210,14 +210,14 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
       render(<ApplicationForm gig={mockPhysicalGig} onSuccess={mockOnSuccess} />)
 
       await waitFor(() => {
-        expect(screen.getByLabelText(/Tell us about yourself/i)).toBeInTheDocument()
+        expect(screen.getByLabelText(/Brief Message \(Optional\)/i)).toBeInTheDocument()
       })
 
-      // Fill in simplified form for physical work
-      const aboutInput = screen.getByLabelText(/Tell us about yourself/i)
+      // Fill in simplified form for physical work (message is optional)
+      const messageInput = screen.getByLabelText(/Brief Message \(Optional\)/i)
       const proposedRateInput = screen.getByLabelText(/Proposed Rate/i)
 
-      fireEvent.change(aboutInput, {
+      fireEvent.change(messageInput, {
         target: { value: 'I have 3 years cleaning experience' }
       })
       fireEvent.change(proposedRateInput, { target: { value: '500' } })

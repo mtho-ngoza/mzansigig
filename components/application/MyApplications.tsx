@@ -389,14 +389,16 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                     </div>
                   </div>
 
-                  <div className="mb-4">
-                    <span className="text-sm text-gray-500 block mb-2">Cover Letter:</span>
-                    <div className="bg-gray-50 p-3 rounded-lg">
-                      <p className="text-sm text-gray-700 line-clamp-3">
-                        {application.coverLetter}
-                      </p>
+                  {application.message && (
+                    <div className="mb-4">
+                      <span className="text-sm text-gray-500 block mb-2">Application Message:</span>
+                      <div className="bg-gray-50 p-3 rounded-lg">
+                        <p className="text-sm text-gray-700 line-clamp-3">
+                          {application.message}
+                        </p>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Withdraw Application Button - Only for pending applications */}
                   {application.status === 'pending' && (

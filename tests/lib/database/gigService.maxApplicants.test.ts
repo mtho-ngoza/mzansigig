@@ -42,7 +42,7 @@ describe('GigService - Max Applicants Feature', () => {
       gigId: mockGigId,
       applicantId: mockApplicantId,
       applicantName: 'Jane Applicant',
-      coverLetter: 'I am interested',
+      message: 'I am interested',
       proposedRate: 5000
     };
 

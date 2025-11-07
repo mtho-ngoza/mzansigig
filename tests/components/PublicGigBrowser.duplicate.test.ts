@@ -33,7 +33,7 @@ describe('PublicGigBrowser - Duplicate Application Prevention Logic', () => {
         gigId: 'gig-1',
         applicantId: mockUserId,
         applicantName: 'Test User',
-        coverLetter: 'I want this job',
+        message: 'I want this job',
         proposedRate: 5000,
         status: 'pending',
         createdAt: new Date()
