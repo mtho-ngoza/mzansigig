@@ -275,6 +275,8 @@ npm run test:ci
 
 📄 **[Complete Gap Analysis & Roadmap](./GAPS_AND_ENHANCEMENTS.md)**
 
+📚 **[Infrastructure Setup Guide](./INFRASTRUCTURE_SETUP.md)** - Production deployment guide
+
 ---
 
 ## 🗺️ Roadmap
@@ -300,8 +302,8 @@ npm run test:ci
 - [ ] Google Cloud OCR production keys
 - [ ] Legal documents (Terms, Privacy Policy)
 - [ ] Beta testing (20-30 users)
-- [ ] Optional: Edit gig functionality
-- [ ] Optional: Location search enhancement
+
+📚 **[Infrastructure Setup Guide](./INFRASTRUCTURE_SETUP.md)** - Complete guide for payment gateway, Firebase, legal docs, and production deployment
 
 ### 🚀 Post-Launch Enhancements
 
