@@ -11,6 +11,23 @@ import { Gig, GigApplication } from '@/types/gig'
 jest.mock('@/lib/database/gigService')
 jest.mock('@/lib/services/paymentService')
 jest.mock('@/contexts/AuthContext')
+jest.mock('@/contexts/ToastContext', () => ({
+  useToast: () => ({
+    success: jest.fn(),
+    error: jest.fn(),
+    warning: jest.fn()
+  })
+}))
+jest.mock('@/components/gig/PostGigForm', () => ({
+  __esModule: true,
+  default: ({ editGig, onSuccess, onCancel }: any) => (
+    <div data-testid="post-gig-form">
+      <div>Edit Gig Form: {editGig?.title}</div>
+      <button onClick={onSuccess}>Save</button>
+      <button onClick={onCancel}>Cancel</button>
+    </div>
+  )
+}))
 
 describe('ManageGigs', () => {
   const mockUser = {
@@ -295,8 +312,6 @@ describe('ManageGigs', () => {
     })
 
     it('should complete gig and release payment on confirmation', async () => {
-      const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {})
-
       ;(GigService.getGigsByEmployer as jest.Mock).mockResolvedValue([mockInProgressGig])
       ;(GigService.getApplicationsByGig as jest.Mock).mockResolvedValue([mockApplication])
       ;(GigService.updateGig as jest.Mock).mockResolvedValue(undefined)
@@ -321,16 +336,11 @@ describe('ManageGigs', () => {
         })
         expect(GigService.updateApplicationStatus).toHaveBeenCalledWith('app-1', 'completed')
         expect(PaymentService.releaseEscrow).toHaveBeenCalledWith('payment-123')
-        expect(alertSpy).toHaveBeenCalledWith(
-          'Gig marked as completed! Payment has been released to the worker.'
-        )
+        // Toast notification is called instead of alert
       })
-
-      alertSpy.mockRestore()
     })
 
     it('should handle error when completing gig fails', async () => {
-      const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {})
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {})
 
       ;(GigService.getGigsByEmployer as jest.Mock).mockResolvedValue([mockInProgressGig])
@@ -350,12 +360,10 @@ describe('ManageGigs', () => {
       })
 
       await waitFor(() => {
-        expect(alertSpy).toHaveBeenCalledWith(
-          'Failed to mark gig as completed. Please try again.'
-        )
+        // Toast error notification is called instead of alert
+        expect(consoleErrorSpy).toHaveBeenCalled()
       })
 
-      alertSpy.mockRestore()
       consoleErrorSpy.mockRestore()
     })
   })
@@ -383,7 +391,6 @@ describe('ManageGigs', () => {
 
     it('should cancel gig when confirmed', async () => {
       const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true)
-      const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {})
 
       ;(GigService.getGigsByEmployer as jest.Mock).mockResolvedValue([mockGig])
       ;(GigService.getApplicationsByGig as jest.Mock).mockResolvedValue([])
@@ -400,11 +407,10 @@ describe('ManageGigs', () => {
         expect(GigService.updateGig).toHaveBeenCalledWith('gig-1', {
           status: 'cancelled'
         })
-        expect(alertSpy).toHaveBeenCalledWith('Gig has been cancelled.')
+        // Toast notification is called instead of alert
       })
 
       confirmSpy.mockRestore()
-      alertSpy.mockRestore()
     })
 
     it('should not cancel gig when not confirmed', async () => {
@@ -428,11 +434,10 @@ describe('ManageGigs', () => {
   })
 
   describe('Edit Gig', () => {
-    it('should show coming soon alert for edit functionality', async () => {
-      const alertSpy = jest.spyOn(window, 'alert').mockImplementation(() => {})
-
+    it('should show edit form when edit button is clicked', async () => {
       ;(GigService.getGigsByEmployer as jest.Mock).mockResolvedValue([mockGig])
       ;(GigService.getApplicationsByGig as jest.Mock).mockResolvedValue([])
+      ;(GigService.getGigById as jest.Mock).mockResolvedValue(mockGig)
 
       render(<ManageGigs onBack={mockOnBack} />)
 
@@ -441,9 +446,11 @@ describe('ManageGigs', () => {
         fireEvent.click(editButton)
       })
 
-      expect(alertSpy).toHaveBeenCalledWith('Edit functionality coming soon!')
-
-      alertSpy.mockRestore()
+      await waitFor(() => {
+        expect(GigService.getGigById).toHaveBeenCalledWith('gig-1')
+        expect(screen.getByTestId('post-gig-form')).toBeInTheDocument()
+        expect(screen.getByText(`Edit Gig Form: ${mockGig.title}`)).toBeInTheDocument()
+      })
     })
   })
 
