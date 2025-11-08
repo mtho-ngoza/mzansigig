@@ -148,10 +148,10 @@ export function ProfileCompletionForm({ onComplete, onCancel }: ProfileCompletio
       setTimeout(() => {
         onComplete?.()
       }, 1000)
-    } catch (error: any) {
+    } catch (error: unknown) {
       setMessage({
         type: 'error',
-        text: error.message || 'Failed to update profile. Please try again.'
+        text: error instanceof Error ? error.message : 'Failed to update profile. Please try again.'
       })
     } finally {
       setIsSubmitting(false)
