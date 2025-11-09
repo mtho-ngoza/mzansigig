@@ -101,9 +101,9 @@ service firebase.storage {
 
     // ========================================
     // Verification Documents (Private)
-    // Path: verificationDocuments/{userId}/{fileName}
+    // Path: verification-documents/{userId}/{verificationLevel}/{documentType}/{fileName}
     // ========================================
-    match /verificationDocuments/{userId}/{fileName} {
+    match /verification-documents/{userId}/{verificationLevel}/{documentType}/{fileName} {
       // Only the user and admins can read verification documents
       allow read: if isOwner(userId) || isAdmin();
 

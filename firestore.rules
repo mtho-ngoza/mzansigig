@@ -343,7 +343,31 @@ service cloud.firestore {
     }
 
     // ========================================
-    // Safety Reports Collection
+    // Safety Reports Collection (hyphenated path)
+    // ========================================
+    match /safety-reports/{reportId} {
+      // Reporter, reportee (person being reported), and admin can read reports
+      // This allows users to see reports about themselves for trust score display
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.reporterId ||
+                     request.auth.uid == resource.data.reporteeId ||
+                     isAdmin());
+
+      // Authenticated users can create safety reports
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['reporterId', 'reporteeId', 'type', 'description']) &&
+                      request.resource.data.reporterId == request.auth.uid &&
+                      request.resource.data.status == 'pending';
+
+      // Only admins can update safety reports
+      allow update: if isAdmin();
+
+      // Only admins can delete safety reports
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Safety Reports Collection (camelCase path - legacy support)
     // ========================================
     match /safetyReports/{reportId} {
       // Reporter, reportee (person being reported), and admin can read reports
