@@ -17,7 +17,7 @@ export class OCRService {
    * Extract text from document using Google Vision API via server-side API route
    * Cost: ~$0.015 per document (very affordable for verification)
    */
-  static async extractDocumentText(imageUrl: string): Promise<OCRResult> {
+  static async extractDocumentText(imageUrl: string, userId: string): Promise<OCRResult> {
     try {
       console.log('Starting OCR extraction via Google Vision API...')
 
@@ -27,7 +27,7 @@ export class OCRService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ imageUrl })
+        body: JSON.stringify({ imageUrl, userId })
       })
 
       if (!response.ok) {

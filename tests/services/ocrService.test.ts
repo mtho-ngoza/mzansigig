@@ -21,7 +21,7 @@ describe('OCRService', () => {
         })
       })
 
-      const result = await OCRService.extractDocumentText('https://example.com/test.jpg')
+      const result = await OCRService.extractDocumentText('https://example.com/test.jpg', 'test-user-123')
 
       expect(result.success).toBe(false)
       expect(result.extractedText).toBe('')
@@ -46,7 +46,7 @@ Date of Birth: 01 JAN 1990`
         })
       })
 
-      const result = await OCRService.extractDocumentText('https://example.com/test.jpg')
+      const result = await OCRService.extractDocumentText('https://example.com/test.jpg', 'test-user-123')
 
       expect(result.success).toBe(true)
       expect(result.extractedText).toBe(mockText)
@@ -61,7 +61,7 @@ Date of Birth: 01 JAN 1990`
         statusText: 'Internal Server Error'
       })
 
-      const result = await OCRService.extractDocumentText('https://example.com/test.jpg')
+      const result = await OCRService.extractDocumentText('https://example.com/test.jpg', 'test-user-123')
 
       expect(result.success).toBe(false)
       expect(result.error).toBeTruthy()

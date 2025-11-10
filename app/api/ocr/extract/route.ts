@@ -10,12 +10,32 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { imageUrl } = body
+    const { imageUrl, userId } = body
+
+    // Require authentication: userId must be provided
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication required: userId is missing' },
+        { status: 401 }
+      )
+    }
 
     if (!imageUrl) {
       return NextResponse.json(
         { error: 'Image URL is required' },
         { status: 400 }
+      )
+    }
+
+    // Security check: Verify the image URL belongs to the user's storage path
+    // This prevents users from processing OCR on other users' documents
+    const isValidUserDocument = imageUrl.includes(`verificationDocuments/${userId}/`) ||
+                                imageUrl.includes(`verificationDocuments%2F${userId}%2F`)
+
+    if (!isValidUserDocument) {
+      return NextResponse.json(
+        { error: 'Unauthorized: You can only process your own documents' },
+        { status: 403 }
       )
     }
 

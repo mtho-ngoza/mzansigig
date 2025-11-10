@@ -5,8 +5,43 @@ import { db, storage } from '@/lib/firebase'
 import { User, PortfolioItem } from '@/types/auth'
 
 export class ProfileService {
+  /**
+   * Validate file for profile uploads
+   */
+  private static validateImageFile(file: File): void {
+    const maxSize = 5 * 1024 * 1024 // 5MB for profile images
+    if (file.size > maxSize) {
+      throw new Error('File size must be less than 5MB')
+    }
+
+    if (file.size < 1024) { // Less than 1KB
+      throw new Error('File is too small to be a valid image')
+    }
+
+    const allowedTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/jpg'
+    ]
+
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error('Only JPEG and PNG images are allowed')
+    }
+
+    // Validate file extension matches mime type
+    const fileExtension = file.name.split('.').pop()?.toLowerCase()
+    const validExtensions = ['jpg', 'jpeg', 'png']
+
+    if (!fileExtension || !validExtensions.includes(fileExtension)) {
+      throw new Error('Invalid file extension. Only JPG and PNG files are allowed')
+    }
+  }
+
   static async uploadProfilePhoto(userId: string, file: File): Promise<string> {
     try {
+      // Validate file before upload
+      this.validateImageFile(file)
+
       const fileExtension = file.name.split('.').pop()
       const fileName = `${userId}-profile.${fileExtension}`
       const storageRef = ref(storage, `profile-photos/${fileName}`)
@@ -37,6 +72,9 @@ export class ProfileService {
 
   static async uploadPortfolioImage(userId: string, file: File): Promise<string> {
     try {
+      // Validate file before upload
+      this.validateImageFile(file)
+
       const fileExtension = file.name.split('.').pop()
       const fileName = `${userId}-${uuidv4()}.${fileExtension}`
       const storageRef = ref(storage, `portfolio/${fileName}`)

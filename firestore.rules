@@ -395,9 +395,30 @@ service cloud.firestore {
     }
 
     // ========================================
-    // Safety Check-Ins Collection
+    // Safety Check-Ins Collection (camelCase)
     // ========================================
     match /safetyCheckIns/{checkInId} {
+      // Users can read their own check-ins, admins can read all
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.userId || isAdmin());
+
+      // Users can create check-ins for gigs they're involved in
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['userId', 'gigId', 'type']) &&
+                      request.resource.data.userId == request.auth.uid &&
+                      exists(/databases/$(database)/documents/gigs/$(request.resource.data.gigId));
+
+      // Users cannot update check-ins (immutable record)
+      allow update: if false;
+
+      // Only admins can delete check-ins
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Safety Check-Ins Collection (hyphenated - legacy support)
+    // ========================================
+    match /safety-checkins/{checkInId} {
       // Users can read their own check-ins, admins can read all
       allow read: if isAuthenticated() &&
                     (request.auth.uid == resource.data.userId || isAdmin());
@@ -537,9 +558,22 @@ service cloud.firestore {
     }
 
     // ========================================
-    // Location Safety Ratings Collection
+    // Location Safety Ratings Collection (camelCase)
     // ========================================
     match /locationSafetyRatings/{ratingId} {
+      // Anyone authenticated can read location safety ratings
+      allow read: if isAuthenticated();
+
+      // Only system/admin can create or update ratings (aggregated data)
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Location Safety Ratings Collection (hyphenated - legacy support)
+    // ========================================
+    match /location-safety-ratings/{ratingId} {
       // Anyone authenticated can read location safety ratings
       allow read: if isAuthenticated();
 
@@ -634,9 +668,27 @@ service cloud.firestore {
     }
 
     // ========================================
-    // Verification Results Collection
+    // Verification Results Collection (camelCase)
     // ========================================
     match /verificationResults/{resultId} {
+      // Users can read their own verification results, admins can read all
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.userId || isAdmin());
+
+      // System/admin can create verification results
+      allow create: if isAdmin();
+
+      // System/admin can update verification results
+      allow update: if isAdmin();
+
+      // Only admins can delete verification results
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Verification Results Collection (hyphenated - legacy support)
+    // ========================================
+    match /verification-results/{resultId} {
       // Users can read their own verification results, admins can read all
       allow read: if isAuthenticated() &&
                     (request.auth.uid == resource.data.userId || isAdmin());

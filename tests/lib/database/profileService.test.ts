@@ -388,4 +388,179 @@ describe('ProfileService', () => {
       })
     })
   })
+
+  describe('File Validation Security', () => {
+    describe('validateImageFile', () => {
+      // Access private method for testing purposes
+      const validateImageFile = (ProfileService as any).validateImageFile.bind(ProfileService)
+
+      describe('File Size Validation', () => {
+        it('should reject files larger than 5MB', () => {
+          const largeFile = new File(
+            [new ArrayBuffer(6 * 1024 * 1024)],
+            'large-photo.jpg',
+            { type: 'image/jpeg' }
+          )
+
+          expect(() => validateImageFile(largeFile)).toThrow('File size must be less than 5MB')
+        })
+
+        it('should reject files smaller than 1KB', () => {
+          const tinyFile = new File(
+            [new ArrayBuffer(500)],
+            'tiny-photo.jpg',
+            { type: 'image/jpeg' }
+          )
+
+          expect(() => validateImageFile(tinyFile)).toThrow('File is too small to be a valid image')
+        })
+
+        it('should accept files between 1KB and 5MB', () => {
+          const validFile = new File(
+            [new ArrayBuffer(2 * 1024 * 1024)],
+            'valid-photo.jpg',
+            { type: 'image/jpeg' }
+          )
+
+          expect(() => validateImageFile(validFile)).not.toThrow()
+        })
+      })
+
+      describe('File Type Validation', () => {
+        it('should accept JPEG images', () => {
+          const jpegFile = new File(
+            [new ArrayBuffer(100 * 1024)],
+            'photo.jpg',
+            { type: 'image/jpeg' }
+          )
+
+          expect(() => validateImageFile(jpegFile)).not.toThrow()
+        })
+
+        it('should accept PNG images', () => {
+          const pngFile = new File(
+            [new ArrayBuffer(100 * 1024)],
+            'photo.png',
+            { type: 'image/png' }
+          )
+
+          expect(() => validateImageFile(pngFile)).not.toThrow()
+        })
+
+        it('should reject PDF files', () => {
+          const pdfFile = new File(
+            [new ArrayBuffer(100 * 1024)],
+            'document.pdf',
+            { type: 'application/pdf' }
+          )
+
+          expect(() => validateImageFile(pdfFile)).toThrow('Only JPEG and PNG images are allowed')
+        })
+
+        it('should reject Word documents', () => {
+          const docxFile = new File(
+            [new ArrayBuffer(100 * 1024)],
+            'document.docx',
+            { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' }
+          )
+
+          expect(() => validateImageFile(docxFile)).toThrow('Only JPEG and PNG images are allowed')
+        })
+
+        it('should reject executable files', () => {
+          const exeFile = new File(
+            [new ArrayBuffer(100 * 1024)],
+            'malware.exe',
+            { type: 'application/x-msdownload' }
+          )
+
+          expect(() => validateImageFile(exeFile)).toThrow('Only JPEG and PNG images are allowed')
+        })
+
+        it('should reject SVG files (XSS risk)', () => {
+          const svgFile = new File(
+            [new ArrayBuffer(100 * 1024)],
+            'image.svg',
+            { type: 'image/svg+xml' }
+          )
+
+          expect(() => validateImageFile(svgFile)).toThrow('Only JPEG and PNG images are allowed')
+        })
+      })
+
+      describe('File Extension Validation', () => {
+        it('should reject files with no extension', () => {
+          const noExtFile = new File(
+            [new ArrayBuffer(100 * 1024)],
+            'photo',
+            { type: 'image/jpeg' }
+          )
+
+          expect(() => validateImageFile(noExtFile)).toThrow('Invalid file extension')
+        })
+
+        it('should reject files with executable extensions', () => {
+          const exeFile = new File(
+            [new ArrayBuffer(100 * 1024)],
+            'photo.exe',
+            { type: 'image/jpeg' }
+          )
+
+          expect(() => validateImageFile(exeFile)).toThrow('Invalid file extension')
+        })
+
+        it('should reject files with script extensions', () => {
+          const jsFile = new File(
+            [new ArrayBuffer(100 * 1024)],
+            'photo.js',
+            { type: 'image/jpeg' }
+          )
+
+          expect(() => validateImageFile(jsFile)).toThrow('Invalid file extension')
+        })
+
+        it('should accept uppercase extensions', () => {
+          const upperFile = new File(
+            [new ArrayBuffer(100 * 1024)],
+            'photo.JPG',
+            { type: 'image/jpeg' }
+          )
+
+          expect(() => validateImageFile(upperFile)).not.toThrow()
+        })
+
+        it('should accept mixed case extensions', () => {
+          const mixedFile = new File(
+            [new ArrayBuffer(100 * 1024)],
+            'photo.PnG',
+            { type: 'image/png' }
+          )
+
+          expect(() => validateImageFile(mixedFile)).not.toThrow()
+        })
+      })
+
+      describe('Extension and MIME Type Mismatch', () => {
+        it('should reject file with JPEG mime but PDF extension', () => {
+          const mismatchFile = new File(
+            [new ArrayBuffer(100 * 1024)],
+            'photo.pdf',
+            { type: 'image/jpeg' }
+          )
+
+          expect(() => validateImageFile(mismatchFile)).toThrow('Invalid file extension')
+        })
+
+        it('should reject file with PNG mime but EXE extension', () => {
+          const mismatchFile = new File(
+            [new ArrayBuffer(100 * 1024)],
+            'photo.exe',
+            { type: 'image/png' }
+          )
+
+          expect(() => validateImageFile(mismatchFile)).toThrow('Invalid file extension')
+        })
+      })
+    })
+  })
 })
