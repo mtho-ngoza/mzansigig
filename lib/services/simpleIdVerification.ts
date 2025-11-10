@@ -308,7 +308,7 @@ export class SimpleIdVerification {
       // OCR TEXT EXTRACTION AND VERIFICATION
       try {
         console.log('Starting OCR extraction for document:', documentId)
-        const ocrResult = await OCRService.extractDocumentText(document.fileUrl)
+        const ocrResult = await OCRService.extractDocumentText(document.fileUrl, document.userId)
 
         if (ocrResult.success && ocrResult.extractedData) {
           result.ocrResults = {
