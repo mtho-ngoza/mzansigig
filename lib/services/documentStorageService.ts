@@ -20,6 +20,7 @@ import {
   serverTimestamp
 } from 'firebase/firestore'
 import { VerificationDocument } from '@/types/auth'
+import { SecurityService } from './securityService'
 
 export class DocumentStorageService {
   private static getStoragePath(
@@ -69,6 +70,7 @@ export class DocumentStorageService {
       const document: VerificationDocument = {
         ...documentData,
         id: documentId,
+        userId,
         fileUrl: downloadURL,
         fileName: file.name,
         fileSize: file.size,
@@ -78,7 +80,6 @@ export class DocumentStorageService {
 
       await setDoc(doc(db, 'verificationDocuments', documentId), {
         ...document,
-        userId,
         storagePath,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
@@ -87,6 +88,13 @@ export class DocumentStorageService {
       return document
     } catch (error) {
       console.error('Error uploading document:', error)
+      // Re-throw validation errors as-is, wrap other errors
+      if (error instanceof Error &&
+          (error.message.includes('File size') ||
+           error.message.includes('file') ||
+           error.message.includes('allowed'))) {
+        throw error
+      }
       throw new Error('Failed to upload document. Please try again.')
     }
   }
@@ -115,7 +123,14 @@ export class DocumentStorageService {
           rejectedAt: data.rejectedAt?.toDate()
         } as VerificationDocument
       })
-    } catch (error) {
+    } catch (error: unknown) {
+      // If the error is due to missing permissions on an empty collection, return empty array
+      // This is expected when user has no documents yet
+      const errorObj = error as { code?: string; message?: string }
+      if (errorObj?.code === 'permission-denied' || errorObj?.message?.includes('Missing or insufficient permissions')) {
+        return []
+      }
+
       console.error('Error getting user documents:', error)
       throw new Error('Failed to load documents.')
     }
@@ -147,7 +162,12 @@ export class DocumentStorageService {
     documentId: string,
     status: 'pending' | 'verified' | 'rejected',
     notes?: string,
-    reviewedBy?: string
+    reviewedBy?: string,
+    verificationAttempt?: {
+      confidence: number
+      issues: string[]
+      ocrExtractedText?: string
+    }
   ): Promise<void> {
     try {
       const updateData: Record<string, unknown> = {
@@ -167,6 +187,13 @@ export class DocumentStorageService {
 
       if (reviewedBy) {
         updateData.reviewedBy = reviewedBy
+      }
+
+      if (verificationAttempt) {
+        updateData.verificationAttempt = {
+          ...verificationAttempt,
+          attemptedAt: serverTimestamp()
+        }
       }
 
       await updateDoc(doc(db, 'verificationDocuments', documentId), updateData)
@@ -206,6 +233,12 @@ export class DocumentStorageService {
       await deleteDoc(docRef)
     } catch (error) {
       console.error('Error deleting document:', error)
+      // Re-throw specific errors as-is, wrap other errors
+      if (error instanceof Error &&
+          (error.message.includes('not found') ||
+           error.message.includes('Unauthorized'))) {
+        throw error
+      }
       throw new Error('Failed to delete document.')
     }
   }
@@ -283,6 +316,124 @@ export class DocumentStorageService {
     } catch (error) {
       console.error('Error getting storage usage:', error)
       return { totalFiles: 0, totalSize: 0 }
+    }
+  }
+
+  /**
+   * Admin Methods
+   */
+
+  static async getPendingDocuments(): Promise<VerificationDocument[]> {
+    try {
+      const docsQuery = query(
+        collection(db, 'verificationDocuments'),
+        where('status', '==', 'pending')
+      )
+
+      const snapshot = await getDocs(docsQuery)
+      return snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        submittedAt: doc.data().submittedAt?.toDate() || new Date(),
+        verifiedAt: doc.data().verifiedAt?.toDate(),
+        rejectedAt: doc.data().rejectedAt?.toDate(),
+        verificationAttempt: doc.data().verificationAttempt ? {
+          ...doc.data().verificationAttempt,
+          attemptedAt: doc.data().verificationAttempt.attemptedAt?.toDate() || new Date()
+        } : undefined
+      })) as VerificationDocument[]
+    } catch (error) {
+      console.error('Error getting pending documents:', error)
+      throw new Error('Failed to load pending documents')
+    }
+  }
+
+  static async getAllDocumentsForAdmin(status?: 'draft' | 'pending' | 'verified' | 'rejected'): Promise<VerificationDocument[]> {
+    try {
+      const docsQuery = status
+        ? query(collection(db, 'verificationDocuments'), where('status', '==', status))
+        : collection(db, 'verificationDocuments')
+
+      const snapshot = await getDocs(docsQuery)
+      return snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id,
+        submittedAt: doc.data().submittedAt?.toDate() || new Date(),
+        verifiedAt: doc.data().verifiedAt?.toDate(),
+        rejectedAt: doc.data().rejectedAt?.toDate(),
+        verificationAttempt: doc.data().verificationAttempt ? {
+          ...doc.data().verificationAttempt,
+          attemptedAt: doc.data().verificationAttempt.attemptedAt?.toDate() || new Date()
+        } : undefined
+      })) as VerificationDocument[]
+    } catch (error) {
+      console.error('Error getting documents for admin:', error)
+      throw new Error('Failed to load documents')
+    }
+  }
+
+  static async adminApproveDocument(documentId: string, adminUserId: string, notes?: string): Promise<void> {
+    try {
+      const docRef = doc(db, 'verificationDocuments', documentId)
+
+      // Get document data first to access userId and verificationLevel
+      const docSnap = await getDoc(docRef)
+      if (!docSnap.exists()) {
+        throw new Error('Document not found')
+      }
+
+      const documentData = docSnap.data()
+      const userId = documentData.userId
+      const verificationLevel = documentData.verificationLevel
+      const documentType = documentData.type
+
+      // Update document status
+      await updateDoc(docRef, {
+        status: 'verified',
+        verifiedAt: serverTimestamp(),
+        reviewedBy: adminUserId,
+        notes: notes || 'Manually approved by admin',
+        updatedAt: serverTimestamp()
+      })
+
+      // Update user verification status
+      const userRef = doc(db, 'users', userId)
+      await updateDoc(userRef, {
+        isVerified: true,
+        verificationLevel: verificationLevel,
+        updatedAt: serverTimestamp()
+      })
+
+      // Update user's verification level in security service
+      await SecurityService.updateUserVerificationLevel(userId, verificationLevel)
+
+      // Update trust score
+      await SecurityService.updateTrustScore(
+        userId,
+        'document_verified',
+        15,
+        `${documentType} document manually approved by admin`
+      )
+    } catch (error) {
+      console.error('Error approving document:', error)
+      throw new Error('Failed to approve document')
+    }
+  }
+
+  static async adminRejectDocument(documentId: string, adminUserId: string, reason: string): Promise<void> {
+    try {
+      const docRef = doc(db, 'verificationDocuments', documentId)
+
+      await updateDoc(docRef, {
+        status: 'rejected',
+        rejectedAt: serverTimestamp(),
+        reviewedBy: adminUserId,
+        notes: reason,
+        updatedAt: serverTimestamp()
+      })
+    } catch (error) {
+      console.error('Error rejecting document:', error)
+      throw new Error('Failed to reject document')
     }
   }
 }

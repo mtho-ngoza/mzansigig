@@ -288,14 +288,18 @@ export class SimpleIdVerification {
         result.recommendations.push('Rename your file to something more descriptive')
       }
 
-      // For SA ID documents, add extra strictness
+      // For SA ID documents, add extra strictness for image quality (but allow PDFs)
       if (document.type === 'sa_id') {
-        if (!['image/jpeg', 'image/jpg', 'image/png'].includes(document.mimeType)) {
-          result.issues.push('SA ID documents must be clear photos (JPG/PNG) of the physical ID document, not PDFs or other formats')
-          result.recommendations.push('Use your phone camera to photograph the physical ID card directly')
+        // Allow PDFs but prefer photos for better OCR
+        if (document.mimeType === 'application/pdf') {
+          // PDFs are allowed but may have lower OCR accuracy
+          result.recommendations.push('For best results, use a clear photo (JPG/PNG) instead of PDF')
+        } else if (!['image/jpeg', 'image/jpg', 'image/png'].includes(document.mimeType)) {
+          result.issues.push('Invalid file format. SA ID documents must be photos (JPG/PNG) or PDF scans')
+          result.recommendations.push('Use your phone camera to photograph the physical ID card or upload a PDF scan')
         }
 
-        if (fileSizeMB < 0.2) {
+        if (fileSizeMB < 0.2 && document.mimeType !== 'application/pdf') {
           result.issues.push('ID photo too small - take a closer, clearer photo')
           result.recommendations.push('Ensure the ID fills most of the frame and is clearly readable')
         }
@@ -484,12 +488,17 @@ export class SimpleIdVerification {
         message = `Document pending manual review (confidence: ${verificationResult.confidence}%)`
       }
 
-      // Update document status
+      // Update document status with verification attempt details
       await DocumentStorageService.updateDocumentStatus(
         documentId,
         status,
         message,
-        'system'
+        'system',
+        {
+          confidence: verificationResult.confidence,
+          issues: verificationResult.issues,
+          ocrExtractedText: verificationResult.ocrResults?.extractedText
+        }
       )
 
       return {

@@ -16,10 +16,11 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Check if user is admin (based on custom claims or admin collection)
+    // Check if user is admin (based on user document userType)
     function isAdmin() {
       return isAuthenticated() &&
-             request.auth.token.admin == true;
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType == 'admin';
     }
 
     // Get user document
@@ -68,9 +69,12 @@ service cloud.firestore {
                        // Cannot change immutable fields
                        request.resource.data.id == resource.data.id &&
                        request.resource.data.email == resource.data.email &&
+                       request.resource.data.userType == resource.data.userType &&
                        request.resource.data.createdAt == resource.data.createdAt) ||
                       // OR anyone can update ONLY rating and reviewCount (review system)
-                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'reviewCount', 'updatedAt']))
+                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'reviewCount', 'updatedAt'])) ||
+                      // OR admin can update userType
+                      isAdmin()
                     );
 
       // Users can delete their own profile
@@ -651,21 +655,25 @@ service cloud.firestore {
     // Verification Documents Collection
     // ========================================
     match /verificationDocuments/{documentId} {
-      // Users can read their own verification documents, admins can read all
-      allow read: if isAuthenticated() &&
+      // Individual document reads - users can read their own, admins can read all
+      allow get: if isAuthenticated() &&
                     (request.auth.uid == resource.data.userId || isAdmin());
+
+      // Collection queries - users can list their own documents (filtered by userId in query)
+      // Admins can list all documents
+      allow list: if isAuthenticated();
 
       // Users can create their own verification documents
       allow create: if isAuthenticated() &&
                       request.resource.data.userId == request.auth.uid;
 
-      // Users can update their own verification documents
+      // Users can update their own verification documents, admins can update all
       allow update: if isAuthenticated() &&
-                      request.resource.data.userId == request.auth.uid;
+                      (request.resource.data.userId == request.auth.uid || isAdmin());
 
-      // Users can delete their own verification documents
+      // Users can delete their own verification documents, admins can delete all
       allow delete: if isAuthenticated() &&
-                      request.resource.data.userId == request.auth.uid;
+                      (request.resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // ========================================

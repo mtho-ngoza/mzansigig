@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { SecurityService } from '@/lib/services/securityService'
+import { DocumentStorageService } from '@/lib/services/documentStorageService'
 import { TrustScoreBadge, VerificationBadge } from './TrustScoreBadge'
-import { User } from '@/types/auth'
+import { User, VerificationDocument } from '@/types/auth'
 import DocumentVerificationFlow from './DocumentVerificationFlow'
 
 interface VerificationCenterProps {
@@ -21,9 +22,12 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
   const [isLoading, setIsLoading] = useState(true)
   const [isVerifying, setIsVerifying] = useState<string | null>(null)
   const [showDocumentFlow, setShowDocumentFlow] = useState<'basic' | 'enhanced' | 'premium' | null>(null)
+  const [pendingDocuments, setPendingDocuments] = useState<VerificationDocument[]>([])
+  const [rejectedDocuments, setRejectedDocuments] = useState<VerificationDocument[]>([])
 
   useEffect(() => {
     loadTrustScore()
+    loadUserDocuments()
   }, [user])
 
   const loadTrustScore = async () => {
@@ -40,6 +44,26 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
     }
   }
 
+  const loadUserDocuments = async () => {
+    if (!user) return
+
+    try {
+      const documents = await DocumentStorageService.getUserDocuments(user.id)
+
+      const pending = documents.filter(doc => doc.status === 'pending')
+      const rejected = documents.filter(doc => doc.status === 'rejected')
+
+      setPendingDocuments(pending)
+      setRejectedDocuments(rejected)
+    } catch (error) {
+      // Silently handle - no documents is a valid state
+      // Only log if it's an actual error (not permissions on empty collection)
+      if (error instanceof Error && !error.message.includes('permissions')) {
+        console.error('Error loading user documents:', error)
+      }
+    }
+  }
+
   const handleVerificationStep = async (level: 'basic' | 'enhanced' | 'premium') => {
     // Show document upload flow instead of instant verification
     setShowDocumentFlow(level)
@@ -50,6 +74,10 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
     setShowDocumentFlow(null)
     await refreshUser()
     await loadTrustScore()
+
+    // Small delay to ensure Firestore has time to propagate
+    await new Promise(resolve => setTimeout(resolve, 500))
+    await loadUserDocuments()
   }
 
   const getVerificationLevel = (): 'basic' | 'enhanced' | 'premium' | 'none' => {
@@ -57,17 +85,6 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
     if (user?.isVerified) return 'basic'
     return 'none'
   }
-
-  const getNextVerificationStep = () => {
-    const current = getVerificationLevel()
-    switch (current) {
-      case 'none': return 'basic'
-      case 'basic': return 'enhanced'
-      case 'enhanced': return 'premium'
-      default: return null
-    }
-  }
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -129,6 +146,119 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
         </CardContent>
       </Card>
 
+      {/* Pending Documents Notice */}
+      {pendingDocuments.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-6">
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                  Verification In Progress
+                </h3>
+                <p className="text-blue-800 mb-3">
+                  {pendingDocuments.length} document{pendingDocuments.length > 1 ? 's are' : ' is'} currently under review by our verification team.
+                </p>
+                <div className="bg-blue-100 rounded-lg p-4 space-y-2">
+                  {pendingDocuments.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="text-blue-900 font-medium">
+                          {doc.type === 'sa_id' ? 'SA ID Document' :
+                           doc.type === 'passport' ? 'Passport' :
+                           doc.type === 'drivers_license' ? "Driver's License" : doc.type}
+                        </span>
+                      </div>
+                      <span className="text-blue-700">
+                        Submitted {new Date(doc.submittedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 flex items-start space-x-2">
+                  <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="text-sm text-blue-800">
+                    <p className="font-medium">What happens next?</p>
+                    <ul className="mt-1 space-y-1 list-disc list-inside">
+                      <li>Our team will review your documents within 24-48 hours</li>
+                      <li>You&apos;ll receive an email notification once review is complete</li>
+                      <li>Your trust score will be updated upon approval</li>
+                      <li>No further action is required from you at this time</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Rejected Documents Notice */}
+      {rejectedDocuments.length > 0 && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-6">
+            <div className="flex items-start space-x-4">
+              <div className="flex-shrink-0">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-red-900 mb-2">
+                  Action Required: Documents Rejected
+                </h3>
+                <p className="text-red-800 mb-3">
+                  {rejectedDocuments.length} document{rejectedDocuments.length > 1 ? 's were' : ' was'} rejected. Please review the feedback and re-upload.
+                </p>
+                <div className="bg-red-100 rounded-lg p-4 space-y-3">
+                  {rejectedDocuments.map((doc) => (
+                    <div key={doc.id} className="space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span className="text-red-900 font-medium">
+                          {doc.type === 'sa_id' ? 'SA ID Document' :
+                           doc.type === 'passport' ? 'Passport' :
+                           doc.type === 'drivers_license' ? "Driver's License" : doc.type}
+                        </span>
+                      </div>
+                      {doc.notes && (
+                        <p className="text-sm text-red-700 ml-6">
+                          Reason: {doc.notes}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4">
+                  <Button
+                    variant="primary"
+                    onClick={() => handleVerificationStep('basic')}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    Re-upload Documents
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Verification Levels */}
       <div className="grid gap-6">
         {/* Basic Verification */}
@@ -159,11 +289,20 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
               </div>
               <div className="ml-6">
                 {getVerificationLevel() === 'none' ? (
-                  <Button
-                    onClick={() => handleVerificationStep('basic')}
-                  >
-                    Start Verification
-                  </Button>
+                  pendingDocuments.length > 0 ? (
+                    <div className="text-center">
+                      <div className="text-blue-600 font-medium mb-2">Under Review</div>
+                      <Button disabled variant="outline">
+                        Awaiting Approval
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => handleVerificationStep('basic')}
+                    >
+                      Start Verification
+                    </Button>
+                  )
                 ) : getVerificationLevel() === 'basic' ? (
                   <div className="text-center">
                     <div className="text-green-600 font-medium">✓ Completed</div>

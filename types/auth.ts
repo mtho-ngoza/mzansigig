@@ -19,6 +19,7 @@ export interface SafetyPreferences {
 
 export interface VerificationDocument {
   id: string
+  userId: string
   type: 'sa_id' | 'passport' | 'drivers_license' | 'proof_of_address' | 'bank_statement' | 'employment_letter' | 'reference_letter'
   verificationLevel: 'basic' | 'enhanced' | 'premium'
   status: 'draft' | 'pending' | 'verified' | 'rejected'
@@ -31,6 +32,12 @@ export interface VerificationDocument {
   rejectedAt?: Date
   notes?: string
   reviewedBy?: string
+  verificationAttempt?: {
+    confidence: number
+    issues: string[]
+    ocrExtractedText?: string
+    attemptedAt: Date
+  }
 }
 
 export interface User {

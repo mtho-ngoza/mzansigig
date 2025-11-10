@@ -22,7 +22,7 @@ export default function DocumentVerificationFlow({
   onComplete
 }: DocumentVerificationFlowProps) {
   const { user } = useAuth()
-  const { success, error: showError } = useToast()
+  const { success, error: showError, warning, info } = useToast()
   const [documents, setDocuments] = useState<VerificationDocument[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -162,20 +162,21 @@ export default function DocumentVerificationFlow({
         // All documents successfully verified
         success(`All documents verified successfully! Your ${verificationLevel} verification is complete. ✓`)
         onComplete()
-      } else if (rejectedCount > 0) {
-        // Some documents were rejected
+      } else if (rejectedCount > 0 && pendingCount === 0) {
+        // Only rejected documents
         const rejectedMessages = verificationResults
           .filter(r => r.status === 'rejected')
           .map(r => r.message)
           .join('; ')
         showError(`${rejectedCount} document(s) rejected: ${rejectedMessages}. Please re-upload with valid documents.`)
-      } else if (pendingCount > 0) {
-        // Some documents are pending manual review
-        const pendingMessages = verificationResults
-          .filter(r => r.status === 'pending')
-          .map(r => r.message)
-          .join('; ')
-        showError(`${pendingCount} document(s) require manual review: ${pendingMessages}. Our team will review within 24-48 hours.`)
+      } else if (pendingCount > 0 && rejectedCount === 0) {
+        // Only pending documents - use info toast
+        info(`Your document${pendingCount > 1 ? 's are' : ' is'} pending manual review. Our team will review within 24-48 hours and notify you via email. No further action needed.`, { duration: 10000 })
+        // Navigate back to verification center to show pending status
+        onComplete()
+      } else if (pendingCount > 0 && rejectedCount > 0) {
+        // Mix of pending and rejected
+        warning(`${rejectedCount} document(s) rejected, ${pendingCount} pending review. Please re-upload rejected documents. Pending documents will be reviewed within 24-48 hours.`, { duration: 10000 })
       } else if (verifiedCount > 0) {
         // Some verified, some might have issues
         success(`${verifiedCount} document(s) verified. Review process complete.`)
@@ -201,6 +202,12 @@ export default function DocumentVerificationFlow({
   const allRequiredDocsUploaded = requiredDocs.every(reqDoc =>
     uploadedDocs[reqDoc.type] && uploadedDocs[reqDoc.type].status !== 'rejected'
   )
+
+  // Check if there are any pending documents
+  const hasPendingDocuments = documents.some(doc => doc.status === 'pending')
+
+  // Check if there are any draft documents that can be submitted
+  const hasDraftDocuments = documents.some(doc => doc.status === 'draft')
 
   const getVerificationTitle = () => {
     return 'Basic Identity Verification'
@@ -318,18 +325,41 @@ export default function DocumentVerificationFlow({
         </Card>
       )}
 
+      {/* Pending Documents Notice */}
+      {hasPendingDocuments && (
+        <Card className="border-blue-200 bg-blue-50">
+          <CardContent className="p-4">
+            <div className="flex items-start space-x-3">
+              <div className="text-blue-600 text-2xl">ℹ️</div>
+              <div>
+                <p className="font-medium text-blue-900">Documents Pending Review</p>
+                <p className="text-sm text-blue-800 mt-1">
+                  Your documents have been submitted and are awaiting manual review by our team.
+                  You will be notified via email within 24-48 hours once the review is complete.
+                </p>
+                <p className="text-sm text-blue-800 mt-2 font-medium">
+                  No further action is required at this time.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Submit Button */}
       {allRequiredDocsUploaded && (
         <div className="flex justify-center pt-6">
           <Button
             onClick={handleSubmitForReview}
             isLoading={isSubmitting}
-            disabled={isSubmitting || !user?.idNumber}
+            disabled={isSubmitting || !user?.idNumber || hasPendingDocuments || !hasDraftDocuments}
             size="lg"
             className="px-8"
           >
             {isSubmitting ? 'Processing Verification...' :
              !user?.idNumber ? 'Add ID Number to Profile First' :
+             hasPendingDocuments ? 'Documents Pending Review' :
+             !hasDraftDocuments ? 'All Documents Submitted' :
              'I Confirm Names Match - Submit for Verification'}
           </Button>
         </div>

@@ -135,6 +135,7 @@ export default function DocumentUpload({
 
       // Upload to Firebase Storage using DocumentStorageService
       const documentData = {
+        userId: user.id,
         type: documentType,
         verificationLevel,
         fileName: selectedFile.name,

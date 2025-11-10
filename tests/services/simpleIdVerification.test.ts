@@ -85,6 +85,10 @@ describe('SimpleIdVerification', () => {
         error: 'No text detected in document. Please ensure the image is clear and well-lit.'
       })
 
+      // Reset other OCR mocks to prevent test interference
+      ;(OCRService.compareNames as jest.Mock).mockReset()
+      ;(OCRService.validateIdNumber as jest.Mock).mockReset()
+
       const result = await SimpleIdVerification.verifyDocumentAgainstProfile(mockDocumentId)
 
       // CRITICAL: Must NOT be valid when OCR fails
@@ -280,8 +284,12 @@ describe('SimpleIdVerification', () => {
       expect(DocumentStorageService.updateDocumentStatus).toHaveBeenCalledWith(
         mockDocumentId,
         expect.not.stringMatching('verified'),
-        expect.any(String),
-        'system'
+        expect.any(String), // message parameter
+        'system',
+        expect.objectContaining({
+          confidence: expect.any(Number),
+          issues: expect.any(Array)
+        })
       )
     })
 
@@ -308,6 +316,132 @@ describe('SimpleIdVerification', () => {
       expect(result.success).toBe(true)
       expect(SecurityService.updateUserVerificationLevel).toHaveBeenCalledWith(mockUserId, 'basic')
       expect(SecurityService.updateTrustScore).toHaveBeenCalled()
+    })
+
+    it('should handle errors gracefully and set status to pending', async () => {
+      // Mock verification throwing an error
+      jest.spyOn(SimpleIdVerification, 'verifyDocumentAgainstProfile').mockRejectedValue(
+        new Error('OCR service unavailable')
+      )
+
+      const result = await SimpleIdVerification.processDocumentVerification(mockDocumentId)
+
+      expect(result.success).toBe(false)
+      expect(result.status).toBe('pending')
+      expect(result.message).toContain('manual')
+      expect(DocumentStorageService.updateDocumentStatus).toHaveBeenCalledWith(
+        mockDocumentId,
+        'pending',
+        'Automatic verification failed - requires manual review',
+        'system'
+      )
+    })
+  })
+
+  describe('getUserVerificationSummary', () => {
+    const mockUserId = 'user_test_123'
+
+    it('should return summary with verified, pending, and rejected counts', async () => {
+      const mockDocuments = [
+        { id: '1', status: 'verified', type: 'sa_id', verificationLevel: 'basic' },
+        { id: '2', status: 'verified', type: 'sa_id', verificationLevel: 'basic' },
+        { id: '3', status: 'pending', type: 'passport', verificationLevel: 'basic' },
+        { id: '4', status: 'rejected', type: 'sa_id', verificationLevel: 'basic' }
+      ]
+      const mockUser = {
+        id: mockUserId,
+        idNumber: '9001015001083',
+        verificationLevel: 'basic' as const
+      }
+
+      ;(DocumentStorageService.getUserDocuments as jest.Mock).mockResolvedValue(mockDocuments)
+      ;(SecurityService.getUser as jest.Mock).mockResolvedValue(mockUser)
+
+      const summary = await SimpleIdVerification.getUserVerificationSummary(mockUserId)
+
+      expect(summary.totalDocuments).toBe(4)
+      expect(summary.verified).toBe(2)
+      expect(summary.pending).toBe(1)
+      expect(summary.rejected).toBe(1)
+      expect(summary.verificationLevel).toBe('basic')
+    })
+
+    it('should include next steps when user has no ID number', async () => {
+      const mockUser = {
+        id: mockUserId,
+        idNumber: undefined,
+        verificationLevel: undefined
+      }
+
+      ;(DocumentStorageService.getUserDocuments as jest.Mock).mockResolvedValue([])
+      ;(SecurityService.getUser as jest.Mock).mockResolvedValue(mockUser)
+
+      const summary = await SimpleIdVerification.getUserVerificationSummary(mockUserId)
+
+      expect(summary.nextSteps).toContain('Add ID number to your profile')
+    })
+
+    it('should include next steps for rejected documents', async () => {
+      const mockDocuments = [
+        { id: '1', status: 'rejected', type: 'sa_id', verificationLevel: 'basic' }
+      ]
+      const mockUser = {
+        id: mockUserId,
+        idNumber: '9001015001083'
+      }
+
+      ;(DocumentStorageService.getUserDocuments as jest.Mock).mockResolvedValue(mockDocuments)
+      ;(SecurityService.getUser as jest.Mock).mockResolvedValue(mockUser)
+
+      const summary = await SimpleIdVerification.getUserVerificationSummary(mockUserId)
+
+      expect(summary.nextSteps).toContain('Re-upload rejected documents with clearer images')
+    })
+
+    it('should include next steps for pending documents', async () => {
+      const mockDocuments = [
+        { id: '1', status: 'pending', type: 'sa_id', verificationLevel: 'basic' }
+      ]
+      const mockUser = {
+        id: mockUserId,
+        idNumber: '9001015001083'
+      }
+
+      ;(DocumentStorageService.getUserDocuments as jest.Mock).mockResolvedValue(mockDocuments)
+      ;(SecurityService.getUser as jest.Mock).mockResolvedValue(mockUser)
+
+      const summary = await SimpleIdVerification.getUserVerificationSummary(mockUserId)
+
+      expect(summary.nextSteps).toContain('Wait for manual review of pending documents')
+    })
+
+    it('should prompt to upload first document when user has none', async () => {
+      const mockUser = {
+        id: mockUserId,
+        idNumber: '9001015001083'
+      }
+
+      ;(DocumentStorageService.getUserDocuments as jest.Mock).mockResolvedValue([])
+      ;(SecurityService.getUser as jest.Mock).mockResolvedValue(mockUser)
+
+      const summary = await SimpleIdVerification.getUserVerificationSummary(mockUserId)
+
+      expect(summary.nextSteps).toContain('Upload your first identity document to start verification')
+      expect(summary.totalDocuments).toBe(0)
+    })
+
+    it('should handle errors and return empty summary', async () => {
+      ;(DocumentStorageService.getUserDocuments as jest.Mock).mockRejectedValue(
+        new Error('Database error')
+      )
+
+      const summary = await SimpleIdVerification.getUserVerificationSummary(mockUserId)
+
+      expect(summary.totalDocuments).toBe(0)
+      expect(summary.verified).toBe(0)
+      expect(summary.pending).toBe(0)
+      expect(summary.rejected).toBe(0)
+      expect(summary.nextSteps).toEqual(['Error loading verification status'])
     })
   })
 })

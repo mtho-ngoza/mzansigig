@@ -16,6 +16,7 @@ import PaymentDashboard from './payment/PaymentDashboard'
 import EmployerPaymentDashboard from './payment/EmployerPaymentDashboard'
 import WithdrawalApprovalDashboard from './admin/WithdrawalApprovalDashboard'
 import FeeConfigManager from './admin/FeeConfigManager'
+import PendingDocumentReview from './admin/PendingDocumentReview'
 import BrowseTalent from './BrowseTalent'
 import { isAdmin } from '@/lib/utils/adminAuth'
 
@@ -32,7 +33,7 @@ export default function Dashboard({
 }: DashboardProps) {
   const { user } = useAuth()
   const { totalUnreadCount } = useMessaging()
-  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'manage-gigs' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments' | 'admin-withdrawals' | 'admin-fees' | 'browse-talent'>('dashboard')
+  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'manage-gigs' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments' | 'admin-withdrawals' | 'admin-fees' | 'admin-documents' | 'browse-talent'>('dashboard')
 
   // Auto-navigate to messages if conversationId is provided
   useEffect(() => {
@@ -278,6 +279,33 @@ export default function Dashboard({
     )
   }
 
+  // Show admin document verification page if user is on that view
+  if (currentView === 'admin-documents') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <PageHeader
+          title="Document Verification Review"
+          description="Review and approve user verification documents"
+          breadcrumbs={[{
+            label: 'Home',
+            onClick: onBrowseGigs || (() => {})
+          }, {
+            label: 'Dashboard',
+            onClick: () => setCurrentView('dashboard')
+          }, {
+            label: 'Document Review',
+            isCurrentPage: true
+          }]}
+          backButton={{
+            label: 'Back to Dashboard',
+            onClick: () => setCurrentView('dashboard')
+          }}
+        />
+        <PendingDocumentReview />
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Dashboard Header */}
@@ -373,6 +401,13 @@ export default function Dashboard({
                         onClick={() => setCurrentView('admin-withdrawals')}
                       >
                         Withdrawal Approvals
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setCurrentView('admin-documents')}
+                      >
+                        Document Review
                       </Button>
                       <Button
                         variant="outline"
