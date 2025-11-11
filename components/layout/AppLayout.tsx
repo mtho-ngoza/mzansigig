@@ -44,8 +44,24 @@ export function AppLayout({ children }: AppLayoutProps) {
     'messages': '/messages'
   }
 
+  // Determine if path is a dashboard sub-route
+  const getDashboardView = () => {
+    if (pathname.startsWith('/dashboard/')) {
+      return pathname.replace('/dashboard/', '')
+    }
+    return null
+  }
+
   // Initialize view from URL on mount
   useEffect(() => {
+    // Check if it's a dashboard sub-route
+    if (pathname.startsWith('/dashboard')) {
+      if (currentView !== 'dashboard') {
+        setCurrentView('dashboard')
+      }
+      return
+    }
+
     const view = pathToView[pathname]
     if (view && view !== currentView) {
       setCurrentView(view)
@@ -215,6 +231,13 @@ export function AppLayout({ children }: AppLayoutProps) {
                   onBrowseGigs={() => handleNavigation('browse')}
                   initialMessageConversationId={messageConversationId}
                   onMessageConversationStart={handleMessageConversationStart}
+                  initialView={getDashboardView() || 'dashboard'}
+                  onViewChange={(view: string) => {
+                    const path = view === 'dashboard' ? '/dashboard' : `/dashboard/${view}`
+                    if (pathname !== path) {
+                      router.push(path)
+                    }
+                  }}
                 />
               )
 
