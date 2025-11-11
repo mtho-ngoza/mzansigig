@@ -47,18 +47,17 @@ export function GlobalHeader({
 
   return (
     <>
-      <header className={`bg-white shadow-sm border-b relative z-50 ${className}`}>
+      <header className={`bg-white shadow-sm border-b sticky top-0 z-50 ${className}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Left side - Logo and main navigation */}
             <div className="flex items-center space-x-6">
-              <div className="flex items-center">
-                <h1 className="text-2xl font-bold text-primary-600 cursor-pointer" onClick={() => onNavigate?.('browse')}>
-                  KasiGig
-                </h1>
-                <p className="ml-4 text-gray-600 hidden sm:block">
-                  From kasi to career
-                </p>
+              <div className="flex items-center cursor-pointer" onClick={() => onNavigate?.('browse')}>
+                <img
+                  src="/logo-full.svg"
+                  alt="KasiGig - From kasi to career"
+                  className="h-10 w-auto"
+                />
               </div>
 
               {/* Main Navigation - Hidden on mobile */}
