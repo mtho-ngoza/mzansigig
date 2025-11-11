@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import Link from 'next/link'
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
@@ -90,16 +91,22 @@ export function Footer() {
             <h3 className="text-white font-semibold text-lg mb-4">Legal</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#" className="text-sm hover:text-white transition-colors">Terms of Service</a>
+                <Link href="/terms" className="text-sm hover:text-white transition-colors">
+                  Terms of Service
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-sm hover:text-white transition-colors">Privacy Policy</a>
+                <Link href="/privacy" className="text-sm hover:text-white transition-colors">
+                  Privacy Policy
+                </Link>
               </li>
               <li>
                 <a href="#" className="text-sm hover:text-white transition-colors">Cookie Policy</a>
               </li>
               <li>
-                <a href="#" className="text-sm hover:text-white transition-colors">POPIA Compliance</a>
+                <Link href="/popia" className="text-sm hover:text-white transition-colors">
+                  POPIA Compliance
+                </Link>
               </li>
               <li>
                 <a href="#" className="text-sm hover:text-white transition-colors">Dispute Resolution</a>
