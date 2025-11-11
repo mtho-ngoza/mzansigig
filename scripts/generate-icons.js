@@ -8,8 +8,8 @@ if (!fs.existsSync(iconsDir)) {
   fs.mkdirSync(iconsDir, { recursive: true });
 }
 
-// KasiGig brand color (blue from theme)
-const brandColor = '#2563eb';
+// KasiGig brand color (vibrant orange from theme)
+const brandColor = '#f97316';
 
 // Icon sizes needed
 const sizes = [72, 96, 128, 144, 152, 192, 384, 512];

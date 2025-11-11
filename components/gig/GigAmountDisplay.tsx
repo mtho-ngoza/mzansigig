@@ -75,7 +75,7 @@ export default function GigAmountDisplay({
             </span>
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="text-xs text-blue-600 hover:text-blue-800"
+              className="text-xs text-secondary-600 hover:text-secondary-800"
             >
               {showDetails ? 'Hide' : 'Show'} breakdown
             </button>
@@ -105,7 +105,7 @@ export default function GigAmountDisplay({
   // Detailed variant
   return (
     <div className={`space-y-3 ${className}`}>
-      <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4 border border-green-200">
+      <div className="bg-gradient-to-r from-green-50 to-secondary-50 rounded-lg p-4 border border-green-200">
         <div className="flex justify-between items-start mb-3">
           <div>
             <h4 className="text-sm font-medium text-gray-700">Worker Earnings</h4>
@@ -137,9 +137,9 @@ export default function GigAmountDisplay({
         </div>
       </div>
 
-      <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-        <h4 className="text-sm font-medium text-blue-800 mb-2">Cost Breakdown for Employer</h4>
-        <div className="space-y-1 text-xs text-blue-700">
+      <div className="bg-secondary-50 rounded-lg p-3 border border-secondary-200">
+        <h4 className="text-sm font-medium text-secondary-800 mb-2">Cost Breakdown for Employer</h4>
+        <div className="space-y-1 text-xs text-secondary-700">
           <div className="flex justify-between">
             <span>Project Payment:</span>
             <span>{formatCurrency(feeBreakdown.grossAmount)}</span>
@@ -156,7 +156,7 @@ export default function GigAmountDisplay({
             <span>Transaction Fee:</span>
             <span>{formatCurrency(feeBreakdown.fixedFee)}</span>
           </div>
-          <div className="border-t border-blue-300 pt-1 flex justify-between font-medium">
+          <div className="border-t border-secondary-300 pt-1 flex justify-between font-medium">
             <span>Total Employer Cost:</span>
             <span>{formatCurrency(feeBreakdown.totalEmployerCost)}</span>
           </div>

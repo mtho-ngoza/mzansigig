@@ -330,9 +330,9 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
                       </label>
                     ))}
                   </div>
-                  <div className="mt-4 text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
-                    <p className="font-medium text-blue-900 mb-1">💡 Why this helps:</p>
-                    <p className="text-blue-700">Letting clients know about your tools helps them plan better and shows you&apos;re ready to work.</p>
+                  <div className="mt-4 text-sm text-gray-600 bg-secondary-50 p-3 rounded-lg border border-secondary-200">
+                    <p className="font-medium text-secondary-900 mb-1">💡 Why this helps:</p>
+                    <p className="text-secondary-700">Letting clients know about your tools helps them plan better and shows you&apos;re ready to work.</p>
                   </div>
                 </CardContent>
               </Card>
@@ -342,9 +342,9 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
           {/* Professional Tips */}
           <Card>
             <CardContent className="p-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h4 className="font-semibold text-blue-800 mb-2">💡 Profile Tips</h4>
-                <ul className="text-sm text-blue-700 space-y-2">
+              <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+                <h4 className="font-semibold text-secondary-800 mb-2">💡 Profile Tips</h4>
+                <ul className="text-sm text-secondary-700 space-y-2">
                   <li>• Be honest about your experience level - clients appreciate transparency</li>
                   <li>• Research market rates in your area before setting your hourly rate</li>
                   <li>• Consider starting with competitive rates to build your reputation</li>

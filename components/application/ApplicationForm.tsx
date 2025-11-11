@@ -391,9 +391,9 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
             </div>
 
             {/* Application Tips */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h5 className="font-semibold text-blue-800 mb-2">💡 Application Tips</h5>
-              <ul className="text-sm text-blue-700 space-y-1">
+            <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+              <h5 className="font-semibold text-secondary-800 mb-2">💡 Application Tips</h5>
+              <ul className="text-sm text-secondary-700 space-y-1">
                 {isPhysicalWork ? (
                   <>
                     <li>• Mention how many years you&apos;ve been doing this work</li>

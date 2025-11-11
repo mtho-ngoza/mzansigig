@@ -181,7 +181,7 @@ export default function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethod
                   onClick={() => handleInputChange('type', option.value)}
                   className={`p-3 rounded-lg border-2 text-center transition-colors ${
                     formData.type === option.value
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      ? 'border-secondary-500 bg-secondary-50 text-secondary-700'
                       : 'border-gray-300 hover:border-gray-400'
                   }`}
                 >
@@ -200,7 +200,7 @@ export default function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethod
             <select
               value={formData.provider}
               onChange={(e) => handleInputChange('provider', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             >
               <option value="payfast">PayFast (Recommended for SA)</option>
               <option value="ozow">Ozow</option>
@@ -325,7 +325,7 @@ export default function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethod
                 <select
                   value={formData.accountType}
                   onChange={(e) => handleInputChange('accountType', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   <option value="cheque">Cheque Account</option>
                   <option value="savings">Savings Account</option>
@@ -344,7 +344,7 @@ export default function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethod
                 <select
                   value={formData.mobileProvider}
                   onChange={(e) => handleInputChange('mobileProvider', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
                   <option value="vodacom">Vodacom</option>
                   <option value="mtn">MTN</option>
@@ -372,7 +372,7 @@ export default function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethod
               id="isDefault"
               checked={formData.isDefault}
               onChange={(e) => setFormData(prev => ({ ...prev, isDefault: e.target.checked }))}
-              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+              className="h-4 w-4 text-secondary-600 border-gray-300 rounded focus:ring-primary-500"
             />
             <label htmlFor="isDefault" className="text-sm text-gray-700">
               Set as default payment method

@@ -50,7 +50,7 @@ export function Toast({ toast, onRemove }: ToastProps) {
       case 'warning':
         return `${baseStyles} bg-yellow-50 border-yellow-500 text-yellow-900`
       case 'info':
-        return `${baseStyles} bg-blue-50 border-blue-500 text-blue-900`
+        return `${baseStyles} bg-secondary-50 border-secondary-500 text-secondary-900`
       default:
         return `${baseStyles} bg-gray-50 border-gray-500 text-gray-900`
     }
@@ -80,7 +80,7 @@ export function Toast({ toast, onRemove }: ToastProps) {
         )
       case 'info':
         return (
-          <svg className={`${iconClasses} text-blue-500`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className={`${iconClasses} text-secondary-500`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         )

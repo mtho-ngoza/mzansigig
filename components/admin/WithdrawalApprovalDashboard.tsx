@@ -124,7 +124,7 @@ export default function WithdrawalApprovalDashboard() {
   const getStatusBadge = (status: WithdrawalRequest['status']) => {
     const styles = {
       pending: 'bg-yellow-100 text-yellow-800',
-      processing: 'bg-blue-100 text-blue-800',
+      processing: 'bg-secondary-100 text-secondary-800',
       completed: 'bg-green-100 text-green-800',
       failed: 'bg-red-100 text-red-800'
     }
@@ -179,13 +179,13 @@ export default function WithdrawalApprovalDashboard() {
                 onClick={() => setFilter(status)}
                 className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                   isActive
-                    ? 'border-blue-600 text-blue-600'
+                    ? 'border-primary-600 text-secondary-600'
                     : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
                 }`}
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
                 <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
-                  isActive ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                  isActive ? 'bg-secondary-100 text-secondary-600' : 'bg-gray-100 text-gray-600'
                 }`}>
                   {count}
                 </span>
@@ -198,7 +198,7 @@ export default function WithdrawalApprovalDashboard() {
       {/* Withdrawals List */}
       {loading ? (
         <div className="text-center py-12">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent"></div>
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary-600 border-r-transparent"></div>
           <p className="mt-4 text-gray-600">Loading withdrawal requests...</p>
         </div>
       ) : filteredWithdrawals.length === 0 ? (
@@ -322,7 +322,7 @@ export default function WithdrawalApprovalDashboard() {
               <textarea
                 value={rejectionReason}
                 onChange={(e) => setRejectionReason(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 rows={3}
                 placeholder="e.g., Insufficient documentation, incorrect bank details"
                 required

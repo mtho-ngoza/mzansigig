@@ -87,7 +87,7 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
       case 'accepted':
         return 'bg-green-100 text-green-800 border-green-200'
       case 'funded':
-        return 'bg-blue-100 text-blue-800 border-blue-200'
+        return 'bg-secondary-100 text-secondary-800 border-secondary-200'
       case 'completed':
         return 'bg-purple-100 text-purple-800 border-purple-200'
       case 'rejected':
@@ -288,11 +288,11 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                 </CardContent>
               </Card>
               <Card
-                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'funded' ? 'ring-2 ring-blue-600' : ''}`}
+                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'funded' ? 'ring-2 ring-primary-600' : ''}`}
                 onClick={() => setStatusFilter('funded')}
               >
                 <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-2xl font-bold text-secondary-600">
                     {applications.filter(app => app.status === 'funded').length}
                   </div>
                   <div className="text-sm text-gray-600">Funded</div>
@@ -496,16 +496,16 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                       )}
 
                       {/* Acceptance Confirmation */}
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                      <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
                         <div className="flex items-center">
-                          <svg className="w-5 h-5 text-blue-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5 text-secondary-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span className="text-blue-800 font-medium">
+                          <span className="text-secondary-800 font-medium">
                             Congratulations! Your application has been accepted.
                           </span>
                         </div>
-                        <p className="text-blue-700 text-sm mt-2">
+                        <p className="text-secondary-700 text-sm mt-2">
                           Use the &quot;Message Employer&quot; button above to discuss project details and next steps.
                         </p>
                       </div>

@@ -261,10 +261,10 @@ export default function WithdrawalRequestForm({ onSuccess, onCancel }: Withdrawa
           </div>
 
           {/* Important Notice */}
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <div className="p-4 bg-secondary-50 border border-secondary-200 rounded-lg">
             <div className="flex items-start">
-              <span className="text-blue-600 text-lg mr-2">ℹ️</span>
-              <div className="text-sm text-blue-800">
+              <span className="text-secondary-600 text-lg mr-2">ℹ️</span>
+              <div className="text-sm text-secondary-800">
                 <p className="font-medium mb-1">Processing Time</p>
                 <p>Withdrawal requests are processed within 1-3 business days. You will be notified once your withdrawal has been processed.</p>
               </div>

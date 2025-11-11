@@ -170,7 +170,7 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
                       name="withdrawalMethod"
                       checked={useExistingMethod}
                       onChange={(e) => setUseExistingMethod(e.target.checked)}
-                      className="h-4 w-4 text-blue-600"
+                      className="h-4 w-4 text-secondary-600"
                     />
                     <div className="flex-1">
                       <div className="font-medium text-gray-900">Use existing bank account</div>
@@ -183,7 +183,7 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
                       <select
                         value={selectedMethodId}
                         onChange={(e) => handleInputChange('selectedMethodId', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       >
                         <option value="">Select a bank account</option>
                         {eligibleMethods.map((method) => (
@@ -208,7 +208,7 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
                     name="withdrawalMethod"
                     checked={!useExistingMethod}
                     onChange={(e) => setUseExistingMethod(!e.target.checked)}
-                    className="h-4 w-4 text-blue-600"
+                    className="h-4 w-4 text-secondary-600"
                   />
                   <div className="flex-1">
                     <div className="font-medium text-gray-900">Add new bank account</div>
@@ -225,7 +225,7 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
                       <select
                         value={bankDetails.bankName}
                         onChange={(e) => handleInputChange('bankName', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       >
                         <option value="">Select your bank</option>
                         {bankOptions.map((bank) => (
@@ -277,7 +277,7 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
                       <select
                         value={bankDetails.accountType}
                         onChange={(e) => handleInputChange('accountType', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                       >
                         <option value="cheque">Cheque Account</option>
                         <option value="savings">Savings Account</option>
@@ -290,9 +290,9 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
           </div>
 
           {/* Processing Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h4 className="font-medium text-blue-900 mb-2">Withdrawal Information</h4>
-            <ul className="text-sm text-blue-800 space-y-1">
+          <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+            <h4 className="font-medium text-secondary-900 mb-2">Withdrawal Information</h4>
+            <ul className="text-sm text-secondary-800 space-y-1">
               <li>• Processing time: 1-3 business days</li>
               <li>• No withdrawal fees</li>
               <li>• Withdrawals processed Monday to Friday</li>
