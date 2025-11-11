@@ -412,7 +412,7 @@ export default function PublicGigBrowser({
             From Kasi to Career 🇿🇦
           </h2>
           <p className="text-2xl md:text-3xl mb-4 max-w-4xl mx-auto font-light">
-            South Africa's first gig platform built for informal sector workers
+            South Africa&apos;s first gig platform built for informal sector workers
           </p>
           <p className="text-lg mb-10 opacity-95 flex items-center justify-center gap-6 flex-wrap max-w-3xl mx-auto">
             <span className="flex items-center gap-2">
