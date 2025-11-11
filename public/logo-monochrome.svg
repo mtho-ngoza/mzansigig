@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="400" height="120" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- KasiGig Logo - Monochrome Version -->
+  <!-- For use on colored backgrounds or black & white printing -->
+
+  <!-- Icon (Hands Connecting) -->
+  <g id="icon" transform="translate(40, 35)">
+    <!-- Left Hand -->
+    <g id="left-hand" transform="translate(-15, 0)">
+      <path d="M 0 -20 L 0 20 M 0 0 L 12 -15 M 0 3 L 15 15"
+            stroke="#1F2937"
+            stroke-width="6"
+            stroke-linecap="round"
+            stroke-linejoin="round"/>
+    </g>
+
+    <!-- Right Hand -->
+    <g id="right-hand" transform="translate(15, 0)">
+      <path d="M 0 -18 Q -12 -18, -12 0 Q -12 18, 0 18 L 10 18"
+            stroke="#1F2937"
+            stroke-width="6"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            fill="none"/>
+    </g>
+
+    <!-- Connection Point -->
+    <circle cx="0" cy="0" r="5" fill="#1F2937"/>
+    <circle cx="0" cy="0" r="2.5" fill="#FFFFFF"/>
+  </g>
+
+  <!-- Text: KasiGig -->
+  <g id="text" transform="translate(85, 60)">
+    <text x="0" y="0"
+          font-family="Inter, Arial, sans-serif"
+          font-size="42"
+          font-weight="700"
+          fill="#1F2937">KasiGig</text>
+  </g>
+
+  <!-- Tagline -->
+  <g id="tagline" transform="translate(85, 82)">
+    <text x="0" y="0"
+          font-family="Inter, Arial, sans-serif"
+          font-size="14"
+          font-weight="400"
+          fill="#6B7280">From kasi to career</text>
+  </g>
+</svg>

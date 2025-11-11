@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KasiGig Logo Preview - The Kasi Connection</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #F9FAFB;
+            padding: 40px 20px;
+            color: #1F2937;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 42px;
+            margin-bottom: 10px;
+            color: #1F2937;
+        }
+
+        .tagline {
+            font-size: 18px;
+            color: #6B7280;
+            font-weight: 400;
+        }
+
+        .section {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            margin-bottom: 40px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .section h2 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #1F2937;
+            border-left: 4px solid #F97316;
+            padding-left: 16px;
+        }
+
+        .logo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .logo-item {
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .logo-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .logo-item h3 {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #6B7280;
+            font-weight: 600;
+        }
+
+        .logo-display {
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+        }
+
+        .logo-display img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .background-dark {
+            background: #1F2937;
+        }
+
+        .background-orange {
+            background: #F97316;
+        }
+
+        .background-teal {
+            background: #0D9488;
+        }
+
+        .specs {
+            background: #F3F4F6;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+            font-size: 13px;
+            color: #6B7280;
+            margin-top: 15px;
+        }
+
+        .specs strong {
+            color: #1F2937;
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .color-swatch {
+            flex: 1;
+            min-width: 200px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .color-display {
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        .color-info {
+            background: white;
+            padding: 15px;
+        }
+
+        .color-info h4 {
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #1F2937;
+        }
+
+        .color-info p {
+            font-size: 13px;
+            color: #6B7280;
+            margin-bottom: 4px;
+        }
+
+        .usage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .usage-example {
+            border: 1px solid #E5E7EB;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .usage-example h4 {
+            background: #F3F4F6;
+            padding: 12px 16px;
+            font-size: 14px;
+            color: #1F2937;
+            border-bottom: 1px solid #E5E7EB;
+        }
+
+        .usage-content {
+            padding: 30px;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-sizes {
+            display: flex;
+            gap: 30px;
+            align-items: flex-end;
+            justify-content: center;
+            padding: 30px;
+        }
+
+        .icon-size {
+            text-align: center;
+        }
+
+        .icon-size img {
+            display: block;
+            margin: 0 auto 10px;
+        }
+
+        .icon-size span {
+            font-size: 12px;
+            color: #6B7280;
+        }
+
+        .download-section {
+            background: linear-gradient(135deg, #F97316 0%, #0D9488 100%);
+            color: white;
+            text-align: center;
+            padding: 50px 40px;
+        }
+
+        .download-section h2 {
+            color: white;
+            border: none;
+            padding: 0;
+            margin-bottom: 15px;
+        }
+
+        .download-section p {
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: white;
+            color: #1F2937;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .guidelines {
+            background: #FEF3C7;
+            border-left: 4px solid #F59E0B;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .guidelines h3 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #92400E;
+        }
+
+        .guidelines ul {
+            margin-left: 20px;
+            color: #78350F;
+        }
+
+        .guidelines li {
+            margin-bottom: 8px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 1px solid #E5E7EB;
+            color: #6B7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>KasiGig Logo Preview</h1>
+            <p class="tagline">The Kasi Connection - Logo Mockup</p>
+        </header>
+
+        <!-- Logo Variations -->
+        <div class="section">
+            <h2>Logo Variations</h2>
+            <div class="logo-grid">
+                <div class="logo-item">
+                    <h3>Full Logo (Color)</h3>
+                    <div class="logo-display">
+                        <img src="logo-full.svg" alt="KasiGig Full Logo">
+                    </div>
+                    <div class="specs">
+                        <strong>Use:</strong> Primary logo for all materials<br>
+                        <strong>File:</strong> logo-full.svg<br>
+                        <strong>Min Width:</strong> 200px
+                    </div>
+                </div>
+
+                <div class="logo-item">
+                    <h3>Icon Only (Color)</h3>
+                    <div class="logo-display">
+                        <img src="logo-icon-simple.svg" alt="KasiGig Icon" style="max-width: 150px;">
+                    </div>
+                    <div class="specs">
+                        <strong>Use:</strong> App icon, favicon, social media<br>
+                        <strong>File:</strong> logo-icon-simple.svg<br>
+                        <strong>Min Size:</strong> 24px
+                    </div>
+                </div>
+
+                <div class="logo-item">
+                    <h3>Monochrome</h3>
+                    <div class="logo-display">
+                        <img src="logo-monochrome.svg" alt="KasiGig Monochrome">
+                    </div>
+                    <div class="specs">
+                        <strong>Use:</strong> B&W printing, watermarks<br>
+                        <strong>File:</strong> logo-monochrome.svg<br>
+                        <strong>Note:</strong> Maintains readability
+                    </div>
+                </div>
+
+                <div class="logo-item background-dark">
+                    <h3 style="color: white;">On Dark Background</h3>
+                    <div class="logo-display">
+                        <img src="logo-white.svg" alt="KasiGig White Logo">
+                    </div>
+                    <div class="specs">
+                        <strong>Use:</strong> Dark backgrounds, night mode<br>
+                        <strong>File:</strong> logo-white.svg<br>
+                        <strong>Note:</strong> Yellow accent maintained
+                    </div>
+                </div>
+
+                <div class="logo-item background-orange">
+                    <h3 style="color: white;">On Brand Orange</h3>
+                    <div class="logo-display">
+                        <img src="logo-white.svg" alt="KasiGig on Orange">
+                    </div>
+                    <div class="specs" style="background: rgba(255,255,255,0.2); color: white;">
+                        <strong style="color: white;">Use:</strong> Social media backgrounds<br>
+                        <strong style="color: white;">Note:</strong> High contrast maintained
+                    </div>
+                </div>
+
+                <div class="logo-item background-teal">
+                    <h3 style="color: white;">On Brand Teal</h3>
+                    <div class="logo-display">
+                        <img src="logo-white.svg" alt="KasiGig on Teal">
+                    </div>
+                    <div class="specs" style="background: rgba(255,255,255,0.2); color: white;">
+                        <strong style="color: white;">Use:</strong> Alternative backgrounds<br>
+                        <strong style="color: white;">Note:</strong> Trust & safety materials
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Color Palette -->
+        <div class="section">
+            <h2>Brand Color Palette</h2>
+            <div class="color-palette">
+                <div class="color-swatch">
+                    <div class="color-display" style="background: #F97316;">🔥</div>
+                    <div class="color-info">
+                        <h4>Primary Orange</h4>
+                        <p><strong>Hex:</strong> #F97316</p>
+                        <p><strong>RGB:</strong> 249, 115, 22</p>
+                        <p><strong>Use:</strong> CTAs, Energy, Action</p>
+                    </div>
+                </div>
+
+                <div class="color-swatch">
+                    <div class="color-display" style="background: #0D9488;">🛡️</div>
+                    <div class="color-info">
+                        <h4>Primary Teal</h4>
+                        <p><strong>Hex:</strong> #0D9488</p>
+                        <p><strong>RGB:</strong> 13, 148, 136</p>
+                        <p><strong>Use:</strong> Trust, Growth, Stability</p>
+                    </div>
+                </div>
+
+                <div class="color-swatch">
+                    <div class="color-display" style="background: #FCD34D; color: #1F2937;">✨</div>
+                    <div class="color-info">
+                        <h4>Accent Yellow</h4>
+                        <p><strong>Hex:</strong> #FCD34D</p>
+                        <p><strong>RGB:</strong> 252, 211, 77</p>
+                        <p><strong>Use:</strong> Highlights, Hope, Success</p>
+                    </div>
+                </div>
+
+                <div class="color-swatch">
+                    <div class="color-display" style="background: #1F2937;">📝</div>
+                    <div class="color-info">
+                        <h4>Text Charcoal</h4>
+                        <p><strong>Hex:</strong> #1F2937</p>
+                        <p><strong>RGB:</strong> 31, 41, 55</p>
+                        <p><strong>Use:</strong> Body text, Headings</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Icon Scaling -->
+        <div class="section">
+            <h2>Icon Scaling Examples</h2>
+            <div class="icon-sizes">
+                <div class="icon-size">
+                    <img src="logo-icon-simple.svg" alt="24px" style="width: 24px; height: 24px;">
+                    <span>24px<br>Minimum</span>
+                </div>
+                <div class="icon-size">
+                    <img src="logo-icon-simple.svg" alt="48px" style="width: 48px; height: 48px;">
+                    <span>48px<br>Standard</span>
+                </div>
+                <div class="icon-size">
+                    <img src="logo-icon-simple.svg" alt="96px" style="width: 96px; height: 96px;">
+                    <span>96px<br>Large</span>
+                </div>
+                <div class="icon-size">
+                    <img src="logo-icon-simple.svg" alt="128px" style="width: 128px; height: 128px;">
+                    <span>128px<br>App Icon</span>
+                </div>
+            </div>
+            <p style="text-align: center; color: #6B7280; margin-top: 20px;">
+                Logo maintains clarity and recognizability at all sizes
+            </p>
+        </div>
+
+        <!-- Usage Examples -->
+        <div class="section">
+            <h2>Usage Examples</h2>
+            <div class="usage-grid">
+                <div class="usage-example">
+                    <h4>Business Card</h4>
+                    <div class="usage-content">
+                        <img src="logo-full.svg" alt="Business Card" style="max-width: 180px;">
+                    </div>
+                </div>
+                <div class="usage-example">
+                    <h4>App Icon (Square)</h4>
+                    <div class="usage-content" style="background: #F97316;">
+                        <img src="logo-icon-simple.svg" alt="App Icon" style="width: 100px; filter: brightness(0) invert(1);">
+                    </div>
+                </div>
+                <div class="usage-example">
+                    <h4>Letterhead</h4>
+                    <div class="usage-content">
+                        <img src="logo-full.svg" alt="Letterhead" style="max-width: 200px;">
+                    </div>
+                </div>
+                <div class="usage-example">
+                    <h4>Social Media Profile</h4>
+                    <div class="usage-content" style="background: #0D9488;">
+                        <img src="logo-icon-simple.svg" alt="Social Media" style="width: 80px; filter: brightness(0) invert(1);">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logo Guidelines -->
+        <div class="section">
+            <h2>Logo Usage Guidelines</h2>
+
+            <div class="guidelines">
+                <h3>✅ DO:</h3>
+                <ul>
+                    <li>Use the full color logo on white or light backgrounds</li>
+                    <li>Use the white logo on dark or brand color backgrounds</li>
+                    <li>Maintain minimum clear space of 1x logo height on all sides</li>
+                    <li>Use SVG format for web and digital applications</li>
+                    <li>Keep the aspect ratio locked when resizing</li>
+                    <li>Use the icon-only version when space is limited (under 150px width)</li>
+                </ul>
+            </div>
+
+            <div class="guidelines" style="background: #FEE2E2; border-left-color: #EF4444;">
+                <h3 style="color: #991B1B;">❌ DON'T:</h3>
+                <ul style="color: #7F1D1D;">
+                    <li>Don't stretch, skew, or distort the logo</li>
+                    <li>Don't change the colors (except approved variations)</li>
+                    <li>Don't add effects like shadows, gradients, or outlines</li>
+                    <li>Don't place on busy or patterned backgrounds</li>
+                    <li>Don't use logos smaller than 24px (icon) or 200px (full logo)</li>
+                    <li>Don't recreate or modify the logo elements</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Download Section -->
+        <div class="section download-section">
+            <h2>Download Logo Files</h2>
+            <p>All logo files are in SVG format for maximum quality and scalability</p>
+            <div class="download-buttons">
+                <a href="logo-full.svg" download class="btn">📄 Full Logo</a>
+                <a href="logo-icon-simple.svg" download class="btn">⭐ Icon Only</a>
+                <a href="logo-monochrome.svg" download class="btn">⚫ Monochrome</a>
+                <a href="logo-white.svg" download class="btn">⚪ White Version</a>
+            </div>
+        </div>
+
+        <!-- Concept Explanation -->
+        <div class="section">
+            <h2>Design Concept: "The Kasi Connection"</h2>
+            <p style="line-height: 1.8; color: #4B5563; margin-bottom: 20px;">
+                The KasiGig logo represents the core mission of the platform: connecting workers with opportunities.
+                The design features two stylized hands reaching toward each other, forming a bridge that symbolizes
+                the connection between job seekers (coming from the kasi) and career opportunities.
+            </p>
+            <p style="line-height: 1.8; color: #4B5563; margin-bottom: 20px;">
+                <strong style="color: #F97316;">The left hand (orange)</strong> represents the worker - energetic,
+                reaching upward, full of potential and action.<br>
+                <strong style="color: #0D9488;">The right hand (teal)</strong> represents opportunity - trustworthy,
+                stable, reaching down to meet the worker.<br>
+                <strong style="color: #FCD34D;">The yellow connection point</strong> represents the moment of
+                connection, hope, and the beginning of transformation.
+            </p>
+            <p style="line-height: 1.8; color: #4B5563;">
+                The geometric, simplified style ensures the logo works at any size - from a 24px favicon to a
+                large billboard. The design is modern yet warm, professional yet approachable, and distinctly
+                South African in its cultural authenticity.
+            </p>
+        </div>
+
+        <footer>
+            <p>KasiGig Brand Assets © 2025 | From kasi to career 🇿🇦</p>
+            <p style="margin-top: 10px; font-size: 14px;">
+                For brand guidelines and usage questions, see: <strong>BRAND_GUIDELINES_QUICK_REF.md</strong>
+            </p>
+        </footer>
+    </div>
+</body>
+</html>

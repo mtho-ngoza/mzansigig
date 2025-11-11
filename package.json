@@ -17,7 +17,8 @@
     "seed:dev": "firebase use dev && FIREBASE_PROJECT_ID=kasigig-dev npm run seed",
     "seed:prod": "firebase use production && FIREBASE_PROJECT_ID=kasigig-production npm run seed",
     "seed:fee-config:dev": "ts-node scripts/seed-fee-config.ts dev",
-    "seed:fee-config:prod": "ts-node scripts/seed-fee-config.ts production"
+    "seed:fee-config:prod": "ts-node scripts/seed-fee-config.ts production",
+    "generate-icons": "node scripts/generate-icons.js"
   },
   "keywords": [
     "gig",
@@ -56,6 +57,7 @@
     "firebase-tools": "^13.31.3",
     "jest": "^30.2.0",
     "jest-environment-jsdom": "^30.2.0",
+    "sharp": "^0.34.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2"
   }

@@ -204,7 +204,7 @@ describe('ManageGigs', () => {
 
       await waitFor(() => {
         expect(screen.getByText('In Progress')).toBeInTheDocument()
-        expect(screen.getByText('In Progress')).toHaveClass('bg-blue-100', 'text-blue-800')
+        expect(screen.getByText('In Progress')).toHaveClass('bg-secondary-100', 'text-secondary-800')
       })
     })
 

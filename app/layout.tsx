@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { MessagingProvider } from '@/contexts/MessagingContext'
@@ -8,6 +9,9 @@ import { PaymentProvider } from '@/contexts/PaymentContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { DevUtilsLoader } from '@/components/DevUtilsLoader'
+
+// Load Inter font
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 // Force dynamic rendering for the entire app
 export const dynamic = 'force-dynamic'
@@ -28,7 +32,7 @@ export const metadata: Metadata = {
     'apple-mobile-web-app-status-bar-style': 'default',
     'apple-mobile-web-app-title': 'KasiGig',
     'application-name': 'KasiGig',
-    'msapplication-TileColor': '#2563eb',
+    'msapplication-TileColor': '#f97316',
     'msapplication-config': '/browserconfig.xml'
   }
 }
@@ -38,7 +42,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: '#2563eb'
+  themeColor: '#f97316'
 }
 
 export default function RootLayout({
@@ -50,7 +54,7 @@ export default function RootLayout({
     <html lang="en">
       <head>
       </head>
-      <body className="font-sans">
+      <body className={inter.className}>
         <DevUtilsLoader />
         <ErrorBoundary>
           <ToastProvider>

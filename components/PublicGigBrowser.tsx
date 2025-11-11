@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { GigService } from '@/lib/database/gigService'
 import { Gig } from '@/types/gig'
 import { User } from '@/types/auth'
@@ -12,6 +12,30 @@ import { useToast } from '@/contexts/ToastContext'
 import { useLocation } from '@/contexts/LocationContext'
 import { calculateDistance, formatDistance } from '@/lib/utils/locationUtils'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
+import { Footer } from '@/components/layout/Footer'
+
+// Custom hook for scroll-triggered animations
+function useInView(options = {}) {
+  const ref = useRef<HTMLDivElement>(null)
+  const [isInView, setIsInView] = useState(false)
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsInView(true)
+        observer.disconnect()
+      }
+    }, { threshold: 0.1, ...options })
+
+    if (ref.current) {
+      observer.observe(ref.current)
+    }
+
+    return () => observer.disconnect()
+  }, [])
+
+  return { ref, isInView }
+}
 
 interface PublicGigBrowserProps {
   onSignUpClick: () => void
@@ -48,6 +72,20 @@ export default function PublicGigBrowser({
   const [radiusKm, setRadiusKm] = useState(25)
   const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({})
   const [userAppliedGigs, setUserAppliedGigs] = useState<Set<string>>(new Set())
+  const [heroAnimated, setHeroAnimated] = useState(false)
+
+  // Scroll-triggered animations
+
+  const { ref: statsRef, isInView: statsInView } = useInView()
+  const { ref: howItWorksRef, isInView: howItWorksInView } = useInView()
+  const { ref: testimonialsRef, isInView: testimonialsInView } = useInView()
+  const { ref: faqRef, isInView: faqInView } = useInView()
+
+  // Trigger hero animations on mount
+  useEffect(() => {
+    const timer = setTimeout(() => setHeroAnimated(true), 100)
+    return () => clearTimeout(timer)
+  }, [])
 
   const categories = [
     'Technology',
@@ -326,7 +364,6 @@ export default function PublicGigBrowser({
     }
   }
 
-
   const formatDate = (date: Date | unknown) => {
     try {
       let dateObj: Date;
@@ -405,17 +442,37 @@ export default function PublicGigBrowser({
     <div className="min-h-screen bg-gray-50">
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-16">
+      <section className="bg-gradient-to-br from-primary-600 via-primary-600 to-primary-700 text-white py-20 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold mb-4">
-            Find Your Next Opportunity
+          <h2 className={`text-5xl md:text-6xl font-bold mb-6 leading-tight transition-all duration-700 ${heroAnimated ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+            From Kasi to Career 🇿🇦
           </h2>
-          <p className="text-xl mb-8 opacity-90">
-            Browse thousands of gigs from trusted employers across South Africa
+          <p className={`text-2xl md:text-3xl mb-4 max-w-4xl mx-auto font-light transition-all duration-700 delay-100 ${heroAnimated ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+            South Africa&apos;s first gig platform built for informal sector workers
+          </p>
+          <p className={`text-lg mb-10 opacity-95 flex items-center justify-center gap-6 flex-wrap max-w-3xl mx-auto transition-all duration-700 delay-200 ${heroAnimated ? 'opacity-95 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              ID Verified Employers
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Payment Protected
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Safe Work
+            </span>
           </p>
 
           {/* Search Section */}
-          <div className="max-w-4xl mx-auto bg-white rounded-lg p-6 shadow-lg">
+          <div className={`max-w-4xl mx-auto bg-white rounded-lg p-6 shadow-lg transition-all duration-700 delay-300 ${heroAnimated ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               <div className="md:col-span-2">
                 <input
@@ -453,20 +510,20 @@ export default function PublicGigBrowser({
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Location Status - Show different content based on permission state */}
         {!showLocationPrompt || locationPermissionGranted ? null : (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-5 w-5 text-secondary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-blue-900">
+                  <p className="text-sm font-medium text-secondary-900">
                     Find gigs near you
                   </p>
-                  <p className="text-sm text-blue-700">
+                  <p className="text-sm text-secondary-700">
                     Enable location to see nearby opportunities first - especially useful for cleaning, construction & transport jobs
                   </p>
                 </div>
@@ -477,13 +534,13 @@ export default function PublicGigBrowser({
                   size="sm"
                   onClick={requestLocationPermission}
                   disabled={isLoadingLocation}
-                  className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                  className="text-secondary-700 border-secondary-300 hover:bg-secondary-100"
                 >
                   {isLoadingLocation ? 'Getting Location...' : 'Enable Location'}
                 </Button>
                 <button
                   onClick={() => setShowLocationPrompt(false)}
-                  className="text-blue-400 hover:text-blue-600"
+                  className="text-secondary-400 hover:text-secondary-600"
                   aria-label="Dismiss"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -518,22 +575,22 @@ export default function PublicGigBrowser({
 
         {/* Radius Selector */}
         {showNearbyOnly && currentCoordinates && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
               <div>
-                <p className="text-sm font-medium text-blue-900">
+                <p className="text-sm font-medium text-secondary-900">
                   Showing gigs within {formatDistance(radiusKm)} of your location
                 </p>
-                <p className="text-xs text-blue-700">
+                <p className="text-xs text-secondary-700">
                   Adjust the radius to see more or fewer nearby opportunities
                 </p>
               </div>
               <div className="flex items-center space-x-2">
-                <label className="text-sm text-blue-700">Radius:</label>
+                <label className="text-sm text-secondary-700">Radius:</label>
                 <select
                   value={radiusKm}
                   onChange={(e) => setRadiusKm(Number(e.target.value))}
-                  className="px-3 py-1 border border-blue-300 rounded-md text-sm text-blue-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-3 py-1 border border-secondary-300 rounded-md text-sm text-secondary-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
                   <option value={5}>5 km</option>
                   <option value={10}>10 km</option>
@@ -559,7 +616,7 @@ export default function PublicGigBrowser({
                 variant={showNearbyOnly ? "primary" : "outline"}
                 size="sm"
                 onClick={handleNearMeToggle}
-                className={showNearbyOnly ? "bg-blue-600 text-white" : "text-blue-700 border-blue-300 hover:bg-blue-100"}
+                className={showNearbyOnly ? "bg-primary-600 text-white" : "text-secondary-700 border-secondary-300 hover:bg-secondary-100"}
               >
                 <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -602,7 +659,7 @@ export default function PublicGigBrowser({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {gigs.map((gig) => (
-              <Card key={gig.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card key={gig.id} className="hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer border-l-4 border-l-transparent hover:border-l-primary-500">
                 <CardHeader>
                   <CardTitle className="text-lg">{gig.title}</CardTitle>
                   <div className="flex items-center justify-between text-sm text-gray-500">
@@ -610,7 +667,7 @@ export default function PublicGigBrowser({
                     <div className="flex items-center space-x-2">
                       <span>{gig.location}</span>
                       {showNearbyOnly && currentCoordinates && gig.coordinates && (
-                        <span className="text-blue-600 font-medium">
+                        <span className="text-secondary-600 font-medium">
                           • {formatDistance(calculateDistance(
                             currentCoordinates,
                             gig.coordinates
@@ -757,6 +814,130 @@ export default function PublicGigBrowser({
         )}
       </section>
 
+      {/* Stats Section */}
+      <section ref={statsRef} className="bg-gradient-to-br from-primary-50 to-secondary-50 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-4 gap-8 text-center">
+            <div className={`transition-all duration-700 ${statsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: statsInView ? '0ms' : '0ms' }}>
+              <div className="text-4xl md:text-5xl font-bold text-primary-600 mb-2">1,200+</div>
+              <div className="text-gray-600 font-medium">Active Workers</div>
+            </div>
+            <div className={`transition-all duration-700 ${statsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: statsInView ? '100ms' : '0ms' }}>
+              <div className="text-4xl md:text-5xl font-bold text-primary-600 mb-2">500+</div>
+              <div className="text-gray-600 font-medium">Verified Employers</div>
+            </div>
+            <div className={`transition-all duration-700 ${statsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: statsInView ? '200ms' : '0ms' }}>
+              <div className="text-4xl md:text-5xl font-bold text-secondary-600 mb-2">R2.5M+</div>
+              <div className="text-gray-600 font-medium">Paid to Workers</div>
+            </div>
+            <div className={`transition-all duration-700 ${statsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: statsInView ? '300ms' : '0ms' }}>
+              <div className="text-4xl md:text-5xl font-bold text-secondary-600 mb-2">4.8/5</div>
+              <div className="text-gray-600 font-medium">Average Rating</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section ref={howItWorksRef} className="bg-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className={`text-center mb-12 transition-all duration-700 ${howItWorksInView ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Get started in three simple steps</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8 md:gap-12">
+            <div className={`text-center transition-all duration-700 ${howItWorksInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: howItWorksInView ? '0ms' : '0ms' }}>
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 text-primary-600 font-bold text-2xl mb-4">1</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Create Your Profile</h3>
+              <p className="text-gray-600">Sign up with your SA ID, add your skills, and get verified. Build trust with your profile.</p>
+            </div>
+            <div className={`text-center transition-all duration-700 ${howItWorksInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: howItWorksInView ? '150ms' : '0ms' }}>
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 text-primary-600 font-bold text-2xl mb-4">2</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Find & Apply</h3>
+              <p className="text-gray-600">Browse gigs in your area, apply to opportunities that match your skills, and get hired.</p>
+            </div>
+            <div className={`text-center transition-all duration-700 ${howItWorksInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: howItWorksInView ? '300ms' : '0ms' }}>
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 text-primary-600 font-bold text-2xl mb-4">3</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Work & Get Paid</h3>
+              <p className="text-gray-600">Complete the job, get reviewed, and receive secure payment. Build your reputation.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section ref={testimonialsRef} className="bg-gray-50 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className={`text-center mb-12 transition-all duration-700 ${testimonialsInView ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">What Our Community Says</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Real stories from workers and employers across South Africa</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className={`bg-white p-6 rounded-lg shadow-sm transition-all duration-700 ${testimonialsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: testimonialsInView ? '0ms' : '0ms' }}>
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 rounded-full bg-secondary-100 flex items-center justify-center text-2xl">👨🏿</div>
+                <div className="ml-3">
+                  <div className="font-bold text-gray-900">Thabo M.</div>
+                  <div className="text-sm text-gray-600">Plumber, Soweto</div>
+                </div>
+              </div>
+              <p className="text-gray-600 italic mb-3">&quot;KasiGig changed my life. I went from struggling to find work to having steady income. The payment protection means I always get paid.&quot;</p>
+              <div className="flex text-accent-400">★★★★★</div>
+            </div>
+            <div className={`bg-white p-6 rounded-lg shadow-sm transition-all duration-700 ${testimonialsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: testimonialsInView ? '150ms' : '0ms' }}>
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 rounded-full bg-secondary-100 flex items-center justify-center text-2xl">👩🏾</div>
+                <div className="ml-3">
+                  <div className="font-bold text-gray-900">Nomsa K.</div>
+                  <div className="text-sm text-gray-600">Cleaner, Durban</div>
+                </div>
+              </div>
+              <p className="text-gray-600 italic mb-3">&quot;As a single mother, finding flexible work was impossible. Now I choose my own hours and my kids eat every day.&quot;</p>
+              <div className="flex text-accent-400">★★★★★</div>
+            </div>
+            <div className={`bg-white p-6 rounded-lg shadow-sm transition-all duration-700 ${testimonialsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: testimonialsInView ? '300ms' : '0ms' }}>
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center text-2xl">👨🏽</div>
+                <div className="ml-3">
+                  <div className="font-bold text-gray-900">David L.</div>
+                  <div className="text-sm text-gray-600">Employer, Cape Town</div>
+                </div>
+              </div>
+              <p className="text-gray-600 italic mb-3">&quot;Finding reliable workers used to be a nightmare. KasiGig&apos;s verification system gives me peace of mind.&quot;</p>
+              <div className="flex text-accent-400">★★★★★</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section ref={faqRef} className="bg-white py-16 border-t">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className={`text-center mb-12 transition-all duration-700 ${faqInView ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
+            <p className="text-lg text-gray-600">Everything you need to know about getting started</p>
+          </div>
+          <div className="space-y-6">
+            <div className={`bg-gray-50 p-6 rounded-lg transition-all duration-700 ${faqInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: faqInView ? '0ms' : '0ms' }}>
+              <h3 className="font-bold text-gray-900 mb-2">Is KasiGig really free to use?</h3>
+              <p className="text-gray-600">Yes! Creating an account and browsing gigs is completely free. We only take a small commission when you successfully complete a job.</p>
+            </div>
+            <div className={`bg-gray-50 p-6 rounded-lg transition-all duration-700 ${faqInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: faqInView ? '100ms' : '0ms' }}>
+              <h3 className="font-bold text-gray-900 mb-2">How does payment protection work?</h3>
+              <p className="text-gray-600">Employers deposit payment into escrow before work begins. Once you complete the job and it&apos;s approved, payment is released to you. You always get paid for completed work.</p>
+            </div>
+            <div className={`bg-gray-50 p-6 rounded-lg transition-all duration-700 ${faqInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: faqInView ? '200ms' : '0ms' }}>
+              <h3 className="font-bold text-gray-900 mb-2">Do I need experience to get started?</h3>
+              <p className="text-gray-600">Not at all! We have gigs for all skill levels. Build your profile, earn reviews, and grow your opportunities over time.</p>
+            </div>
+            <div className={`bg-gray-50 p-6 rounded-lg transition-all duration-700 ${faqInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: faqInView ? '300ms' : '0ms' }}>
+              <h3 className="font-bold text-gray-900 mb-2">What documents do I need to get verified?</h3>
+              <p className="text-gray-600">Just your South African ID document. Verification is quick and helps build trust with employers.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Application Form Modal/Overlay */}
       {showApplicationForm && selectedGig && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -781,6 +962,9 @@ export default function PublicGigBrowser({
           </div>
         </div>
       )}
+
+      {/* Footer */}
+      <Footer />
     </div>
   )
 }

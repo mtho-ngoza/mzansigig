@@ -124,12 +124,12 @@ export default function WorkerEarningsDashboard({ onWithdrawalRequest }: WorkerE
             </div>
 
             {/* Total Earnings */}
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-lg border border-blue-200">
-              <div className="text-sm text-blue-700 font-medium mb-1">Total Earnings</div>
-              <div className="text-2xl font-bold text-blue-900">
+            <div className="bg-gradient-to-br from-secondary-50 to-secondary-100 p-4 rounded-lg border border-secondary-200">
+              <div className="text-sm text-secondary-700 font-medium mb-1">Total Earnings</div>
+              <div className="text-2xl font-bold text-secondary-900">
                 R{balance.totalEarnings.toFixed(2)}
               </div>
-              <div className="text-xs text-blue-600 mt-1">Lifetime</div>
+              <div className="text-xs text-secondary-600 mt-1">Lifetime</div>
             </div>
 
             {/* Total Withdrawn */}

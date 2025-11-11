@@ -17,7 +17,7 @@ export function TrustScoreBadge({
 }: TrustScoreBadgeProps) {
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-green-600 bg-green-100 border-green-200'
-    if (score >= 60) return 'text-blue-600 bg-blue-100 border-blue-200'
+    if (score >= 60) return 'text-secondary-600 bg-secondary-100 border-secondary-200'
     if (score >= 40) return 'text-yellow-600 bg-yellow-100 border-yellow-200'
     return 'text-red-600 bg-red-100 border-red-200'
   }
@@ -76,7 +76,7 @@ export function VerificationBadge({ level, size = 'md', className = '' }: Verifi
         }
       case 'enhanced':
         return {
-          color: 'text-blue-700 bg-blue-100 border-blue-200',
+          color: 'text-secondary-700 bg-secondary-100 border-secondary-200',
           icon: (
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />

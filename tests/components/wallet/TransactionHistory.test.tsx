@@ -307,7 +307,7 @@ describe('TransactionHistory Component', () => {
 
       // Find the parent container that includes both label and amount
       const withdrawalsLabel = screen.getByText('Total Withdrawals')
-      const withdrawalsCard = withdrawalsLabel.closest('.bg-blue-50')
+      const withdrawalsCard = withdrawalsLabel.closest('.bg-secondary-50')
       expect(withdrawalsCard).toHaveTextContent('Total Withdrawals')
       expect(withdrawalsCard).toHaveTextContent('R500.00')
     })

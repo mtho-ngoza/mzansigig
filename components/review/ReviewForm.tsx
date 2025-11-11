@@ -210,9 +210,9 @@ export default function ReviewForm({
             </div>
 
             {/* Review Guidelines */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h5 className="font-semibold text-blue-800 mb-2">Review Guidelines</h5>
-              <ul className="text-sm text-blue-700 space-y-1">
+            <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+              <h5 className="font-semibold text-secondary-800 mb-2">Review Guidelines</h5>
+              <ul className="text-sm text-secondary-700 space-y-1">
                 <li>• Be honest and constructive in your feedback</li>
                 <li>• Focus on your experience with this specific gig</li>
                 <li>• Mention communication, professionalism, and quality of work</li>

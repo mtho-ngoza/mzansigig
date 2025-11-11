@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- KasiGig Logo - Simplified "The Kasi Connection" -->
+  <!-- Two hands connecting, forming K and G -->
+
+  <g id="logo" transform="translate(100, 100)">
+    <!-- Left Hand reaching right (Orange - Worker) -->
+    <g id="left-hand" transform="translate(-45, 0)">
+      <!-- Stylized hand shape forming "K" -->
+      <path d="M 0 -30 L 0 30 M 0 0 L 20 -20 M 0 5 L 25 20"
+            stroke="#F97316"
+            stroke-width="8"
+            stroke-linecap="round"
+            stroke-linejoin="round"/>
+    </g>
+
+    <!-- Right Hand reaching left (Teal - Opportunity) -->
+    <g id="right-hand" transform="translate(45, 0)">
+      <!-- Stylized hand shape forming "G" -->
+      <path d="M 0 -25 Q -20 -25, -20 0 Q -20 25, 0 25 L 15 25"
+            stroke="#0D9488"
+            stroke-width="8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            fill="none"/>
+    </g>
+
+    <!-- Connection Point (Yellow accent) -->
+    <circle cx="0" cy="0" r="8" fill="#FCD34D"/>
+    <circle cx="0" cy="0" r="4" fill="#FFFFFF"/>
+  </g>
+</svg>
