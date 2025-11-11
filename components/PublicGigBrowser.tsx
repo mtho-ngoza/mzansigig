@@ -13,6 +13,10 @@ import { useLocation } from '@/contexts/LocationContext'
 import { calculateDistance, formatDistance } from '@/lib/utils/locationUtils'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
 import { Footer } from '@/components/layout/Footer'
+import { FilterPanel } from '@/components/gig/FilterPanel'
+import { SortDropdown, SortOption } from '@/components/gig/SortDropdown'
+import { ActiveFilters } from '@/components/gig/ActiveFilters'
+import { GigFilterOptions, DEFAULT_FILTERS } from '@/types/filters'
 
 // Custom hook for scroll-triggered animations
 function useInView(options = {}) {
@@ -62,6 +66,7 @@ export default function PublicGigBrowser({
   } = useLocation()
 
   const [gigs, setGigs] = useState<Gig[]>([])
+  const [filteredAndSortedGigs, setFilteredAndSortedGigs] = useState<Gig[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<string>('')
@@ -73,6 +78,13 @@ export default function PublicGigBrowser({
   const [applicationCounts, setApplicationCounts] = useState<Record<string, number>>({})
   const [userAppliedGigs, setUserAppliedGigs] = useState<Set<string>>(new Set())
   const [heroAnimated, setHeroAnimated] = useState(false)
+  const [filters, setFilters] = useState<GigFilterOptions>({
+    ...DEFAULT_FILTERS,
+    searchTerm: '',
+    category: ''
+  })
+  const [sortOption, setSortOption] = useState<SortOption>('newest')
+  const [showFilterPanel, setShowFilterPanel] = useState(false)
 
   // Scroll-triggered animations
   const { ref: statsRef, isInView: statsInView } = useInView()
@@ -124,6 +136,117 @@ export default function PublicGigBrowser({
       )
       return distA - distB
     })
+  }
+
+  const applyFiltersAndSort = (gigsToFilter: Gig[]) => {
+    let result = [...gigsToFilter]
+
+    // Apply budget filter
+    if (filters.budgetMin !== undefined) {
+      result = result.filter(
+        (gig) =>
+          gig.budget >= filters.budgetMin! &&
+          (filters.budgetMax === undefined || gig.budget <= filters.budgetMax)
+      )
+    }
+
+    // Apply duration filter
+    if (filters.durations.length > 0) {
+      result = result.filter((gig) => filters.durations.includes(gig.duration))
+    }
+
+    // Apply work type filter
+    if (filters.workType === 'remote') {
+      result = result.filter((gig) => gig.isRemote === true)
+    } else if (filters.workType === 'physical') {
+      result = result.filter((gig) => gig.isRemote !== true)
+    }
+
+    // Apply urgency filter
+    if (filters.urgency !== 'all' && filters.urgency) {
+      const now = new Date()
+      result = result.filter((gig) => {
+        if (!gig.deadline) return false
+
+        const deadline =
+          gig.deadline instanceof Date
+            ? gig.deadline
+            : typeof gig.deadline === 'object' && 'toDate' in gig.deadline
+            ? (gig.deadline as { toDate: () => Date }).toDate()
+            : new Date(gig.deadline)
+
+        const daysUntilDeadline = Math.ceil(
+          (deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        )
+
+        if (filters.urgency === 'urgent') {
+          return daysUntilDeadline <= 3 && daysUntilDeadline >= 0
+        } else if (filters.urgency === 'week') {
+          return daysUntilDeadline <= 7 && daysUntilDeadline >= 0
+        } else if (filters.urgency === 'month') {
+          return daysUntilDeadline <= 30 && daysUntilDeadline >= 0
+        }
+        return true
+      })
+    }
+
+    // Apply skills filter
+    if (filters.skills.length > 0) {
+      result = result.filter((gig) =>
+        filters.skills.some((skill) =>
+          gig.skillsRequired.some((req) =>
+            req.toLowerCase().includes(skill.toLowerCase())
+          )
+        )
+      )
+    }
+
+    // Apply sorting
+    result.sort((a, b) => {
+      switch (sortOption) {
+        case 'newest':
+          return b.createdAt.getTime() - a.createdAt.getTime()
+        case 'oldest':
+          return a.createdAt.getTime() - b.createdAt.getTime()
+        case 'budget-high':
+          return b.budget - a.budget
+        case 'budget-low':
+          return a.budget - b.budget
+        case 'deadline-soon': {
+          if (!a.deadline && !b.deadline) return 0
+          if (!a.deadline) return 1
+          if (!b.deadline) return -1
+
+          const deadlineA =
+            a.deadline instanceof Date
+              ? a.deadline
+              : typeof a.deadline === 'object' && 'toDate' in a.deadline
+              ? (a.deadline as { toDate: () => Date }).toDate()
+              : new Date(a.deadline)
+
+          const deadlineB =
+            b.deadline instanceof Date
+              ? b.deadline
+              : typeof b.deadline === 'object' && 'toDate' in b.deadline
+              ? (b.deadline as { toDate: () => Date }).toDate()
+              : new Date(b.deadline)
+
+          return deadlineA.getTime() - deadlineB.getTime()
+        }
+        case 'most-applications':
+          return (
+            (applicationCounts[b.id] || 0) - (applicationCounts[a.id] || 0)
+          )
+        case 'least-applications':
+          return (
+            (applicationCounts[a.id] || 0) - (applicationCounts[b.id] || 0)
+          )
+        default:
+          return 0
+      }
+    })
+
+    return result
   }
 
   const loadGigs = async () => {
@@ -328,6 +451,30 @@ export default function PublicGigBrowser({
     return () => clearTimeout(debounceTimer)
   }, [searchTerm])
 
+  // Apply filters and sorting whenever gigs, filters, or sortOption changes
+  useEffect(() => {
+    const filtered = applyFiltersAndSort(gigs)
+    setFilteredAndSortedGigs(filtered)
+  }, [gigs, filters, sortOption, applicationCounts])
+
+  // Update filters state when search term or category changes
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      searchTerm,
+      category: selectedCategory
+    }))
+  }, [searchTerm, selectedCategory])
+
+  // Update filters state when location filter changes
+  useEffect(() => {
+    setFilters((prev) => ({
+      ...prev,
+      showNearbyOnly,
+      radiusKm
+    }))
+  }, [showNearbyOnly, radiusKm])
+
   const handleSearch = async () => {
     try {
       setLoading(true)
@@ -361,6 +508,50 @@ export default function PublicGigBrowser({
     if (e.key === 'Enter') {
       handleSearch()
     }
+  }
+
+  const handleFiltersChange = (newFilters: Partial<GigFilterOptions>) => {
+    setFilters((prev) => ({
+      ...prev,
+      ...newFilters
+    }))
+  }
+
+  const handleClearFilters = () => {
+    setFilters({
+      ...DEFAULT_FILTERS,
+      searchTerm,
+      category: selectedCategory,
+      showNearbyOnly,
+      radiusKm
+    })
+  }
+
+  const handleRemoveFilter = (
+    filterKey: keyof GigFilterOptions,
+    value?: string
+  ) => {
+    setFilters((prev) => {
+      const updated = { ...prev }
+
+      if (filterKey === 'durations' && value) {
+        updated.durations = updated.durations.filter((d) => d !== value)
+      } else if (filterKey === 'skills' && value) {
+        updated.skills = updated.skills.filter((s) => s !== value)
+      } else if (filterKey === 'budgetMin') {
+        updated.budgetMin = undefined
+        updated.budgetMax = undefined
+      } else if (filterKey === 'workType') {
+        updated.workType = 'all'
+      } else if (filterKey === 'urgency') {
+        updated.urgency = 'all'
+      } else if (filterKey === 'showNearbyOnly') {
+        updated.showNearbyOnly = false
+        setShowNearbyOnly(false)
+      }
+
+      return updated
+    })
   }
 
   const formatDate = (date: Date | unknown) => {
@@ -602,62 +793,120 @@ export default function PublicGigBrowser({
           </div>
         )}
 
-        <div className="flex justify-between items-center mb-8">
-          <h3 className="text-2xl font-bold text-gray-900">
-            Available Gigs
-          </h3>
-          <div className="flex items-center space-x-4">
-            <p className="text-gray-600">
-              {gigs.length} gigs found{showNearbyOnly ? ` within ${formatDistance(radiusKm)}` : ''}
-            </p>
-            {locationPermissionGranted && (
-              <Button
-                variant={showNearbyOnly ? "primary" : "outline"}
-                size="sm"
-                onClick={handleNearMeToggle}
-                className={showNearbyOnly ? "bg-primary-600 text-white" : "text-secondary-700 border-secondary-300 hover:bg-secondary-100"}
-              >
-                <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                {showNearbyOnly ? `Within ${formatDistance(radiusKm)}` : 'Near Me'}
-              </Button>
-            )}
-          </div>
-        </div>
+        {/* Active Filters */}
+        <ActiveFilters
+          filters={filters}
+          onRemoveFilter={handleRemoveFilter}
+          onClearAll={handleClearFilters}
+        />
 
-        {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <Card>
-                  <CardHeader>
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <div className="h-3 bg-gray-200 rounded"></div>
-                      <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-                      <div className="h-3 bg-gray-200 rounded w-4/6"></div>
-                    </div>
-                  </CardContent>
-                </Card>
+        {/* Filter Panel and Gigs Layout */}
+        <div className="lg:grid lg:grid-cols-4 lg:gap-8">
+          {/* Filter Panel - Desktop Sidebar */}
+          <div className="hidden lg:block lg:col-span-1">
+            <FilterPanel
+              filters={filters}
+              onFiltersChange={handleFiltersChange}
+              onClearFilters={handleClearFilters}
+              resultCount={filteredAndSortedGigs.length}
+            />
+          </div>
+
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            {/* Mobile Filter Button */}
+            <div className="lg:hidden mb-4">
+              <Button
+                onClick={() => setShowFilterPanel(!showFilterPanel)}
+                variant="outline"
+                className="w-full"
+              >
+                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                  />
+                </svg>
+                Filters
+              </Button>
+            </div>
+
+            {/* Mobile Filter Panel */}
+            {showFilterPanel && (
+              <div className="lg:hidden mb-4">
+                <FilterPanel
+                  filters={filters}
+                  onFiltersChange={handleFiltersChange}
+                  onClearFilters={handleClearFilters}
+                  resultCount={filteredAndSortedGigs.length}
+                  isOpen={showFilterPanel}
+                  onClose={() => setShowFilterPanel(false)}
+                />
               </div>
-            ))}
-          </div>
-        ) : gigs.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg mb-4">
-              No gigs found matching your criteria.
-            </p>
-            <Button onClick={loadGigs} variant="outline">
-              View All Gigs
-            </Button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {gigs.map((gig) => (
+            )}
+
+            {/* Header with Sort */}
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900">Available Gigs</h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Showing {filteredAndSortedGigs.length} of {gigs.length} gigs
+                  {showNearbyOnly ? ` within ${formatDistance(radiusKm)}` : ''}
+                </p>
+              </div>
+              <div className="flex items-center space-x-3">
+                <SortDropdown value={sortOption} onChange={setSortOption} />
+                {locationPermissionGranted && (
+                  <Button
+                    variant={showNearbyOnly ? "primary" : "outline"}
+                    size="sm"
+                    onClick={handleNearMeToggle}
+                    className={showNearbyOnly ? "bg-primary-600 text-white" : "text-secondary-700 border-secondary-300 hover:bg-secondary-100"}
+                  >
+                    <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    {showNearbyOnly ? `Within ${formatDistance(radiusKm)}` : 'Near Me'}
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Gigs Grid */}
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <Card>
+                      <CardHeader>
+                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="h-3 bg-gray-200 rounded"></div>
+                          <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                          <div className="h-3 bg-gray-200 rounded w-4/6"></div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                ))}
+              </div>
+            ) : filteredAndSortedGigs.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-500 text-lg mb-4">
+                  No gigs found matching your criteria.
+                </p>
+                <Button onClick={handleClearFilters} variant="outline">
+                  Clear Filters
+                </Button>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {filteredAndSortedGigs.map((gig) => (
               <Card key={gig.id} className="hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer border-l-4 border-l-transparent hover:border-l-primary-500">
                 <CardHeader>
                   <CardTitle className="text-lg">{gig.title}</CardTitle>
@@ -810,7 +1059,11 @@ export default function PublicGigBrowser({
               </Button>
             </div>
           </div>
-        )}
+            )}
+          </div>
+          {/* End of Main Content (lg:col-span-3) */}
+        </div>
+        {/* End of Filter Panel and Gigs Layout (lg:grid) */}
       </section>
 
       {/* Stats Section */}
