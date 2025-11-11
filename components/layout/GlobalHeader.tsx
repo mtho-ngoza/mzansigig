@@ -56,7 +56,7 @@ export function GlobalHeader({
                 <img
                   src="/logo-full.png"
                   alt="KasiGig - From kasi to career"
-                  className="h-10 w-auto"
+                  className="h-15 w-auto"
                 />
               </div>
 
