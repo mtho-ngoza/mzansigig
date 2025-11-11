@@ -12,6 +12,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { useLocation } from '@/contexts/LocationContext'
 import { calculateDistance, formatDistance } from '@/lib/utils/locationUtils'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
+import { Footer } from '@/components/layout/Footer'
 
 interface PublicGigBrowserProps {
   onSignUpClick: () => void
@@ -405,13 +406,33 @@ export default function PublicGigBrowser({
     <div className="min-h-screen bg-gray-50">
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary-600 to-primary-700 text-white py-16">
+      <section className="bg-gradient-to-br from-primary-600 via-primary-600 to-primary-700 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold mb-4">
-            Find Your Next Opportunity
+          <h2 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+            From Kasi to Career 🇿🇦
           </h2>
-          <p className="text-xl mb-8 opacity-90">
-            Browse thousands of gigs from trusted employers across South Africa
+          <p className="text-2xl md:text-3xl mb-4 max-w-4xl mx-auto font-light">
+            South Africa's first gig platform built for informal sector workers
+          </p>
+          <p className="text-lg mb-10 opacity-95 flex items-center justify-center gap-6 flex-wrap max-w-3xl mx-auto">
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              ID Verified Employers
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Payment Protected
+            </span>
+            <span className="flex items-center gap-2">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              Safe Work
+            </span>
           </p>
 
           {/* Search Section */}
@@ -444,6 +465,29 @@ export default function PublicGigBrowser({
                   🔍 Search Now
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Feature Highlights */}
+      <section className="bg-white py-16 border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center p-6 rounded-lg hover:bg-gray-50 transition-colors">
+              <div className="text-5xl mb-4">🛡️</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">ID Verified Employers</h3>
+              <p className="text-gray-600">All employers verified with SA ID documents. Your safety is our priority.</p>
+            </div>
+            <div className="text-center p-6 rounded-lg hover:bg-gray-50 transition-colors">
+              <div className="text-5xl mb-4">💰</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Payment Protected</h3>
+              <p className="text-gray-600">Escrow system holds payment until work is complete. Get paid what you earned.</p>
+            </div>
+            <div className="text-center p-6 rounded-lg hover:bg-gray-50 transition-colors">
+              <div className="text-5xl mb-4">⭐</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Build Your Profile</h3>
+              <p className="text-gray-600">Earn trust scores, get verified, and grow your career opportunities.</p>
             </div>
           </div>
         </div>
@@ -602,7 +646,7 @@ export default function PublicGigBrowser({
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {gigs.map((gig) => (
-              <Card key={gig.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+              <Card key={gig.id} className="hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer border-l-4 border-l-transparent hover:border-l-primary-500">
                 <CardHeader>
                   <CardTitle className="text-lg">{gig.title}</CardTitle>
                   <div className="flex items-center justify-between text-sm text-gray-500">
@@ -781,6 +825,9 @@ export default function PublicGigBrowser({
           </div>
         </div>
       )}
+
+      {/* Footer */}
+      <Footer />
     </div>
   )
 }
