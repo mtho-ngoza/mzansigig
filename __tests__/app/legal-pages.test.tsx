@@ -27,9 +27,7 @@ describe('Legal Pages - Footer Presence', () => {
       render(<TermsOfService />)
 
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
-      // Check for text-based logo
-      const logoElements = screen.getAllByText('KasiGig')
-      expect(logoElements.length).toBeGreaterThan(0)
+      expect(screen.getByText('KasiGig')).toBeInTheDocument()
     })
 
     it('should have legal notice disclaimer', () => {
@@ -75,9 +73,7 @@ describe('Legal Pages - Footer Presence', () => {
       render(<PrivacyPolicy />)
 
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
-      // Check for text-based logo
-      const logoElements = screen.getAllByText('KasiGig')
-      expect(logoElements.length).toBeGreaterThan(0)
+      expect(screen.getByText('KasiGig')).toBeInTheDocument()
     })
 
     it('should have POPIA compliance notice', () => {
@@ -125,9 +121,7 @@ describe('Legal Pages - Footer Presence', () => {
       render(<POPIACompliance />)
 
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
-      // Check for text-based logo
-      const logoElements = screen.getAllByText('KasiGig')
-      expect(logoElements.length).toBeGreaterThan(0)
+      expect(screen.getByText('KasiGig')).toBeInTheDocument()
     })
 
     it('should explain POPIA protection', () => {
@@ -183,18 +177,17 @@ describe('Legal Pages - Footer Presence', () => {
   describe('Cross-Page Consistency', () => {
     it('should have consistent navigation header across all legal pages', () => {
       const { unmount: unmountTerms } = render(<TermsOfService />)
-      // Check for text-based logo
-      expect(screen.getAllByText('KasiGig').length).toBeGreaterThan(0)
+      expect(screen.getByText('KasiGig')).toBeInTheDocument()
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
       unmountTerms()
 
       const { unmount: unmountPrivacy } = render(<PrivacyPolicy />)
-      expect(screen.getAllByText('KasiGig').length).toBeGreaterThan(0)
+      expect(screen.getByText('KasiGig')).toBeInTheDocument()
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
       unmountPrivacy()
 
       render(<POPIACompliance />)
-      expect(screen.getAllByText('KasiGig').length).toBeGreaterThan(0)
+      expect(screen.getByText('KasiGig')).toBeInTheDocument()
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
     })
 
@@ -229,26 +222,25 @@ describe('Legal Pages - Footer Presence', () => {
     it('should have working home link in Terms header', () => {
       render(<TermsOfService />)
 
-      // Find all links pointing to home
-      const homeLinks = screen.getAllByRole('link', { name: /KasiGig|Back to Home/i })
-      const logoLink = homeLinks.find(link => link.getAttribute('href') === '/')
-      expect(logoLink).toHaveAttribute('href', '/')
+      const homeLinks = screen.getAllByRole('link')
+      const kasigigLink = homeLinks.find(link => link.textContent === 'KasiGig')
+      expect(kasigigLink).toHaveAttribute('href', '/')
     })
 
     it('should have working home link in Privacy header', () => {
       render(<PrivacyPolicy />)
 
-      const homeLinks = screen.getAllByRole('link', { name: /KasiGig|Back to Home/i })
-      const logoLink = homeLinks.find(link => link.getAttribute('href') === '/')
-      expect(logoLink).toHaveAttribute('href', '/')
+      const homeLinks = screen.getAllByRole('link')
+      const kasigigLink = homeLinks.find(link => link.textContent === 'KasiGig')
+      expect(kasigigLink).toHaveAttribute('href', '/')
     })
 
     it('should have working home link in POPIA header', () => {
       render(<POPIACompliance />)
 
-      const homeLinks = screen.getAllByRole('link', { name: /KasiGig|Back to Home/i })
-      const logoLink = homeLinks.find(link => link.getAttribute('href') === '/')
-      expect(logoLink).toHaveAttribute('href', '/')
+      const homeLinks = screen.getAllByRole('link')
+      const kasigigLink = homeLinks.find(link => link.textContent === 'KasiGig')
+      expect(kasigigLink).toHaveAttribute('href', '/')
     })
   })
 })
