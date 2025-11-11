@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { GlobalHeader } from './GlobalHeader'
 import { PageHeader } from './PageHeader'
@@ -16,7 +17,8 @@ interface AppLayoutProps {
   children: React.ReactNode
 }
 
-export function AppLayout({ }: AppLayoutProps) {
+export function AppLayout({ children }: AppLayoutProps) {
+  const pathname = usePathname()
   const { user, isLoading } = useAuth()
   const [currentView, setCurrentView] = useState<PageView>('browse')
   const [messageConversationId, setMessageConversationId] = useState<string | undefined>(undefined)
@@ -36,6 +38,15 @@ export function AppLayout({ }: AppLayoutProps) {
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary-500"></div>
       </div>
     )
+  }
+
+  // Routes that should use Next.js routing instead of state-based navigation
+  const routedPages = ['/terms', '/privacy', '/popia']
+  const isRoutedPage = routedPages.includes(pathname)
+
+  // For routed pages (like legal pages), render children directly
+  if (isRoutedPage && children) {
+    return <>{children}</>
   }
 
   const handleNavigation = (page: PageView) => {
