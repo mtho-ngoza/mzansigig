@@ -75,7 +75,6 @@ export default function PublicGigBrowser({
   const [heroAnimated, setHeroAnimated] = useState(false)
 
   // Scroll-triggered animations
-
   const { ref: statsRef, isInView: statsInView } = useInView()
   const { ref: howItWorksRef, isInView: howItWorksInView } = useInView()
   const { ref: testimonialsRef, isInView: testimonialsInView } = useInView()
@@ -501,29 +500,6 @@ export default function PublicGigBrowser({
                   🔍 Search Now
                 </Button>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Feature Highlights */}
-      <section className="bg-white py-16 border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center p-6 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="text-5xl mb-4">🛡️</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">ID Verified Employers</h3>
-              <p className="text-gray-600">All employers verified with SA ID documents. Your safety is our priority.</p>
-            </div>
-            <div className="text-center p-6 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="text-5xl mb-4">💰</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Payment Protected</h3>
-              <p className="text-gray-600">Escrow system holds payment until work is complete. Get paid what you earned.</p>
-            </div>
-            <div className="text-center p-6 rounded-lg hover:bg-gray-50 transition-colors">
-              <div className="text-5xl mb-4">⭐</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Build Your Profile</h3>
-              <p className="text-gray-600">Earn trust scores, get verified, and grow your career opportunities.</p>
             </div>
           </div>
         </div>
