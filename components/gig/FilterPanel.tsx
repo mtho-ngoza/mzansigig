@@ -2,6 +2,8 @@
 
 import React from 'react'
 import { GigFilterOptions, BUDGET_RANGES, DURATION_OPTIONS } from '@/types/filters'
+import { SkillsFilter } from './SkillsFilter'
+import { FilterPresets } from './FilterPresets'
 
 interface FilterPanelProps {
   filters: GigFilterOptions
@@ -74,6 +76,9 @@ export function FilterPanel({
           </p>
         </div>
       )}
+
+      {/* Filter Presets */}
+      <FilterPresets onApplyPreset={onFiltersChange} />
 
       {/* Budget Range Filter */}
       <div className="mb-6">
@@ -229,6 +234,14 @@ export function FilterPanel({
             <span className="ml-2 text-sm text-gray-700">This Month</span>
           </label>
         </div>
+      </div>
+
+      {/* Skills Filter */}
+      <div className="mb-6">
+        <SkillsFilter
+          selectedSkills={filters.skills}
+          onSkillsChange={(skills) => onFiltersChange({ skills })}
+        />
       </div>
     </div>
   )
