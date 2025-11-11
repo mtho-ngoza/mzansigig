@@ -76,6 +76,10 @@ export default function PublicGigBrowser({
 
   // Scroll-triggered animations
   const { ref: featuresRef, isInView: featuresInView } = useInView()
+  const { ref: statsRef, isInView: statsInView } = useInView()
+  const { ref: howItWorksRef, isInView: howItWorksInView } = useInView()
+  const { ref: testimonialsRef, isInView: testimonialsInView } = useInView()
+  const { ref: faqRef, isInView: faqInView } = useInView()
 
   // Trigger hero animations on mount
   useEffect(() => {
@@ -521,6 +525,130 @@ export default function PublicGigBrowser({
               <div className="text-5xl mb-4 transform transition-transform duration-300 hover:scale-110">⭐</div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Build Your Profile</h3>
               <p className="text-gray-600">Earn trust scores, get verified, and grow your career opportunities.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section ref={statsRef} className="bg-gradient-to-br from-primary-50 to-secondary-50 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-4 gap-8 text-center">
+            <div className={`transition-all duration-700 ${statsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: statsInView ? '0ms' : '0ms' }}>
+              <div className="text-4xl md:text-5xl font-bold text-primary-600 mb-2">1,200+</div>
+              <div className="text-gray-600 font-medium">Active Workers</div>
+            </div>
+            <div className={`transition-all duration-700 ${statsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: statsInView ? '100ms' : '0ms' }}>
+              <div className="text-4xl md:text-5xl font-bold text-primary-600 mb-2">500+</div>
+              <div className="text-gray-600 font-medium">Verified Employers</div>
+            </div>
+            <div className={`transition-all duration-700 ${statsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: statsInView ? '200ms' : '0ms' }}>
+              <div className="text-4xl md:text-5xl font-bold text-secondary-600 mb-2">R2.5M+</div>
+              <div className="text-gray-600 font-medium">Paid to Workers</div>
+            </div>
+            <div className={`transition-all duration-700 ${statsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: statsInView ? '300ms' : '0ms' }}>
+              <div className="text-4xl md:text-5xl font-bold text-secondary-600 mb-2">4.8/5</div>
+              <div className="text-gray-600 font-medium">Average Rating</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works Section */}
+      <section ref={howItWorksRef} className="bg-white py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className={`text-center mb-12 transition-all duration-700 ${howItWorksInView ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Get started in three simple steps</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8 md:gap-12">
+            <div className={`text-center transition-all duration-700 ${howItWorksInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: howItWorksInView ? '0ms' : '0ms' }}>
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 text-primary-600 font-bold text-2xl mb-4">1</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Create Your Profile</h3>
+              <p className="text-gray-600">Sign up with your SA ID, add your skills, and get verified. Build trust with your profile.</p>
+            </div>
+            <div className={`text-center transition-all duration-700 ${howItWorksInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: howItWorksInView ? '150ms' : '0ms' }}>
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 text-primary-600 font-bold text-2xl mb-4">2</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Find & Apply</h3>
+              <p className="text-gray-600">Browse gigs in your area, apply to opportunities that match your skills, and get hired.</p>
+            </div>
+            <div className={`text-center transition-all duration-700 ${howItWorksInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: howItWorksInView ? '300ms' : '0ms' }}>
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary-100 text-primary-600 font-bold text-2xl mb-4">3</div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Work & Get Paid</h3>
+              <p className="text-gray-600">Complete the job, get reviewed, and receive secure payment. Build your reputation.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section ref={testimonialsRef} className="bg-gray-50 py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className={`text-center mb-12 transition-all duration-700 ${testimonialsInView ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">What Our Community Says</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Real stories from workers and employers across South Africa</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className={`bg-white p-6 rounded-lg shadow-sm transition-all duration-700 ${testimonialsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: testimonialsInView ? '0ms' : '0ms' }}>
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 rounded-full bg-secondary-100 flex items-center justify-center text-2xl">👨🏿</div>
+                <div className="ml-3">
+                  <div className="font-bold text-gray-900">Thabo M.</div>
+                  <div className="text-sm text-gray-600">Plumber, Soweto</div>
+                </div>
+              </div>
+              <p className="text-gray-600 italic mb-3">&quot;KasiGig changed my life. I went from struggling to find work to having steady income. The payment protection means I always get paid.&quot;</p>
+              <div className="flex text-accent-400">★★★★★</div>
+            </div>
+            <div className={`bg-white p-6 rounded-lg shadow-sm transition-all duration-700 ${testimonialsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: testimonialsInView ? '150ms' : '0ms' }}>
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 rounded-full bg-secondary-100 flex items-center justify-center text-2xl">👩🏾</div>
+                <div className="ml-3">
+                  <div className="font-bold text-gray-900">Nomsa K.</div>
+                  <div className="text-sm text-gray-600">Cleaner, Durban</div>
+                </div>
+              </div>
+              <p className="text-gray-600 italic mb-3">&quot;As a single mother, finding flexible work was impossible. Now I choose my own hours and my kids eat every day.&quot;</p>
+              <div className="flex text-accent-400">★★★★★</div>
+            </div>
+            <div className={`bg-white p-6 rounded-lg shadow-sm transition-all duration-700 ${testimonialsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: testimonialsInView ? '300ms' : '0ms' }}>
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 rounded-full bg-primary-100 flex items-center justify-center text-2xl">👨🏽</div>
+                <div className="ml-3">
+                  <div className="font-bold text-gray-900">David L.</div>
+                  <div className="text-sm text-gray-600">Employer, Cape Town</div>
+                </div>
+              </div>
+              <p className="text-gray-600 italic mb-3">&quot;Finding reliable workers used to be a nightmare. KasiGig&apos;s verification system gives me peace of mind.&quot;</p>
+              <div className="flex text-accent-400">★★★★★</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Section */}
+      <section ref={faqRef} className="bg-white py-16 border-t">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className={`text-center mb-12 transition-all duration-700 ${faqInView ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
+            <p className="text-lg text-gray-600">Everything you need to know about getting started</p>
+          </div>
+          <div className="space-y-6">
+            <div className={`bg-gray-50 p-6 rounded-lg transition-all duration-700 ${faqInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: faqInView ? '0ms' : '0ms' }}>
+              <h3 className="font-bold text-gray-900 mb-2">Is KasiGig really free to use?</h3>
+              <p className="text-gray-600">Yes! Creating an account and browsing gigs is completely free. We only take a small commission when you successfully complete a job.</p>
+            </div>
+            <div className={`bg-gray-50 p-6 rounded-lg transition-all duration-700 ${faqInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: faqInView ? '100ms' : '0ms' }}>
+              <h3 className="font-bold text-gray-900 mb-2">How does payment protection work?</h3>
+              <p className="text-gray-600">Employers deposit payment into escrow before work begins. Once you complete the job and it&apos;s approved, payment is released to you. You always get paid for completed work.</p>
+            </div>
+            <div className={`bg-gray-50 p-6 rounded-lg transition-all duration-700 ${faqInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: faqInView ? '200ms' : '0ms' }}>
+              <h3 className="font-bold text-gray-900 mb-2">Do I need experience to get started?</h3>
+              <p className="text-gray-600">Not at all! We have gigs for all skill levels. Build your profile, earn reviews, and grow your opportunities over time.</p>
+            </div>
+            <div className={`bg-gray-50 p-6 rounded-lg transition-all duration-700 ${faqInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: faqInView ? '300ms' : '0ms' }}>
+              <h3 className="font-bold text-gray-900 mb-2">What documents do I need to get verified?</h3>
+              <p className="text-gray-600">Just your South African ID document. Verification is quick and helps build trust with employers.</p>
             </div>
           </div>
         </div>
