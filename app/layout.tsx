@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     'apple-mobile-web-app-status-bar-style': 'default',
     'apple-mobile-web-app-title': 'KasiGig',
     'application-name': 'KasiGig',
-    'msapplication-TileColor': '#2563eb',
+    'msapplication-TileColor': '#f97316',
     'msapplication-config': '/browserconfig.xml'
   }
 }
@@ -38,7 +38,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: '#2563eb'
+  themeColor: '#f97316'
 }
 
 export default function RootLayout({

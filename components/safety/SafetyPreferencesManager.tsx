@@ -139,7 +139,7 @@ export default function SafetyPreferencesManager({ onBack }: SafetyPreferencesMa
               <div className="text-sm text-gray-600">Emergency Contacts</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">
+              <div className="text-2xl font-bold text-secondary-600">
                 {user?.trustScore || 50}
               </div>
               <div className="text-sm text-gray-600">Trust Score</div>
@@ -364,9 +364,9 @@ export default function SafetyPreferencesManager({ onBack }: SafetyPreferencesMa
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="bg-blue-50 p-4 rounded-lg">
-              <h4 className="font-medium text-blue-900 mb-2">Before Meeting</h4>
-              <ul className="text-sm text-blue-800 space-y-1">
+            <div className="bg-secondary-50 p-4 rounded-lg">
+              <h4 className="font-medium text-secondary-900 mb-2">Before Meeting</h4>
+              <ul className="text-sm text-secondary-800 space-y-1">
                 <li>• Verify the employer&apos;s identity</li>
                 <li>• Share meeting details with contacts</li>
                 <li>• Choose well-lit, public locations</li>

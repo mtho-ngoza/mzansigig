@@ -82,11 +82,11 @@ export default function ReviewPrompt({
             <p className="text-gray-600 mb-4">
               {`You've completed "${gigTitle}". Would you like to leave a review for ${revieweeName}?`}
             </p>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800 font-medium mb-2">
+            <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+              <p className="text-sm text-secondary-800 font-medium mb-2">
                 Why reviews matter:
               </p>
-              <ul className="text-sm text-blue-700 space-y-1">
+              <ul className="text-sm text-secondary-700 space-y-1">
                 <li>• Help build trust in the KasiGig community</li>
                 <li>• Guide others in making informed decisions</li>
                 <li>• Recognize great work and professionalism</li>

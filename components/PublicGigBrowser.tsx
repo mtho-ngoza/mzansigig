@@ -453,20 +453,20 @@ export default function PublicGigBrowser({
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Location Status - Show different content based on permission state */}
         {!showLocationPrompt || locationPermissionGranted ? null : (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4 mb-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-5 w-5 text-secondary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                   </svg>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-blue-900">
+                  <p className="text-sm font-medium text-secondary-900">
                     Find gigs near you
                   </p>
-                  <p className="text-sm text-blue-700">
+                  <p className="text-sm text-secondary-700">
                     Enable location to see nearby opportunities first - especially useful for cleaning, construction & transport jobs
                   </p>
                 </div>
@@ -477,13 +477,13 @@ export default function PublicGigBrowser({
                   size="sm"
                   onClick={requestLocationPermission}
                   disabled={isLoadingLocation}
-                  className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                  className="text-secondary-700 border-secondary-300 hover:bg-secondary-100"
                 >
                   {isLoadingLocation ? 'Getting Location...' : 'Enable Location'}
                 </Button>
                 <button
                   onClick={() => setShowLocationPrompt(false)}
-                  className="text-blue-400 hover:text-blue-600"
+                  className="text-secondary-400 hover:text-secondary-600"
                   aria-label="Dismiss"
                 >
                   <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -518,22 +518,22 @@ export default function PublicGigBrowser({
 
         {/* Radius Selector */}
         {showNearbyOnly && currentCoordinates && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
               <div>
-                <p className="text-sm font-medium text-blue-900">
+                <p className="text-sm font-medium text-secondary-900">
                   Showing gigs within {formatDistance(radiusKm)} of your location
                 </p>
-                <p className="text-xs text-blue-700">
+                <p className="text-xs text-secondary-700">
                   Adjust the radius to see more or fewer nearby opportunities
                 </p>
               </div>
               <div className="flex items-center space-x-2">
-                <label className="text-sm text-blue-700">Radius:</label>
+                <label className="text-sm text-secondary-700">Radius:</label>
                 <select
                   value={radiusKm}
                   onChange={(e) => setRadiusKm(Number(e.target.value))}
-                  className="px-3 py-1 border border-blue-300 rounded-md text-sm text-blue-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="px-3 py-1 border border-secondary-300 rounded-md text-sm text-secondary-900 bg-white focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 >
                   <option value={5}>5 km</option>
                   <option value={10}>10 km</option>
@@ -559,7 +559,7 @@ export default function PublicGigBrowser({
                 variant={showNearbyOnly ? "primary" : "outline"}
                 size="sm"
                 onClick={handleNearMeToggle}
-                className={showNearbyOnly ? "bg-blue-600 text-white" : "text-blue-700 border-blue-300 hover:bg-blue-100"}
+                className={showNearbyOnly ? "bg-primary-600 text-white" : "text-secondary-700 border-secondary-300 hover:bg-secondary-100"}
               >
                 <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -610,7 +610,7 @@ export default function PublicGigBrowser({
                     <div className="flex items-center space-x-2">
                       <span>{gig.location}</span>
                       {showNearbyOnly && currentCoordinates && gig.coordinates && (
-                        <span className="text-blue-600 font-medium">
+                        <span className="text-secondary-600 font-medium">
                           • {formatDistance(calculateDistance(
                             currentCoordinates,
                             gig.coordinates

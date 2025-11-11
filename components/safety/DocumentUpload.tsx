@@ -197,7 +197,7 @@ export default function DocumentUpload({
       case 'verified': return 'text-green-600 bg-green-100'
       case 'rejected': return 'text-red-600 bg-red-100'
       case 'pending': return 'text-yellow-600 bg-yellow-100'
-      case 'draft': return 'text-blue-600 bg-blue-100'
+      case 'draft': return 'text-secondary-600 bg-secondary-100'
       default: return 'text-gray-600 bg-gray-100'
     }
   }
@@ -231,7 +231,7 @@ export default function DocumentUpload({
           <div className="space-y-4">
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
+                <div className="w-8 h-8 bg-secondary-100 rounded flex items-center justify-center">
                   📄
                 </div>
                 <div>
@@ -249,8 +249,8 @@ export default function DocumentUpload({
             </div>
 
             {existingDocument.notes && (
-              <div className="p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-800">
+              <div className="p-3 bg-secondary-50 rounded-lg">
+                <p className="text-sm text-secondary-800">
                   <strong>Review Notes:</strong> {existingDocument.notes}
                 </p>
               </div>
@@ -314,7 +314,7 @@ export default function DocumentUpload({
             <div
               className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                 isUploadingState
-                  ? 'border-blue-300 bg-blue-50 cursor-wait'
+                  ? 'border-secondary-300 bg-secondary-50 cursor-wait'
                   : isDeletingState
                   ? 'border-red-300 bg-red-50 cursor-wait'
                   : dragActive
@@ -330,11 +330,11 @@ export default function DocumentUpload({
             >
               {isUploadingState ? (
                 <div>
-                  <div className="w-12 h-12 bg-blue-100 rounded-full mx-auto mb-3 flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                  <div className="w-12 h-12 bg-secondary-100 rounded-full mx-auto mb-3 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
                   </div>
-                  <p className="font-medium text-blue-900">Uploading {selectedFile?.name}</p>
-                  <p className="text-sm text-blue-600">Please wait while we upload your document...</p>
+                  <p className="font-medium text-secondary-900">Uploading {selectedFile?.name}</p>
+                  <p className="text-sm text-secondary-600">Please wait while we upload your document...</p>
                 </div>
               ) : selectedFile ? (
                 <div>
@@ -394,7 +394,7 @@ export default function DocumentUpload({
                       variant="outline"
                       size="sm"
                       onClick={handleReplaceDocument}
-                      className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                      className="text-secondary-600 border-secondary-200 hover:bg-secondary-50"
                       disabled={isUploadingState || isDeletingState}
                     >
                       Replace

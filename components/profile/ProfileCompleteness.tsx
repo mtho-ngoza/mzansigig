@@ -88,7 +88,7 @@ export default function ProfileCompleteness() {
               {missingFields.slice(0, 5).map((field, index) => (
                 <span
                   key={index}
-                  className="px-2 py-1 bg-blue-50 text-blue-700 rounded-full text-xs border border-blue-200"
+                  className="px-2 py-1 bg-secondary-50 text-secondary-700 rounded-full text-xs border border-secondary-200"
                 >
                   {field}
                 </span>

@@ -232,7 +232,7 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">Total Paid</p>
-                      <p className="text-2xl font-bold text-blue-600">
+                      <p className="text-2xl font-bold text-secondary-600">
                         {formatCurrency(analytics?.totalPaid || 0)}
                       </p>
                     </div>

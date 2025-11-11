@@ -83,7 +83,7 @@ export default function LocationFilters({ onFiltersChange, className = '' }: Loc
               {locationStatusText()}
             </span>
             {isLocationFilterActive() && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary-100 text-secondary-800">
                 Active
               </span>
             )}
@@ -155,7 +155,7 @@ export default function LocationFilters({ onFiltersChange, className = '' }: Loc
                     onClick={() => handleRadiusChange(option.value)}
                     className={`p-2 text-sm rounded-md border transition-colors ${
                       radiusKm === option.value
-                        ? 'bg-blue-600 text-white border-blue-600'
+                        ? 'bg-primary-600 text-white border-primary-600'
                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                     }`}
                   >
@@ -173,12 +173,12 @@ export default function LocationFilters({ onFiltersChange, className = '' }: Loc
           {userLocation?.preferred && (
             <div className="space-y-2">
               <h4 className="text-sm font-medium text-gray-700">Current Area</h4>
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
-                <p className="text-sm text-blue-800">
+              <div className="p-3 bg-secondary-50 border border-secondary-200 rounded-md">
+                <p className="text-sm text-secondary-800">
                   {userLocation.preferred.city}, {userLocation.preferred.province}
                 </p>
                 {userLocation.lastUpdated && (
-                  <p className="text-xs text-blue-600 mt-1">
+                  <p className="text-xs text-secondary-600 mt-1">
                     Updated {new Date(userLocation.lastUpdated).toLocaleTimeString()}
                   </p>
                 )}

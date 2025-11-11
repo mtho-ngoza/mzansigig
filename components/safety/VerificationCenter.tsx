@@ -148,47 +148,47 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
 
       {/* Pending Documents Notice */}
       {pendingDocuments.length > 0 && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-secondary-200 bg-secondary-50">
           <CardContent className="p-6">
             <div className="flex items-start space-x-4">
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 bg-secondary-100 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                <h3 className="text-lg font-semibold text-secondary-900 mb-2">
                   Verification In Progress
                 </h3>
-                <p className="text-blue-800 mb-3">
+                <p className="text-secondary-800 mb-3">
                   {pendingDocuments.length} document{pendingDocuments.length > 1 ? 's are' : ' is'} currently under review by our verification team.
                 </p>
-                <div className="bg-blue-100 rounded-lg p-4 space-y-2">
+                <div className="bg-secondary-100 rounded-lg p-4 space-y-2">
                   {pendingDocuments.map((doc) => (
                     <div key={doc.id} className="flex items-center justify-between text-sm">
                       <div className="flex items-center space-x-2">
-                        <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
-                        <span className="text-blue-900 font-medium">
+                        <span className="text-secondary-900 font-medium">
                           {doc.type === 'sa_id' ? 'SA ID Document' :
                            doc.type === 'passport' ? 'Passport' :
                            doc.type === 'drivers_license' ? "Driver's License" : doc.type}
                         </span>
                       </div>
-                      <span className="text-blue-700">
+                      <span className="text-secondary-700">
                         Submitted {new Date(doc.submittedAt).toLocaleDateString()}
                       </span>
                     </div>
                   ))}
                 </div>
                 <div className="mt-4 flex items-start space-x-2">
-                  <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 text-secondary-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                  <div className="text-sm text-blue-800">
+                  <div className="text-sm text-secondary-800">
                     <p className="font-medium">What happens next?</p>
                     <ul className="mt-1 space-y-1 list-disc list-inside">
                       <li>Our team will review your documents within 24-48 hours</li>
@@ -291,7 +291,7 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
                 {getVerificationLevel() === 'none' ? (
                   pendingDocuments.length > 0 ? (
                     <div className="text-center">
-                      <div className="text-blue-600 font-medium mb-2">Under Review</div>
+                      <div className="text-secondary-600 font-medium mb-2">Under Review</div>
                       <Button disabled variant="outline">
                         Awaiting Approval
                       </Button>
@@ -321,15 +321,15 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
         <Card className="opacity-75">
           <CardContent className="p-6 relative">
             <div className="absolute top-4 right-4">
-              <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
+              <span className="bg-secondary-100 text-secondary-800 text-xs font-medium px-2 py-1 rounded-full">
                 Coming Soon
               </span>
             </div>
             <div className="flex items-start justify-between">
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                    <svg className="w-4 h-4 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                  <div className="w-8 h-8 bg-secondary-100 rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-secondary-600" fill="currentColor" viewBox="0 0 20 20">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                     </svg>
                   </div>
@@ -345,14 +345,14 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
                   <li>• +25 Trust Score points</li>
                 </ul>
                 <div className="mt-3 text-sm">
-                  <span className="text-blue-600 font-medium">
+                  <span className="text-secondary-600 font-medium">
                     Launching Q2 2025 - {user?.workSector === 'informal' ? 'Free for informal workers' : 'R150 (subsidized: R50)'}
                   </span>
                 </div>
               </div>
               <div className="ml-6">
                 <div className="text-center">
-                  <div className="text-blue-600 font-medium mb-2">Coming Soon</div>
+                  <div className="text-secondary-600 font-medium mb-2">Coming Soon</div>
                   <Button disabled variant="outline" className="opacity-50">
                     Notify Me
                   </Button>
@@ -428,8 +428,8 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
               </p>
             </div>
             <div className="text-center p-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-full mx-auto mb-3 flex items-center justify-center">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-12 h-12 bg-secondary-100 rounded-full mx-auto mb-3 flex items-center justify-center">
+                <svg className="w-6 h-6 text-secondary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
               </div>

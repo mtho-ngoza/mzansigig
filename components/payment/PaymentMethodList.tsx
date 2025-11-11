@@ -141,7 +141,7 @@ export default function PaymentMethodList({
             <Card
               className={`${
                 selectedMethodId === method.id
-                  ? 'ring-2 ring-blue-500 bg-blue-50'
+                  ? 'ring-2 ring-secondary-500 bg-secondary-50'
                   : ''
               }`}
             >
@@ -155,7 +155,7 @@ export default function PaymentMethodList({
                         {getPaymentMethodTitle(method)}
                       </h3>
                       {method.isDefault && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-secondary-100 text-secondary-800">
                           Default
                         </span>
                       )}
@@ -207,16 +207,16 @@ export default function PaymentMethodList({
       </div>
 
       {/* Instructions */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
         <div className="flex">
           <div className="flex-shrink-0">
-            <div className="text-blue-400 text-xl">ℹ️</div>
+            <div className="text-secondary-400 text-xl">ℹ️</div>
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-blue-800">
+            <h3 className="text-sm font-medium text-secondary-800">
               Payment Method Security
             </h3>
-            <div className="mt-2 text-sm text-blue-700">
+            <div className="mt-2 text-sm text-secondary-700">
               <ul className="list-disc list-inside space-y-1">
                 <li>Your payment information is encrypted and secure</li>
                 <li>We never store your full card details</li>

@@ -257,7 +257,7 @@ export default function SafeMeetingLocations({
 
   const getSafetyBadgeColor = (rating: number) => {
     if (rating >= 4.5) return 'bg-green-100 text-green-800'
-    if (rating >= 4.0) return 'bg-blue-100 text-blue-800'
+    if (rating >= 4.0) return 'bg-secondary-100 text-secondary-800'
     if (rating >= 3.5) return 'bg-yellow-100 text-yellow-800'
     return 'bg-red-100 text-red-800'
   }
@@ -396,17 +396,17 @@ export default function SafeMeetingLocations({
       )}
 
       {/* Safety Tips */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-secondary-50 border-secondary-200">
         <CardContent className="p-4">
           <div className="flex items-start space-x-3">
-            <div className="text-blue-600 mt-1">
+            <div className="text-secondary-600 mt-1">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div>
-              <h4 className="font-medium text-blue-900 mb-1">Meeting Safety Tips</h4>
-              <ul className="text-sm text-blue-800 space-y-1">
+              <h4 className="font-medium text-secondary-900 mb-1">Meeting Safety Tips</h4>
+              <ul className="text-sm text-secondary-800 space-y-1">
                 <li>• Always meet in well-lit, public places during business hours</li>
                 <li>• Inform a friend or family member about your meeting location and time</li>
                 <li>• Arrive early to familiarize yourself with the location and exits</li>

@@ -216,7 +216,7 @@ export default function ProfileManagement({ onBack }: ProfileManagementProps) {
 
                   {/* Work Sector */}
                   {user.workSector && (
-                    <span className="inline-block mb-2 px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                    <span className="inline-block mb-2 px-3 py-1 bg-secondary-100 text-secondary-800 text-sm rounded-full">
                       {user.workSector === 'professional' ? 'Professional' : 'Informal Sector'}
                     </span>
                   )}

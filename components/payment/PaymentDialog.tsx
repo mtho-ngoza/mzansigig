@@ -175,7 +175,7 @@ export default function PaymentDialog({
                     onClick={() => setPaymentType(option.value as 'fixed' | 'milestone' | 'bonus')}
                     className={`p-3 rounded-lg border-2 text-left transition-colors ${
                       paymentType === option.value
-                        ? 'border-blue-500 bg-blue-50'
+                        ? 'border-secondary-500 bg-secondary-50'
                         : 'border-gray-300 hover:border-gray-400'
                     }`}
                   >
@@ -322,8 +322,8 @@ export default function PaymentDialog({
 
             {/* Selected Payment Method */}
             {selectedMethod && (
-              <div className="bg-blue-50 rounded-lg p-4">
-                <h4 className="font-medium text-blue-900 mb-2">Payment Method</h4>
+              <div className="bg-secondary-50 rounded-lg p-4">
+                <h4 className="font-medium text-secondary-900 mb-2">Payment Method</h4>
                 <div className="flex items-center space-x-3">
                   <div className="text-xl">
                     {selectedMethod.type === 'card' ? '💳' :
@@ -331,14 +331,14 @@ export default function PaymentDialog({
                      selectedMethod.type === 'mobile_money' ? '📱' : '💰'}
                   </div>
                   <div>
-                    <p className="font-medium text-blue-900">
+                    <p className="font-medium text-secondary-900">
                       {selectedMethod.type === 'card'
                         ? `${selectedMethod.cardBrand} ending in ${selectedMethod.cardLast4}`
                         : selectedMethod.type === 'bank'
                         ? `${selectedMethod.bankName} ending in ${selectedMethod.accountLast4}`
                         : `${selectedMethod.mobileProvider} ${selectedMethod.mobileNumber}`}
                     </p>
-                    <p className="text-sm text-blue-700">
+                    <p className="text-sm text-secondary-700">
                       via {selectedMethod.provider?.toUpperCase()}
                     </p>
                   </div>
@@ -415,7 +415,7 @@ export default function PaymentDialog({
                 <div
                   key={s}
                   className={`h-2 flex-1 rounded-full ${
-                    s === step || (step === 'add-method' && s === 'method') ? 'bg-blue-500' :
+                    s === step || (step === 'add-method' && s === 'method') ? 'bg-secondary-500' :
                     currentStepIndex > thisStepIndex ? 'bg-green-500' : 'bg-gray-200'
                   }`}
                 />

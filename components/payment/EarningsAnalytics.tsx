@@ -41,7 +41,7 @@ export default function EarningsAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Paid</p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-2xl font-bold text-secondary-600">
                   {formatCurrency(analytics.totalPaid)}
                 </p>
               </div>
@@ -137,7 +137,7 @@ export default function EarningsAnalytics() {
                     <div className="flex-1">
                       <div className="bg-gray-200 rounded-full h-6 relative">
                         <div
-                          className="bg-gradient-to-r from-blue-500 to-green-500 h-6 rounded-full flex items-center justify-end pr-2"
+                          className="bg-gradient-to-r from-secondary-500 to-green-500 h-6 rounded-full flex items-center justify-end pr-2"
                           style={{ width: `${Math.max(widthPercentage, 5)}%` }}
                         >
                           {month.amount > 0 && (

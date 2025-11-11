@@ -165,9 +165,9 @@ export default function TransactionHistory({ onClose }: TransactionHistoryProps)
               R{totalEarnings.toFixed(2)}
             </div>
           </div>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="text-sm text-blue-700 font-medium">Total Withdrawals</div>
-            <div className="text-2xl font-bold text-blue-900 mt-1">
+          <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+            <div className="text-sm text-secondary-700 font-medium">Total Withdrawals</div>
+            <div className="text-2xl font-bold text-secondary-900 mt-1">
               R{totalWithdrawals.toFixed(2)}
             </div>
           </div>
@@ -280,7 +280,7 @@ export default function TransactionHistory({ onClose }: TransactionHistoryProps)
                           transaction.type === 'earnings'
                             ? 'bg-green-100 text-green-700'
                             : transaction.type === 'payments'
-                            ? 'bg-blue-100 text-blue-700'
+                            ? 'bg-secondary-100 text-secondary-700'
                             : transaction.type === 'refunds'
                             ? 'bg-purple-100 text-purple-700'
                             : 'bg-orange-100 text-orange-700'

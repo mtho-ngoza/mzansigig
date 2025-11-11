@@ -141,7 +141,7 @@ export default function VerificationSummary({ className = '' }: VerificationSumm
             <span className="text-sm text-gray-600">Current Level:</span>
             <span className={`px-2 py-1 rounded text-sm font-medium ${
               summary.verificationLevel === 'premium' ? 'bg-purple-100 text-purple-800' :
-              summary.verificationLevel === 'enhanced' ? 'bg-blue-100 text-blue-800' :
+              summary.verificationLevel === 'enhanced' ? 'bg-secondary-100 text-secondary-800' :
               'bg-green-100 text-green-800'
             }`}>
               {summary.verificationLevel.charAt(0).toUpperCase() + summary.verificationLevel.slice(1)}
@@ -156,7 +156,7 @@ export default function VerificationSummary({ className = '' }: VerificationSumm
             <ul className="space-y-1">
               {summary.nextSteps.map((step, index) => (
                 <li key={index} className="flex items-start space-x-2 text-sm">
-                  <span className="text-blue-500 mt-0.5">•</span>
+                  <span className="text-secondary-500 mt-0.5">•</span>
                   <span className="text-gray-700">{step}</span>
                 </li>
               ))}

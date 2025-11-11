@@ -126,7 +126,7 @@ export default function ProfilePhotoUpload({ onBack }: ProfilePhotoUploadProps) 
                 )}
 
                 {previewUrl && (
-                  <div className="absolute -top-2 -right-2 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                  <div className="absolute -top-2 -right-2 bg-secondary-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
                     ✓
                   </div>
                 )}
@@ -160,9 +160,9 @@ export default function ProfilePhotoUpload({ onBack }: ProfilePhotoUploadProps) 
             </div>
 
             {/* Photo Guidelines */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h4 className="font-semibold text-blue-800 mb-2">📋 {isInformal ? 'Photo Tips' : 'Photo Guidelines'}</h4>
-              <ul className="text-sm text-blue-700 space-y-1">
+            <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+              <h4 className="font-semibold text-secondary-800 mb-2">📋 {isInformal ? 'Photo Tips' : 'Photo Guidelines'}</h4>
+              <ul className="text-sm text-secondary-700 space-y-1">
                 <li>• Use a clear, well-lit photo of your face</li>
                 <li>• Look professional and approachable</li>
                 <li>• Avoid group photos, selfies, or distracting backgrounds</li>

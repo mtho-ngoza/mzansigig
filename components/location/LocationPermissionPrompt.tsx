@@ -32,20 +32,20 @@ export default function LocationPermissionPrompt({
 
   if (compact) {
     return (
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+      <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4 mb-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="h-5 w-5 text-secondary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-blue-900">
+              <p className="text-sm font-medium text-secondary-900">
                 Find gigs near you
               </p>
-              <p className="text-sm text-blue-700">
+              <p className="text-sm text-secondary-700">
                 Enable location to see nearby opportunities first
               </p>
             </div>
@@ -56,14 +56,14 @@ export default function LocationPermissionPrompt({
               size="sm"
               onClick={handleRequestLocation}
               disabled={isLoadingLocation}
-              className="text-blue-700 border-blue-300 hover:bg-blue-100"
+              className="text-secondary-700 border-secondary-300 hover:bg-secondary-100"
             >
               {isLoadingLocation ? 'Requesting...' : 'Enable'}
             </Button>
             {showDismiss && (
               <button
                 onClick={handleDismiss}
-                className="text-blue-400 hover:text-blue-600"
+                className="text-secondary-400 hover:text-secondary-600"
                 aria-label="Dismiss"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -78,10 +78,10 @@ export default function LocationPermissionPrompt({
   }
 
   return (
-    <Card className="mb-6 border-blue-200 bg-blue-50">
+    <Card className="mb-6 border-secondary-200 bg-secondary-50">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center text-lg text-blue-900">
-          <svg className="mr-2 h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <CardTitle className="flex items-center text-lg text-secondary-900">
+          <svg className="mr-2 h-5 w-5 text-secondary-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
@@ -90,32 +90,32 @@ export default function LocationPermissionPrompt({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <p className="text-blue-800">
+          <p className="text-secondary-800">
             Enable location services to discover gigs in your area. This is especially useful for:
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm text-blue-700">Cleaning services</span>
+              <div className="w-2 h-2 bg-secondary-500 rounded-full"></div>
+              <span className="text-sm text-secondary-700">Cleaning services</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm text-blue-700">Construction work</span>
+              <div className="w-2 h-2 bg-secondary-500 rounded-full"></div>
+              <span className="text-sm text-secondary-700">Construction work</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm text-blue-700">Transportation</span>
+              <div className="w-2 h-2 bg-secondary-500 rounded-full"></div>
+              <span className="text-sm text-secondary-700">Transportation</span>
             </div>
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm text-blue-700">Local services</span>
+              <div className="w-2 h-2 bg-secondary-500 rounded-full"></div>
+              <span className="text-sm text-secondary-700">Local services</span>
             </div>
           </div>
 
-          <div className="bg-white p-3 rounded-md border border-blue-200">
-            <h4 className="font-medium text-blue-900 mb-1">Privacy Notice</h4>
-            <p className="text-xs text-blue-700">
+          <div className="bg-white p-3 rounded-md border border-secondary-200">
+            <h4 className="font-medium text-secondary-900 mb-1">Privacy Notice</h4>
+            <p className="text-xs text-secondary-700">
               Your location is only used to show nearby gigs and is not shared with employers until you apply.
               You can disable location access at any time in your browser settings.
             </p>
@@ -125,7 +125,7 @@ export default function LocationPermissionPrompt({
             <Button
               onClick={handleRequestLocation}
               disabled={isLoadingLocation}
-              className="bg-blue-600 hover:bg-blue-700 text-white flex-1"
+              className="bg-primary-600 hover:bg-primary-700 text-white flex-1"
             >
               {isLoadingLocation ? (
                 <>
@@ -150,7 +150,7 @@ export default function LocationPermissionPrompt({
               <Button
                 variant="outline"
                 onClick={handleDismiss}
-                className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                className="border-secondary-300 text-secondary-700 hover:bg-secondary-100"
               >
                 Maybe Later
               </Button>

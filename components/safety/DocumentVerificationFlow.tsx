@@ -327,17 +327,17 @@ export default function DocumentVerificationFlow({
 
       {/* Pending Documents Notice */}
       {hasPendingDocuments && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-secondary-200 bg-secondary-50">
           <CardContent className="p-4">
             <div className="flex items-start space-x-3">
-              <div className="text-blue-600 text-2xl">ℹ️</div>
+              <div className="text-secondary-600 text-2xl">ℹ️</div>
               <div>
-                <p className="font-medium text-blue-900">Documents Pending Review</p>
-                <p className="text-sm text-blue-800 mt-1">
+                <p className="font-medium text-secondary-900">Documents Pending Review</p>
+                <p className="text-sm text-secondary-800 mt-1">
                   Your documents have been submitted and are awaiting manual review by our team.
                   You will be notified via email within 24-48 hours once the review is complete.
                 </p>
-                <p className="text-sm text-blue-800 mt-2 font-medium">
+                <p className="text-sm text-secondary-800 mt-2 font-medium">
                   No further action is required at this time.
                 </p>
               </div>
@@ -373,25 +373,25 @@ export default function DocumentVerificationFlow({
         <CardContent>
           <div className="space-y-3 text-sm text-gray-600">
             <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-medium text-xs">
+              <div className="w-6 h-6 bg-secondary-100 rounded-full flex items-center justify-center text-secondary-600 font-medium text-xs">
                 1
               </div>
               <p>Upload all required documents using the forms above</p>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-medium text-xs">
+              <div className="w-6 h-6 bg-secondary-100 rounded-full flex items-center justify-center text-secondary-600 font-medium text-xs">
                 2
               </div>
               <p>Our system automatically verifies your documents using OCR technology</p>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-medium text-xs">
+              <div className="w-6 h-6 bg-secondary-100 rounded-full flex items-center justify-center text-secondary-600 font-medium text-xs">
                 3
               </div>
               <p>You&apos;ll receive instant verification results or feedback if documents need improvement</p>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-medium text-xs">
+              <div className="w-6 h-6 bg-secondary-100 rounded-full flex items-center justify-center text-secondary-600 font-medium text-xs">
                 4
               </div>
               <p>Once verified, your trust score will be updated and you&apos;ll gain access to more opportunities</p>

@@ -100,7 +100,7 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600">This Month</p>
-                      <p className="text-2xl font-bold text-blue-600">
+                      <p className="text-2xl font-bold text-secondary-600">
                         {formatCurrency(
                           analytics?.monthlyEarnings
                             .find(m => m.month === new Date().toISOString().slice(0, 7))

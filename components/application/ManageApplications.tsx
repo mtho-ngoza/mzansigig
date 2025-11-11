@@ -343,11 +343,11 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                 </CardContent>
               </Card>
               <Card
-                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'funded' ? 'ring-2 ring-blue-600' : ''}`}
+                className={`cursor-pointer transition-all hover:shadow-md ${statusFilter === 'funded' ? 'ring-2 ring-primary-600' : ''}`}
                 onClick={() => setStatusFilter('funded')}
               >
                 <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-blue-600">
+                  <div className="text-2xl font-bold text-secondary-600">
                     {applications.filter(app => app.status === 'funded').length}
                   </div>
                   <div className="text-sm text-gray-600">Funded</div>
@@ -515,18 +515,18 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
 
                       {/* Status Banner */}
                       <div className={`border rounded-lg p-4 ${
-                        application.status === 'funded' ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'
+                        application.status === 'funded' ? 'bg-green-50 border-green-200' : 'bg-secondary-50 border-secondary-200'
                       }`}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center">
                             <svg className={`w-5 h-5 mr-2 ${
-                              application.status === 'funded' ? 'text-green-600' : 'text-blue-600'
+                              application.status === 'funded' ? 'text-green-600' : 'text-secondary-600'
                             }`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <div className="flex flex-col">
                               <span className={`font-medium ${
-                                application.status === 'funded' ? 'text-green-800' : 'text-blue-800'
+                                application.status === 'funded' ? 'text-green-800' : 'text-secondary-800'
                               }`}>
                                 {application.status === 'funded'
                                   ? `✅ Project Funded - ${application.applicantName} can begin work`
@@ -534,7 +534,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                               </span>
                               {application.paymentStatus && application.paymentStatus !== 'unpaid' && (
                                 <span className={`text-sm mt-1 ${
-                                  application.status === 'funded' ? 'text-green-700' : 'text-blue-700'
+                                  application.status === 'funded' ? 'text-green-700' : 'text-secondary-700'
                                 }`}>
                                   Payment Status: {application.paymentStatus === 'in_escrow' ? '🔒 In Escrow' :
                                                   application.paymentStatus === 'paid' ? '✅ Paid' :
@@ -550,7 +550,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                               <Button
                                 size="sm"
                                 onClick={() => setShowPaymentDialog({ isOpen: true, application })}
-                                className="bg-blue-600 hover:bg-blue-700"
+                                className="bg-primary-600 hover:bg-primary-700"
                               >
                                 💳 Make Payment
                               </Button>
