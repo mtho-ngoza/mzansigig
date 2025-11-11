@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { MessagingProvider } from '@/contexts/MessagingContext'
@@ -9,9 +8,6 @@ import { PaymentProvider } from '@/contexts/PaymentContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { DevUtilsLoader } from '@/components/DevUtilsLoader'
-
-// Load Inter font
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 
 // Force dynamic rendering for the entire app
 export const dynamic = 'force-dynamic'
@@ -53,8 +49,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
       </head>
-      <body className={inter.className}>
+      <body className="font-sans">
         <DevUtilsLoader />
         <ErrorBoundary>
           <ToastProvider>
