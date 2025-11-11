@@ -75,7 +75,6 @@ export default function PublicGigBrowser({
   const [heroAnimated, setHeroAnimated] = useState(false)
 
   // Scroll-triggered animations
-
   const { ref: statsRef, isInView: statsInView } = useInView()
   const { ref: howItWorksRef, isInView: howItWorksInView } = useInView()
   const { ref: testimonialsRef, isInView: testimonialsInView } = useInView()
@@ -506,7 +505,7 @@ export default function PublicGigBrowser({
         </div>
       </section>
 
-      {/* Gigs Section */}
+      {/* Gigs Section - PRIORITY: Show immediately after hero */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Location Status - Show different content based on permission state */}
         {!showLocationPrompt || locationPermissionGranted ? null : (

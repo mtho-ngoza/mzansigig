@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { GlobalHeader } from './GlobalHeader'
 import { PageHeader } from './PageHeader'
@@ -16,19 +17,65 @@ interface AppLayoutProps {
   children: React.ReactNode
 }
 
-export function AppLayout({ }: AppLayoutProps) {
+export function AppLayout({ children }: AppLayoutProps) {
+  const pathname = usePathname()
+  const router = useRouter()
   const { user, isLoading } = useAuth()
   const [currentView, setCurrentView] = useState<PageView>('browse')
   const [messageConversationId, setMessageConversationId] = useState<string | undefined>(undefined)
   const [showPostGig, setShowPostGig] = useState(false)
+
+  // Map URL paths to page views
+  const pathToView: Record<string, PageView> = {
+    '/': 'browse',
+    '/auth': 'auth',
+    '/dashboard': 'dashboard',
+    '/profile': 'profile',
+    '/post-gig': 'post-gig',
+    '/messages': 'messages'
+  }
+
+  const viewToPath: Record<PageView, string> = {
+    'browse': '/',
+    'auth': '/auth',
+    'dashboard': '/dashboard',
+    'profile': '/profile',
+    'post-gig': '/post-gig',
+    'messages': '/messages'
+  }
+
+  // Determine if path is a dashboard sub-route
+  const getDashboardView = () => {
+    if (pathname.startsWith('/dashboard/')) {
+      return pathname.replace('/dashboard/', '')
+    }
+    return null
+  }
+
+  // Initialize view from URL on mount
+  useEffect(() => {
+    // Check if it's a dashboard sub-route
+    if (pathname.startsWith('/dashboard')) {
+      if (currentView !== 'dashboard') {
+        setCurrentView('dashboard')
+      }
+      return
+    }
+
+    const view = pathToView[pathname]
+    if (view && view !== currentView) {
+      setCurrentView(view)
+    }
+  }, [pathname]) // Only run when pathname changes
 
   // Handle authentication state changes
   useEffect(() => {
     if (user && currentView === 'auth') {
       // Redirect to dashboard after successful authentication
       setCurrentView('dashboard')
+      router.push('/dashboard')
     }
-  }, [user, currentView])
+  }, [user, currentView, router])
 
   if (isLoading) {
     return (
@@ -38,8 +85,22 @@ export function AppLayout({ }: AppLayoutProps) {
     )
   }
 
+  // Routes that should use Next.js routing instead of state-based navigation
+  const routedPages = ['/terms', '/privacy', '/popia']
+  const isRoutedPage = routedPages.includes(pathname)
+
+  // For routed pages (like legal pages), render children directly
+  if (isRoutedPage && children) {
+    return <>{children}</>
+  }
+
   const handleNavigation = (page: PageView) => {
     setCurrentView(page)
+    // Update URL to match the navigation
+    const newPath = viewToPath[page]
+    if (newPath && pathname !== newPath) {
+      router.push(newPath)
+    }
     if (page !== 'messages') {
       setMessageConversationId(undefined)
     }
@@ -51,11 +112,13 @@ export function AppLayout({ }: AppLayoutProps) {
   const handleShowPostGig = () => {
     setShowPostGig(true)
     setCurrentView('post-gig')
+    router.push('/post-gig')
   }
 
   const handleMessageConversationStart = (conversationId: string) => {
     setMessageConversationId(conversationId)
     setCurrentView('messages')
+    router.push('/messages')
   }
 
   // Determine current page for header highlighting
@@ -71,7 +134,7 @@ export function AppLayout({ }: AppLayoutProps) {
     const breadcrumbs: Array<{label: string; onClick?: () => void; isCurrentPage?: boolean}> = [
       {
         label: 'Home',
-        onClick: () => setCurrentView('browse')
+        onClick: () => handleNavigation('browse')
       }
     ]
 
@@ -86,7 +149,7 @@ export function AppLayout({ }: AppLayoutProps) {
         breadcrumbs.push(
           {
             label: 'Dashboard',
-            onClick: () => setCurrentView('dashboard')
+            onClick: () => handleNavigation('dashboard')
           },
           {
             label: 'Profile & Settings',
@@ -98,7 +161,7 @@ export function AppLayout({ }: AppLayoutProps) {
         breadcrumbs.push(
           {
             label: 'Dashboard',
-            onClick: () => setCurrentView('dashboard')
+            onClick: () => handleNavigation('dashboard')
           },
           {
             label: 'Post New Gig',
@@ -110,7 +173,7 @@ export function AppLayout({ }: AppLayoutProps) {
         breadcrumbs.push(
           {
             label: 'Dashboard',
-            onClick: () => setCurrentView('dashboard')
+            onClick: () => handleNavigation('dashboard')
           },
           {
             label: 'Messages',
@@ -127,7 +190,7 @@ export function AppLayout({ }: AppLayoutProps) {
   if (currentView === 'auth') {
     return (
       <AuthPage
-        onBackClick={() => setCurrentView('browse')}
+        onBackClick={() => handleNavigation('browse')}
       />
     )
   }
@@ -141,10 +204,14 @@ export function AppLayout({ }: AppLayoutProps) {
           onNavigate={handleNavigation}
           onShowPostGig={handleShowPostGig}
           showAuthButtons={!user}
+          onNavigateToDashboardView={(view: string) => {
+            const path = view === 'dashboard' ? '/dashboard' : `/dashboard/${view}`
+            router.push(path)
+          }}
         />
         <PostGigPage onBack={() => {
           setShowPostGig(false)
-          setCurrentView('dashboard')
+          handleNavigation('dashboard')
         }} />
       </>
     )
@@ -157,6 +224,10 @@ export function AppLayout({ }: AppLayoutProps) {
         onNavigate={handleNavigation}
         onShowPostGig={handleShowPostGig}
         showAuthButtons={!user}
+        onNavigateToDashboardView={(view: string) => {
+          const path = view === 'dashboard' ? '/dashboard' : `/dashboard/${view}`
+          router.push(path)
+        }}
       />
       <main className="min-h-screen bg-gray-50">
         {(() => {
@@ -165,9 +236,16 @@ export function AppLayout({ }: AppLayoutProps) {
             case 'messages':
               return (
                 <Dashboard
-                  onBrowseGigs={() => setCurrentView('browse')}
+                  onBrowseGigs={() => handleNavigation('browse')}
                   initialMessageConversationId={messageConversationId}
                   onMessageConversationStart={handleMessageConversationStart}
+                  initialView={getDashboardView() || 'dashboard'}
+                  onViewChange={(view: string) => {
+                    const path = view === 'dashboard' ? '/dashboard' : `/dashboard/${view}`
+                    if (pathname !== path) {
+                      router.push(path)
+                    }
+                  }}
                 />
               )
 
@@ -180,7 +258,7 @@ export function AppLayout({ }: AppLayoutProps) {
                     breadcrumbs={getBreadcrumbs()}
                     backButton={{
                       label: 'Back to Dashboard',
-                      onClick: () => setCurrentView('dashboard')
+                      onClick: () => handleNavigation('dashboard')
                     }}
                   />
                   <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -195,13 +273,13 @@ export function AppLayout({ }: AppLayoutProps) {
             default:
               return (
                 <PublicGigBrowser
-                  onSignUpClick={() => setCurrentView('auth')}
-                  onLoginClick={() => setCurrentView('auth')}
+                  onSignUpClick={() => handleNavigation('auth')}
+                  onLoginClick={() => handleNavigation('auth')}
                   showAuthButtons={!user}
-                  onDashboardClick={user ? () => setCurrentView('dashboard') : undefined}
+                  onDashboardClick={user ? () => handleNavigation('dashboard') : undefined}
                   currentUser={user}
                   onMessageConversationStart={handleMessageConversationStart}
-                  onMessagesClick={user ? () => setCurrentView('messages') : undefined}
+                  onMessagesClick={user ? () => handleNavigation('messages') : undefined}
                 />
               )
           }

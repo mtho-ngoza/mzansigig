@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { MessagingProvider } from '@/contexts/MessagingContext'
@@ -10,9 +9,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { DevUtilsLoader } from '@/components/DevUtilsLoader'
 
-// Load Inter font
-const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
-
 // Force dynamic rendering for the entire app
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -21,6 +17,17 @@ export const metadata: Metadata = {
   title: 'KasiGig - Empowering South Africa\'s Informal Sector',
   description: 'Secure, inclusive gig opportunities for all South Africans. From kasi to career - find work, build skills, earn income.',
   manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' }
+    ],
+    shortcut: '/icons/icon-192x192.png',
+    apple: [
+      { url: '/icons/icon-152x152.png', sizes: '152x152', type: 'image/png' },
+      { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' }
+    ]
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -53,8 +60,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet" />
       </head>
-      <body className={inter.className}>
+      <body className="font-sans">
         <DevUtilsLoader />
         <ErrorBoundary>
           <ToastProvider>

@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMessaging } from '@/contexts/MessagingContext'
 
@@ -10,6 +11,7 @@ interface MobileMenuProps {
   currentPage?: 'browse' | 'dashboard' | 'messages' | 'profile'
   onNavigate?: (page: 'browse' | 'dashboard' | 'messages' | 'profile' | 'auth') => void
   onShowPostGig?: () => void
+  onNavigateToDashboardView?: (view: string) => void
 }
 
 export function MobileMenu({
@@ -17,8 +19,10 @@ export function MobileMenu({
   onClose,
   currentPage = 'browse',
   onNavigate,
-  onShowPostGig
+  onShowPostGig,
+  onNavigateToDashboardView
 }: MobileMenuProps) {
+  const router = useRouter()
   const { user, logout } = useAuth()
   const { totalUnreadCount } = useMessaging()
 
@@ -29,8 +33,9 @@ export function MobileMenu({
     onClose()
   }
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
+    router.push('/')
     onClose()
   }
 

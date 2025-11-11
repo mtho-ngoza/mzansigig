@@ -20,25 +20,46 @@ import PendingDocumentReview from './admin/PendingDocumentReview'
 import BrowseTalent from './BrowseTalent'
 import { isAdmin } from '@/lib/utils/adminAuth'
 
+type DashboardView = 'dashboard' | 'post-gig' | 'manage-gigs' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments' | 'admin-withdrawals' | 'admin-fees' | 'admin-documents' | 'browse-talent'
+
 interface DashboardProps {
   onBrowseGigs?: () => void
   initialMessageConversationId?: string
   onMessageConversationStart?: (conversationId: string) => void
+  initialView?: string
+  onViewChange?: (view: string) => void
 }
 
 export default function Dashboard({
   onBrowseGigs,
   initialMessageConversationId,
-  onMessageConversationStart
+  onMessageConversationStart,
+  initialView,
+  onViewChange
 }: DashboardProps) {
   const { user } = useAuth()
   const { totalUnreadCount } = useMessaging()
-  const [currentView, setCurrentView] = useState<'dashboard' | 'post-gig' | 'manage-gigs' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments' | 'admin-withdrawals' | 'admin-fees' | 'admin-documents' | 'browse-talent'>('dashboard')
+  const [currentView, setCurrentView] = useState<DashboardView>((initialView as DashboardView) || 'dashboard')
+
+  // Update URL when view changes
+  const handleViewChange = (view: DashboardView) => {
+    setCurrentView(view)
+    if (onViewChange) {
+      onViewChange(view)
+    }
+  }
+
+  // Sync with initial view from URL
+  useEffect(() => {
+    if (initialView && initialView !== currentView) {
+      setCurrentView(initialView as DashboardView)
+    }
+  }, [initialView])
 
   // Auto-navigate to messages if conversationId is provided
   useEffect(() => {
     if (initialMessageConversationId) {
-      setCurrentView('messages')
+      handleViewChange('messages')
     }
   }, [initialMessageConversationId])
 
@@ -51,7 +72,7 @@ export default function Dashboard({
       },
       {
         label: 'Dashboard',
-        onClick: () => setCurrentView('dashboard')
+        onClick: () => handleViewChange('dashboard')
       }
     ]
 
@@ -99,12 +120,12 @@ export default function Dashboard({
 
   // Show post gig page if user is on that view
   if (currentView === 'post-gig') {
-    return <PostGigPage onBack={() => setCurrentView('dashboard')} />
+    return <PostGigPage onBack={() => handleViewChange('dashboard')} />
   }
 
   // Show manage gigs page if user is on that view
   if (currentView === 'manage-gigs') {
-    return <ManageGigs onBack={() => setCurrentView('dashboard')} />
+    return <ManageGigs onBack={() => handleViewChange('dashboard')} />
   }
 
   // Show my applications page if user is on that view
@@ -117,7 +138,7 @@ export default function Dashboard({
           breadcrumbs={getDashboardBreadcrumbs('my-applications')}
           backButton={{
             label: 'Back to Dashboard',
-            onClick: () => setCurrentView('dashboard')
+            onClick: () => handleViewChange('dashboard')
           }}
           actions={onBrowseGigs ? [{
             label: 'Browse More Gigs',
@@ -131,7 +152,7 @@ export default function Dashboard({
           }] : undefined}
         />
         <MyApplications
-          onBack={() => setCurrentView('dashboard')}
+          onBack={() => handleViewChange('dashboard')}
           onBrowseGigs={onBrowseGigs}
           onMessageConversationStart={onMessageConversationStart}
         />
@@ -149,11 +170,11 @@ export default function Dashboard({
           breadcrumbs={getDashboardBreadcrumbs('manage-applications')}
           backButton={{
             label: 'Back to Dashboard',
-            onClick: () => setCurrentView('dashboard')
+            onClick: () => handleViewChange('dashboard')
           }}
           actions={[{
             label: 'Post New Gig',
-            onClick: () => setCurrentView('post-gig'),
+            onClick: () => handleViewChange('post-gig'),
             variant: 'primary' as const,
             icon: (
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -163,7 +184,7 @@ export default function Dashboard({
           }]}
         />
         <ManageApplications
-          onBack={() => setCurrentView('dashboard')}
+          onBack={() => handleViewChange('dashboard')}
           onMessageConversationStart={onMessageConversationStart}
         />
       </>
@@ -172,7 +193,7 @@ export default function Dashboard({
 
   // Show profile management page if user is on that view
   if (currentView === 'profile') {
-    return <ProfileManagement onBack={() => setCurrentView('dashboard')} />
+    return <ProfileManagement onBack={() => handleViewChange('dashboard')} />
   }
 
   // Show messaging page if user is on that view
@@ -185,7 +206,7 @@ export default function Dashboard({
           breadcrumbs={getDashboardBreadcrumbs('messages')}
           backButton={{
             label: 'Back to Dashboard',
-            onClick: () => setCurrentView('dashboard')
+            onClick: () => handleViewChange('dashboard')
           }}
         />
         <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -205,19 +226,19 @@ export default function Dashboard({
     // Show employer-specific payment dashboard for employers
     if (user?.userType === 'employer') {
       return (
-        <EmployerPaymentDashboard onBack={() => setCurrentView('dashboard')} />
+        <EmployerPaymentDashboard onBack={() => handleViewChange('dashboard')} />
       )
     }
     // Show worker payment dashboard for job seekers
     return (
-      <PaymentDashboard onBack={() => setCurrentView('dashboard')} />
+      <PaymentDashboard onBack={() => handleViewChange('dashboard')} />
     )
   }
 
   // Show browse talent page if user is on that view
   if (currentView === 'browse-talent') {
     return (
-      <BrowseTalent onBack={() => setCurrentView('dashboard')} />
+      <BrowseTalent onBack={() => handleViewChange('dashboard')} />
     )
   }
 
@@ -233,14 +254,14 @@ export default function Dashboard({
             onClick: onBrowseGigs || (() => {})
           }, {
             label: 'Dashboard',
-            onClick: () => setCurrentView('dashboard')
+            onClick: () => handleViewChange('dashboard')
           }, {
             label: 'Withdrawal Approvals',
             isCurrentPage: true
           }]}
           backButton={{
             label: 'Back to Dashboard',
-            onClick: () => setCurrentView('dashboard')
+            onClick: () => handleViewChange('dashboard')
           }}
         />
         <WithdrawalApprovalDashboard />
@@ -260,14 +281,14 @@ export default function Dashboard({
             onClick: onBrowseGigs || (() => {})
           }, {
             label: 'Dashboard',
-            onClick: () => setCurrentView('dashboard')
+            onClick: () => handleViewChange('dashboard')
           }, {
             label: 'Fee Configuration',
             isCurrentPage: true
           }]}
           backButton={{
             label: 'Back to Dashboard',
-            onClick: () => setCurrentView('dashboard')
+            onClick: () => handleViewChange('dashboard')
           }}
         />
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
@@ -291,14 +312,14 @@ export default function Dashboard({
             onClick: onBrowseGigs || (() => {})
           }, {
             label: 'Dashboard',
-            onClick: () => setCurrentView('dashboard')
+            onClick: () => handleViewChange('dashboard')
           }, {
             label: 'Document Review',
             isCurrentPage: true
           }]}
           backButton={{
             label: 'Back to Dashboard',
-            onClick: () => setCurrentView('dashboard')
+            onClick: () => handleViewChange('dashboard')
           }}
         />
         <PendingDocumentReview />
@@ -322,7 +343,7 @@ export default function Dashboard({
         actions={[
           ...(user?.userType === 'employer' ? [{
             label: 'Post New Gig',
-            onClick: () => setCurrentView('post-gig'),
+            onClick: () => handleViewChange('post-gig'),
             variant: 'primary' as const,
             icon: (
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -398,28 +419,28 @@ export default function Dashboard({
                     <>
                       <Button
                         className="w-full"
-                        onClick={() => setCurrentView('admin-withdrawals')}
+                        onClick={() => handleViewChange('admin-withdrawals')}
                       >
                         Withdrawal Approvals
                       </Button>
                       <Button
                         variant="outline"
                         className="w-full"
-                        onClick={() => setCurrentView('admin-documents')}
+                        onClick={() => handleViewChange('admin-documents')}
                       >
                         Document Review
                       </Button>
                       <Button
                         variant="outline"
                         className="w-full"
-                        onClick={() => setCurrentView('admin-fees')}
+                        onClick={() => handleViewChange('admin-fees')}
                       >
                         Fee Configuration
                       </Button>
                       <Button
                         variant="outline"
                         className="w-full relative"
-                        onClick={() => setCurrentView('messages')}
+                        onClick={() => handleViewChange('messages')}
                       >
                         Messages
                         {totalUnreadCount > 0 && (
@@ -431,7 +452,7 @@ export default function Dashboard({
                       <Button
                         variant="outline"
                         className="w-full"
-                        onClick={() => setCurrentView('profile')}
+                        onClick={() => handleViewChange('profile')}
                       >
                         Profile
                       </Button>
@@ -447,21 +468,21 @@ export default function Dashboard({
                       <Button
                         variant="outline"
                         className="w-full"
-                        onClick={() => setCurrentView('profile')}
+                        onClick={() => handleViewChange('profile')}
                       >
                         Update Profile
                       </Button>
                       <Button
                         variant="outline"
                         className="w-full"
-                        onClick={() => setCurrentView('my-applications')}
+                        onClick={() => handleViewChange('my-applications')}
                       >
                         My Applications
                       </Button>
                       <Button
                         variant="outline"
                         className="w-full relative"
-                        onClick={() => setCurrentView('messages')}
+                        onClick={() => handleViewChange('messages')}
                       >
                         Messages
                         {totalUnreadCount > 0 && (
@@ -473,7 +494,7 @@ export default function Dashboard({
                       <Button
                         variant="outline"
                         className="w-full"
-                        onClick={() => setCurrentView('payments')}
+                        onClick={() => handleViewChange('payments')}
                       >
                         Payments
                       </Button>
@@ -482,28 +503,28 @@ export default function Dashboard({
                     <>
                       <Button
                         className="w-full"
-                        onClick={() => setCurrentView('post-gig')}
+                        onClick={() => handleViewChange('post-gig')}
                       >
                         Post a Gig
                       </Button>
                       <Button
                         variant="outline"
                         className="w-full"
-                        onClick={() => setCurrentView('manage-gigs')}
+                        onClick={() => handleViewChange('manage-gigs')}
                       >
                         Manage Gigs
                       </Button>
                       <Button
                         variant="outline"
                         className="w-full"
-                        onClick={() => setCurrentView('manage-applications')}
+                        onClick={() => handleViewChange('manage-applications')}
                       >
                         View Applications
                       </Button>
                       <Button
                         variant="outline"
                         className="w-full relative"
-                        onClick={() => setCurrentView('messages')}
+                        onClick={() => handleViewChange('messages')}
                       >
                         Messages
                         {totalUnreadCount > 0 && (
@@ -515,14 +536,14 @@ export default function Dashboard({
                       <Button
                         variant="outline"
                         className="w-full"
-                        onClick={() => setCurrentView('browse-talent')}
+                        onClick={() => handleViewChange('browse-talent')}
                       >
                         Browse Talent
                       </Button>
                       <Button
                         variant="outline"
                         className="w-full"
-                        onClick={() => setCurrentView('payments')}
+                        onClick={() => handleViewChange('payments')}
                       >
                         Payments
                       </Button>

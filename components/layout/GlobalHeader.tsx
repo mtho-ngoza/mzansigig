@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useMessaging } from '@/contexts/MessagingContext'
 import { Button } from '@/components/ui/Button'
@@ -13,6 +14,7 @@ interface GlobalHeaderProps {
   onShowPostGig?: () => void
   showAuthButtons?: boolean
   className?: string
+  onNavigateToDashboardView?: (view: string) => void
 }
 
 export function GlobalHeader({
@@ -20,8 +22,10 @@ export function GlobalHeader({
   onNavigate,
   onShowPostGig,
   showAuthButtons = false,
-  className = ''
+  className = '',
+  onNavigateToDashboardView
 }: GlobalHeaderProps) {
+  const router = useRouter()
   const { user, logout } = useAuth()
   const { totalUnreadCount } = useMessaging()
   const [showMessages, setShowMessages] = useState(false)
@@ -40,9 +44,11 @@ export function GlobalHeader({
     setShowProfileDropdown(!showProfileDropdown)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     setShowProfileDropdown(false)
-    logout()
+    await logout()
+    // Redirect to home page after logout
+    router.push('/')
   }
 
   return (
@@ -176,7 +182,11 @@ export function GlobalHeader({
                           <button
                             onClick={() => {
                               setShowProfileDropdown(false)
-                              onNavigate?.('dashboard')
+                              if (onNavigateToDashboardView) {
+                                onNavigateToDashboardView('my-applications')
+                              } else {
+                                router.push('/dashboard/my-applications')
+                              }
                             }}
                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           >
@@ -193,7 +203,11 @@ export function GlobalHeader({
                           <button
                             onClick={() => {
                               setShowProfileDropdown(false)
-                              onNavigate?.('dashboard')
+                              if (onNavigateToDashboardView) {
+                                onNavigateToDashboardView('manage-gigs')
+                              } else {
+                                router.push('/dashboard/manage-gigs')
+                              }
                             }}
                             className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           >
@@ -257,6 +271,7 @@ export function GlobalHeader({
         currentPage={currentPage}
         onNavigate={onNavigate}
         onShowPostGig={onShowPostGig}
+        onNavigateToDashboardView={onNavigateToDashboardView}
       />
 
       {/* Click outside handler for dropdowns */}
