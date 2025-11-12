@@ -1,13 +1,27 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from 'react'
+import dynamic from 'next/dynamic'
 import { GigService } from '@/lib/database/gigService'
 import { Gig } from '@/types/gig'
 import { User } from '@/types/auth'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
-import ApplicationForm from '@/components/application/ApplicationForm'
 import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
+
+// Lazy load ApplicationForm (only loaded when user clicks "Apply")
+// This reduces initial bundle size for 2G/3G optimization
+const ApplicationForm = dynamic(
+  () => import('@/components/application/ApplicationForm'),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    ),
+    ssr: false
+  }
+)
 import { useToast } from '@/contexts/ToastContext'
 import { useLocation } from '@/contexts/LocationContext'
 import { calculateDistance, formatDistance } from '@/lib/utils/locationUtils'
