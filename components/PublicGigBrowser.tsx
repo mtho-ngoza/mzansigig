@@ -204,10 +204,40 @@ export default function PublicGigBrowser({
     // Apply sorting
     result.sort((a, b) => {
       switch (sortOption) {
-        case 'newest':
-          return b.createdAt.getTime() - a.createdAt.getTime()
-        case 'oldest':
-          return a.createdAt.getTime() - b.createdAt.getTime()
+        case 'newest': {
+          const createdAtA =
+            a.createdAt instanceof Date
+              ? a.createdAt
+              : typeof a.createdAt === 'object' && 'toDate' in a.createdAt
+              ? (a.createdAt as { toDate: () => Date }).toDate()
+              : new Date(a.createdAt)
+
+          const createdAtB =
+            b.createdAt instanceof Date
+              ? b.createdAt
+              : typeof b.createdAt === 'object' && 'toDate' in b.createdAt
+              ? (b.createdAt as { toDate: () => Date }).toDate()
+              : new Date(b.createdAt)
+
+          return createdAtB.getTime() - createdAtA.getTime()
+        }
+        case 'oldest': {
+          const createdAtA =
+            a.createdAt instanceof Date
+              ? a.createdAt
+              : typeof a.createdAt === 'object' && 'toDate' in a.createdAt
+              ? (a.createdAt as { toDate: () => Date }).toDate()
+              : new Date(a.createdAt)
+
+          const createdAtB =
+            b.createdAt instanceof Date
+              ? b.createdAt
+              : typeof b.createdAt === 'object' && 'toDate' in b.createdAt
+              ? (b.createdAt as { toDate: () => Date }).toDate()
+              : new Date(b.createdAt)
+
+          return createdAtA.getTime() - createdAtB.getTime()
+        }
         case 'budget-high':
           return b.budget - a.budget
         case 'budget-low':
