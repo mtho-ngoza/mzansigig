@@ -283,7 +283,9 @@ describe('GigService - CRUD Operations', () => {
             'status',
             '==',
             'open',
-            'createdAt'
+            'createdAt',
+            'desc',
+            undefined
           )
         })
       })
@@ -306,7 +308,9 @@ describe('GigService - CRUD Operations', () => {
             'status',
             '==',
             'cancelled',
-            'createdAt'
+            'createdAt',
+            'desc',
+            undefined
           )
         })
       })

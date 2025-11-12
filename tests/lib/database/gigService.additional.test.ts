@@ -97,7 +97,7 @@ describe('GigService - Additional Coverage', () => {
 
       const results = await GigService.searchGigs('tech', 'technology')
 
-      expect(mockFirestore.getWhere).toHaveBeenCalledWith('gigs', 'category', '==', 'technology', 'createdAt')
+      expect(mockFirestore.getWhere).toHaveBeenCalledWith('gigs', 'category', '==', 'technology', 'createdAt', 'desc', undefined)
       expect(results).toHaveLength(1)
       expect(results[0].id).toBe('gig-1')
     })

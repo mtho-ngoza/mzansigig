@@ -10,7 +10,9 @@ import {
   where,
   orderBy,
   limit,
+  startAfter,
   DocumentData,
+  DocumentSnapshot,
   QueryConstraint,
   WhereFilterOp
 } from 'firebase/firestore';
@@ -134,6 +136,49 @@ export class FirestoreService {
       })) as T[];
     } catch (error: unknown) {
       throw new Error(`Error querying documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Query documents with cursor-based pagination support
+   * Returns both documents and the last document snapshot for pagination
+   */
+  static async getWhereWithCursor<T>(
+    collectionName: string,
+    field: string,
+    operator: WhereFilterOp,
+    value: unknown,
+    orderByField: string,
+    orderDirection: 'asc' | 'desc' = 'desc',
+    limitCount: number,
+    startAfterDoc?: DocumentSnapshot<DocumentData>
+  ): Promise<{ items: T[]; lastDoc: DocumentSnapshot<DocumentData> | null }> {
+    try {
+      const queryConstraints: QueryConstraint[] = [
+        where(field, operator, value),
+        orderBy(orderByField, orderDirection),
+        limit(limitCount)
+      ];
+
+      // Add cursor if provided
+      if (startAfterDoc) {
+        queryConstraints.push(startAfter(startAfterDoc));
+      }
+
+      const q = query(collection(db, collectionName), ...queryConstraints);
+      const querySnapshot = await getDocs(q);
+
+      const items = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as T[];
+
+      // Get last document for next pagination
+      const lastDoc = querySnapshot.docs[querySnapshot.docs.length - 1] || null;
+
+      return { items, lastDoc };
+    } catch (error: unknown) {
+      throw new Error(`Error querying documents with cursor: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

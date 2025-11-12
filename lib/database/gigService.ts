@@ -8,6 +8,7 @@ import {
   filterByRadius,
   getCityCoordinates
 } from '@/lib/utils/locationUtils';
+import type { DocumentSnapshot, DocumentData } from 'firebase/firestore';
 
 export class GigService {
   // Gig CRUD operations
@@ -56,17 +57,39 @@ export class GigService {
     return await FirestoreService.getWhere<Gig>('gigs', 'employerId', '==', employerId, 'createdAt');
   }
 
-  static async getGigsByStatus(status: Gig['status']): Promise<Gig[]> {
-    return await FirestoreService.getWhere<Gig>('gigs', 'status', '==', status, 'createdAt');
+  static async getGigsByStatus(status: Gig['status'], limitCount?: number): Promise<Gig[]> {
+    return await FirestoreService.getWhere<Gig>('gigs', 'status', '==', status, 'createdAt', 'desc', limitCount);
   }
 
-  static async searchGigs(searchTerm: string, category?: string): Promise<Gig[]> {
+  /**
+   * Get gigs by status with cursor-based pagination
+   * Returns both gigs and the last document snapshot for next page
+   */
+  static async getGigsByStatusWithCursor(
+    status: Gig['status'],
+    limitCount: number,
+    startAfterDoc?: DocumentSnapshot<DocumentData>
+  ): Promise<{ gigs: Gig[]; lastDoc: DocumentSnapshot<DocumentData> | null }> {
+    const result = await FirestoreService.getWhereWithCursor<Gig>(
+      'gigs',
+      'status',
+      '==',
+      status,
+      'createdAt',
+      'desc',
+      limitCount,
+      startAfterDoc
+    );
+    return { gigs: result.items, lastDoc: result.lastDoc };
+  }
+
+  static async searchGigs(searchTerm: string, category?: string, limitCount?: number): Promise<Gig[]> {
     let gigs: Gig[] = [];
 
     if (category) {
-      gigs = await FirestoreService.getWhere<Gig>('gigs', 'category', '==', category, 'createdAt');
+      gigs = await FirestoreService.getWhere<Gig>('gigs', 'category', '==', category, 'createdAt', 'desc', limitCount);
     } else {
-      gigs = await this.getAllGigs();
+      gigs = await this.getAllGigs(limitCount);
     }
 
     const searchTermLower = searchTerm.toLowerCase();
