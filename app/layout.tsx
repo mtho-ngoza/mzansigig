@@ -8,6 +8,7 @@ import { PaymentProvider } from '@/contexts/PaymentContext'
 import { ErrorBoundary } from '@/components/ErrorBoundary'
 import { AppLayout } from '@/components/layout/AppLayout'
 import { DevUtilsLoader } from '@/components/DevUtilsLoader'
+import { WebVitalsLoader } from '@/components/WebVitalsLoader'
 
 // Force dynamic rendering for the entire app
 export const dynamic = 'force-dynamic'
@@ -66,6 +67,7 @@ export default function RootLayout({
       </head>
       <body className="font-sans">
         <DevUtilsLoader />
+        <WebVitalsLoader />
         <ErrorBoundary>
           <ToastProvider>
             <LocationProvider>
