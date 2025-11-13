@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { RegisterData } from '@/types/auth'
 import { GoogleSignInButton } from './GoogleSignInButton'
 import { ProfileCompletionModal } from './ProfileCompletionModal'
+import LocationAutocomplete from '@/components/location/LocationAutocomplete'
 
 export function RegisterForm() {
   const { register, loginWithGoogle, isLoading } = useAuth()
@@ -240,15 +241,19 @@ export function RegisterForm() {
         required
       />
 
-      <Input
-        label="Location"
-        name="location"
-        value={formData.location}
-        onChange={handleChange}
-        error={errors.location}
-        placeholder="e.g. Cape Town, Johannesburg"
-        required
-      />
+      <div>
+        <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+          Location *
+        </label>
+        <LocationAutocomplete
+          id="location"
+          value={formData.location}
+          onChange={(value) => setFormData(prev => ({ ...prev, location: value }))}
+          placeholder="Search for city, township, or suburb..."
+          error={errors.location}
+          required
+        />
+      </div>
 
       <div className="space-y-1">
         <label htmlFor="userType" className="block text-sm font-medium text-gray-700">

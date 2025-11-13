@@ -15,6 +15,7 @@ interface LocationAutocompleteProps {
   required?: boolean
   allowCustom?: boolean // Allow custom location input not in database
   maxResults?: number
+  id?: string // Optional ID for label association
 }
 
 // Location type badge configurations
@@ -36,7 +37,8 @@ export default function LocationAutocomplete({
   disabled = false,
   required = false,
   allowCustom = true,
-  maxResults = 8
+  maxResults = 8,
+  id
 }: LocationAutocompleteProps) {
   const [inputValue, setInputValue] = useState(value)
   const [results, setResults] = useState<LocationSearchResult[]>([])
@@ -200,6 +202,7 @@ export default function LocationAutocomplete({
       <div className="relative">
         <input
           ref={inputRef}
+          id={id}
           type="text"
           value={inputValue}
           onChange={handleInputChange}

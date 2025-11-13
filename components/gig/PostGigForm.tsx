@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { GigService } from '@/lib/database/gigService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
-import { SA_LOCATIONS } from '@/types/location'
+import LocationAutocomplete from '@/components/location/LocationAutocomplete'
 import { Gig } from '@/types/gig'
 
 interface PostGigFormProps {
@@ -353,22 +353,14 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
               <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
                 Location *
               </label>
-              <select
+              <LocationAutocomplete
                 id="location"
                 value={formData.location}
-                onChange={(e) => handleInputChange('location', e.target.value)}
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                  errors.location ? 'border-red-500' : ''
-                }`}
-              >
-                <option value="">Select a location</option>
-                {SA_LOCATIONS.map(location => (
-                  <option key={location} value={location}>{location}</option>
-                ))}
-              </select>
-              {errors.location && (
-                <p className="mt-1 text-sm text-red-600">{errors.location}</p>
-              )}
+                onChange={(value) => handleInputChange('location', value)}
+                placeholder="Search for city, township, or suburb..."
+                error={errors.location}
+                required
+              />
             </div>
           </div>
 
