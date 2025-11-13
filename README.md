@@ -226,7 +226,7 @@ Empower all South Africans - from informal sector workers to professionals - by 
 #### Application Flow
 - ✅ ~~**Duplicate Application Prevention**~~ - **COMPLETED**: Compound query prevents same worker applying twice (allows re-apply after withdrawal)
 - ✅ ~~**Multiple Acceptance Prevention**~~ - **COMPLETED**: Validation prevents accepting when another worker is already accepted/funded. Prevents race conditions and payment conflicts.
-- ⚠️ **Auto-update Gig Status** - Change from 'open' to 'in-progress' when funded
+- ✅ ~~**Auto-update Gig Status**~~ - **COMPLETED**: Gig status automatically changes to 'in-progress' when payment is funded (not just accepted). Keeps gigs open for backup applications until payment secured.
 
 #### Safety & Fraud
 - ✅ ~~**Duplicate Review Prevention**~~ - **COMPLETED**: One review per party per gig (already implemented with tests)

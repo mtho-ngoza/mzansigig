@@ -69,15 +69,20 @@ describe('GigService - Multiple Acceptance Prevention', () => {
         { status: 'accepted' }
       )
 
-      // Verify gig was updated
+      // Verify gig was updated with assigned worker (but NOT status - that happens on funding)
       expect(FirestoreService.update).toHaveBeenCalledWith(
         'gigs',
         mockGigId,
         expect.objectContaining({
-          status: 'in-progress',
           assignedTo: 'worker-1'
         })
       )
+
+      // Verify gig status was NOT updated to in-progress (happens only when funded)
+      const gigUpdateCall = jest.mocked(FirestoreService.update).mock.calls.find(
+        call => call[0] === 'gigs' && call[1] === mockGigId
+      )
+      expect(gigUpdateCall?.[2]).not.toHaveProperty('status')
     })
 
     it('should reject other pending applications when first is accepted', async () => {

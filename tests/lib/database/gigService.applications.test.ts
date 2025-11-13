@@ -119,15 +119,20 @@ describe('GigService - Application Management', () => {
 
       await GigService.updateApplicationStatus(mockApplicationId, 'accepted');
 
-      // Should update gig to in-progress and assign worker
+      // Should assign worker to gig (but NOT change status - that happens when funded)
       expect(FirestoreService.update).toHaveBeenCalledWith(
         'gigs',
         mockGigId,
         expect.objectContaining({
-          status: 'in-progress',
           assignedTo: mockApplicantId
         })
       );
+
+      // Verify gig status was NOT updated (happens only when funded)
+      const gigUpdateCall = (FirestoreService.update as jest.Mock).mock.calls.find(
+        (call: unknown[]) => call[0] === 'gigs' && call[1] === mockGigId
+      );
+      expect(gigUpdateCall?.[2]).not.toHaveProperty('status');
     });
 
     it('should reject other applications when one is accepted', async () => {

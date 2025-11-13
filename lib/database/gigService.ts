@@ -394,22 +394,33 @@ export class GigService {
 
     await FirestoreService.update('applications', applicationId, { status });
 
-    // If accepted, update gig status and assign worker
+    // If accepted, assign worker and reject other applications
+    // Note: Gig status remains 'open' until funded to allow backup applications
     if (status === 'accepted') {
       const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
       if (application) {
+        // Assign worker to gig
         await this.updateGig(application.gigId, {
-          status: 'in-progress',
           assignedTo: application.applicantId
         });
 
-        // Reject other applications for this gig
+        // Reject other pending applications for this gig
         const otherApplications = await this.getApplicationsByGig(application.gigId);
         for (const app of otherApplications) {
           if (app.id !== applicationId && app.status === 'pending') {
             await FirestoreService.update('applications', app.id, { status: 'rejected' });
           }
         }
+      }
+    }
+
+    // If funded, update gig status to in-progress (payment secured, work can begin)
+    if (status === 'funded') {
+      const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+      if (application) {
+        await this.updateGig(application.gigId, {
+          status: 'in-progress'
+        });
       }
     }
   }
