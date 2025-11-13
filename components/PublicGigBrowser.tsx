@@ -26,6 +26,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { useLocation } from '@/contexts/LocationContext'
 import { calculateDistance, formatDistance } from '@/lib/utils/locationUtils'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
+import PaymentInfoBadge from '@/components/gig/PaymentInfoBadge'
 import { Footer } from '@/components/layout/Footer'
 import { FilterPanel } from '@/components/gig/FilterPanel'
 import { SortDropdown, SortOption } from '@/components/gig/SortDropdown'
@@ -1120,6 +1121,11 @@ export default function PublicGigBrowser({
                       showBreakdown={currentUser ? true : false}
                       variant="compact"
                     />
+                    {gig.status === 'open' && (
+                      <div className="flex justify-start">
+                        <PaymentInfoBadge variant="info" size="sm" />
+                      </div>
+                    )}
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-500">Duration:</span>
                       <span className="text-sm">{gig.duration}</span>

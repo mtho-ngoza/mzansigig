@@ -219,7 +219,7 @@ Empower all South Africans - from informal sector workers to professionals - by 
 ### **Priority 1: Must Address Before Public Beta**
 
 #### Payment & Escrow
-- ⚠️ **Unfunded Gig Warnings** - Workers need visibility on payment status before applying
+- ✅ ~~**Unfunded Gig Warnings**~~ - **COMPLETED**: Informational badge shows "Payment after selection" on all open gigs
 - ⚠️ **Escrow Release Mechanism** - Worker-initiated completion or auto-release to prevent payment hostage situations
 - ⚠️ **Dispute Resolution System** - Handle conflicts when employer/worker disagree on completion
 
