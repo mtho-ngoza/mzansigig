@@ -207,6 +207,62 @@ Empower all South Africans - from informal sector workers to professionals - by 
 
 ---
 
+## 🔒 Pre-Deploy Security & Trust Review
+
+**Status**: Comprehensive workflow analysis completed. Core functionality solid, identified improvements for production readiness.
+
+### **Philosophy: Progressive Trust Model**
+- 🎯 **Low friction at entry** - Easy posting/applying to maximize platform adoption
+- 🛡️ **Protection at critical moments** - Secure payments and work exchanges
+- 📈 **Trust through behavior** - Incentivize verification and good practices
+
+### **Priority 1: Must Address Before Public Beta**
+
+#### Payment & Escrow
+- ⚠️ **Unfunded Gig Warnings** - Workers need visibility on payment status before applying
+- ⚠️ **Escrow Release Mechanism** - Worker-initiated completion or auto-release to prevent payment hostage situations
+- ⚠️ **Dispute Resolution System** - Handle conflicts when employer/worker disagree on completion
+
+#### Application Flow
+- ✅ ~~**Duplicate Application Prevention**~~ - **COMPLETED**: Compound query prevents same worker applying twice (allows re-apply after withdrawal)
+- ⚠️ **Multiple Acceptance Prevention** - Ensure only one worker assigned per gig
+- ⚠️ **Auto-update Gig Status** - Change from 'open' to 'in-progress' when funded
+
+#### Safety & Fraud
+- ✅ ~~**Duplicate Review Prevention**~~ - **COMPLETED**: One review per party per gig (already implemented with tests)
+- ⚠️ **Basic Safety Features** - Emergency contacts and check-in system for physical gigs
+- ⚠️ **Location Distance Warnings** - Alert when worker applies to gigs far from their location
+
+### **Priority 2: Recommended Before Launch**
+
+#### UX & Lifecycle
+- 💡 **Gig Expiry** - Auto-close unfunded gigs after 7 days, completed gigs after deadline
+- 💡 **Funding Timeout** - Auto-cancel accepted applications if not funded within 48 hours
+- 💡 **Work Type Clarification** - Clear Remote/Physical/Hybrid indicators
+- 💡 **Application Limits** - Prevent spam by limiting active applications per worker (~20)
+
+#### Trust & Verification
+- 💡 **Soft Verification Nudges** - "Verified users get 3x more responses" encouragement
+- 💡 **Review Improvements** - Mutual review reveal, 30-day review deadline
+- 💡 **Market Rate Guidance** - Category-specific minimum wage suggestions
+
+### **Priority 3: Scale & Polish**
+
+#### Advanced Features
+- 🚀 **Milestone Payments** - Split payments for long-duration gigs (3+ months)
+- 🚀 **Proof of Work** - Check-in/check-out for physical work, deliverable uploads for digital
+- 🚀 **Pattern Detection** - Flag suspicious behavior (same device, rapid cancellations)
+- 🚀 **Communication Evidence** - Link messages to gigs for dispute resolution
+
+### **Implementation Approach**
+- ✅ **Phase 1** (Beta): Soft warnings and basic protections without blocking user flow
+- ✅ **Phase 2** (Launch): Enforce critical security at payment/work exchange points
+- ✅ **Phase 3** (Scale): Advanced fraud detection and trust systems
+
+**Note**: All gaps documented for transparency. Core platform is production-ready with escrow system, verification, and reviews in place. These improvements enhance trust and reduce friction points identified through workflow analysis.
+
+---
+
 ## 🛠 Tech Stack
 
 - **Frontend**: Next.js 15 with TypeScript & App Router
