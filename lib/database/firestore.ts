@@ -140,6 +140,42 @@ export class FirestoreService {
   }
 
   /**
+   * Query documents with compound where clauses (multiple conditions)
+   * More efficient than filtering in memory
+   */
+  static async getWhereCompound<T>(
+    collectionName: string,
+    conditions: Array<{ field: string; operator: WhereFilterOp; value: unknown }>,
+    orderByField?: string,
+    orderDirection: 'asc' | 'desc' = 'desc',
+    limitCount?: number
+  ): Promise<T[]> {
+    try {
+      const queryConstraints: QueryConstraint[] = conditions.map(condition =>
+        where(condition.field, condition.operator, condition.value)
+      );
+
+      if (orderByField) {
+        queryConstraints.push(orderBy(orderByField, orderDirection));
+      }
+
+      if (limitCount) {
+        queryConstraints.push(limit(limitCount));
+      }
+
+      const q = query(collection(db, collectionName), ...queryConstraints);
+      const querySnapshot = await getDocs(q);
+
+      return querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as T[];
+    } catch (error: unknown) {
+      throw new Error(`Error querying documents with compound conditions: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
    * Query documents with cursor-based pagination support
    * Returns both documents and the last document snapshot for pagination
    */

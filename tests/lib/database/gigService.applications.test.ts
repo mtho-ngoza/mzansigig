@@ -202,6 +202,7 @@ describe('GigService - Application Management', () => {
       };
       (FirestoreService.getById as jest.Mock).mockResolvedValue(mockGig);
       (FirestoreService.getWhere as jest.Mock).mockResolvedValue([]); // No existing applications
+      (FirestoreService.getWhereCompound as jest.Mock).mockResolvedValue([]); // No duplicate applications
       (FirestoreService.create as jest.Mock).mockResolvedValue(mockApplicationId);
 
       const result = await GigService.createApplication(applicationData);
@@ -510,6 +511,148 @@ describe('GigService - Application Management', () => {
       await expect(GigService.withdrawApplication(mockApplicationId)).rejects.toThrow(
         'Firestore update error'
       );
+    });
+  });
+
+  describe('createApplication - Duplicate Prevention', () => {
+    const mockGig: Gig = {
+      id: mockGigId,
+      title: 'Test Gig',
+      description: 'Test Description',
+      category: 'technology',
+      location: 'Johannesburg',
+      budget: 1000,
+      duration: '1 week',
+      skillsRequired: ['JavaScript'],
+      employerId: mockEmployerId,
+      employerName: 'Employer Name',
+      status: 'open',
+      applicants: [],
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    const mockApplicationData = {
+      gigId: mockGigId,
+      applicantId: mockApplicantId,
+      applicantName: 'John Doe',
+      message: 'I am interested',
+      proposedRate: 1000
+    };
+
+    beforeEach(() => {
+      (FirestoreService.getById as jest.Mock).mockResolvedValue(mockGig);
+    });
+
+    it('should prevent duplicate applications from same user to same gig', async () => {
+      // Mock existing application
+      const existingApplication: GigApplication = {
+        id: 'existing-app-123',
+        gigId: mockGigId,
+        applicantId: mockApplicantId,
+        applicantName: 'John Doe',
+        message: 'Previous application',
+        proposedRate: 900,
+        status: 'pending',
+        createdAt: new Date()
+      };
+
+      (FirestoreService.getWhereCompound as jest.Mock).mockResolvedValue([existingApplication]);
+
+      await expect(GigService.createApplication(mockApplicationData)).rejects.toThrow(
+        'You have already applied to this gig'
+      );
+
+      expect(FirestoreService.getWhereCompound).toHaveBeenCalledWith(
+        'applications',
+        [
+          { field: 'gigId', operator: '==', value: mockGigId },
+          { field: 'applicantId', operator: '==', value: mockApplicantId }
+        ]
+      );
+      expect(FirestoreService.create).not.toHaveBeenCalled();
+    });
+
+    it('should allow application when user has not applied before', async () => {
+      (FirestoreService.getWhereCompound as jest.Mock).mockResolvedValue([]);
+      (FirestoreService.create as jest.Mock).mockResolvedValue('new-app-123');
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue([]);
+
+      const applicationId = await GigService.createApplication(mockApplicationData);
+
+      expect(applicationId).toBe('new-app-123');
+      expect(FirestoreService.create).toHaveBeenCalledWith(
+        'applications',
+        expect.objectContaining({
+          gigId: mockGigId,
+          applicantId: mockApplicantId,
+          status: 'pending'
+        })
+      );
+    });
+
+    it('should allow re-application if previous application was withdrawn', async () => {
+      const withdrawnApplication: GigApplication = {
+        id: 'withdrawn-app-123',
+        gigId: mockGigId,
+        applicantId: mockApplicantId,
+        applicantName: 'John Doe',
+        message: 'Previous application',
+        proposedRate: 900,
+        status: 'withdrawn',
+        createdAt: new Date()
+      };
+
+      (FirestoreService.getWhereCompound as jest.Mock).mockResolvedValue([withdrawnApplication]);
+      (FirestoreService.create as jest.Mock).mockResolvedValue('new-app-456');
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue([withdrawnApplication]);
+
+      const applicationId = await GigService.createApplication(mockApplicationData);
+
+      expect(applicationId).toBe('new-app-456');
+      expect(FirestoreService.create).toHaveBeenCalled();
+    });
+
+    it('should prevent duplicate application even if one is rejected', async () => {
+      const rejectedApplication: GigApplication = {
+        id: 'rejected-app-123',
+        gigId: mockGigId,
+        applicantId: mockApplicantId,
+        applicantName: 'John Doe',
+        message: 'Previous application',
+        proposedRate: 900,
+        status: 'rejected',
+        createdAt: new Date()
+      };
+
+      (FirestoreService.getWhereCompound as jest.Mock).mockResolvedValue([rejectedApplication]);
+
+      await expect(GigService.createApplication(mockApplicationData)).rejects.toThrow(
+        'You have already applied to this gig'
+      );
+
+      expect(FirestoreService.create).not.toHaveBeenCalled();
+    });
+
+    it('should prevent duplicate application if one is accepted', async () => {
+      const acceptedApplication: GigApplication = {
+        id: 'accepted-app-123',
+        gigId: mockGigId,
+        applicantId: mockApplicantId,
+        applicantName: 'John Doe',
+        message: 'Previous application',
+        proposedRate: 900,
+        status: 'accepted',
+        createdAt: new Date()
+      };
+
+      (FirestoreService.getWhereCompound as jest.Mock).mockResolvedValue([acceptedApplication]);
+
+      await expect(GigService.createApplication(mockApplicationData)).rejects.toThrow(
+        'You have already applied to this gig'
+      );
+
+      expect(FirestoreService.create).not.toHaveBeenCalled();
     });
   });
 });

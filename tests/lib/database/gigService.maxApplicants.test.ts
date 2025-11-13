@@ -17,6 +17,8 @@ describe('GigService - Max Applicants Feature', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    // Default mock for duplicate check - tests can override as needed
+    (FirestoreService.getWhereCompound as jest.Mock).mockResolvedValue([]);
   });
 
   describe('createApplication with maxApplicants', () => {

@@ -440,6 +440,7 @@ describe('GigService - CRUD Operations', () => {
           }
           jest.mocked(FirestoreService.getById).mockResolvedValue(mockGig)
           jest.mocked(FirestoreService.getWhere).mockResolvedValue([]) // No existing applications
+          jest.mocked(FirestoreService.getWhereCompound).mockResolvedValue([]) // No duplicate applications
           jest.mocked(FirestoreService.create).mockResolvedValue(applicationId)
 
           // When

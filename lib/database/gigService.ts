@@ -312,6 +312,24 @@ export class GigService {
       }
     }
 
+    // Check if user has already applied to this gig (duplicate prevention)
+    const existingApplications = await FirestoreService.getWhereCompound<GigApplication>(
+      'applications',
+      [
+        { field: 'gigId', operator: '==', value: applicationData.gigId },
+        { field: 'applicantId', operator: '==', value: applicationData.applicantId }
+      ]
+    );
+
+    // Allow re-application only if previous application was withdrawn
+    const activeApplication = existingApplications.find(
+      app => app.status !== 'withdrawn'
+    );
+
+    if (activeApplication) {
+      throw new Error('You have already applied to this gig');
+    }
+
     const application = {
       ...applicationData,
       createdAt: new Date(),
