@@ -38,6 +38,18 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
     isOpen: boolean
     userId?: string
   }>({ isOpen: false })
+  const [approveCompletionDialog, setApproveCompletionDialog] = useState<{
+    isOpen: boolean
+    applicationId: string
+    gigTitle: string
+  }>({ isOpen: false, applicationId: '', gigTitle: '' })
+  const [disputeCompletionDialog, setDisputeCompletionDialog] = useState<{
+    isOpen: boolean
+    applicationId: string
+    gigTitle: string
+  }>({ isOpen: false, applicationId: '', gigTitle: '' })
+  const [disputeReason, setDisputeReason] = useState('')
+  const [processingCompletion, setProcessingCompletion] = useState(false)
 
   useEffect(() => {
     const loadApplicationsAndGigs = async () => {
@@ -170,6 +182,92 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
       style: 'currency',
       currency: 'ZAR'
     }).format(amount)
+  }
+
+  const handleApproveCompletionClick = (applicationId: string, gigTitle: string) => {
+    setApproveCompletionDialog({ isOpen: true, applicationId, gigTitle })
+  }
+
+  const handleApproveCompletionConfirm = async () => {
+    if (!user) return
+
+    try {
+      setProcessingCompletion(true)
+      await GigService.approveCompletion(approveCompletionDialog.applicationId, user.id)
+
+      // Update local state to mark as completed
+      setApplications(prevApps =>
+        prevApps.map(app =>
+          app.id === approveCompletionDialog.applicationId
+            ? { ...app, status: 'completed' as const }
+            : app
+        )
+      )
+
+      setApproveCompletionDialog({ isOpen: false, applicationId: '', gigTitle: '' })
+      success('Completion approved! Payment has been released to the worker.')
+    } catch (error) {
+      console.error('Error approving completion:', error)
+      showError(error instanceof Error ? error.message : 'Failed to approve completion. Please try again.')
+    } finally {
+      setProcessingCompletion(false)
+    }
+  }
+
+  const handleDisputeCompletionClick = (applicationId: string, gigTitle: string) => {
+    setDisputeCompletionDialog({ isOpen: true, applicationId, gigTitle })
+    setDisputeReason('')
+  }
+
+  const handleDisputeCompletionConfirm = async () => {
+    if (!user) return
+
+    if (!disputeReason || disputeReason.trim().length < 10) {
+      showError('Please provide a detailed reason for the dispute (minimum 10 characters).')
+      return
+    }
+
+    try {
+      setProcessingCompletion(true)
+      await GigService.disputeCompletion(
+        disputeCompletionDialog.applicationId,
+        user.id,
+        disputeReason
+      )
+
+      // Update local state to reflect the dispute
+      setApplications(prevApps =>
+        prevApps.map(app =>
+          app.id === disputeCompletionDialog.applicationId
+            ? {
+                ...app,
+                completionDisputedAt: new Date(),
+                completionDisputeReason: disputeReason,
+                completionAutoReleaseAt: undefined
+              }
+            : app
+        )
+      )
+
+      setDisputeCompletionDialog({ isOpen: false, applicationId: '', gigTitle: '' })
+      setDisputeReason('')
+      success('Completion disputed. Please work with the worker to resolve the issues.')
+    } catch (error) {
+      console.error('Error disputing completion:', error)
+      showError(error instanceof Error ? error.message : 'Failed to dispute completion. Please try again.')
+    } finally {
+      setProcessingCompletion(false)
+    }
+  }
+
+  const calculateDaysUntilAutoRelease = (autoReleaseDate: Date | undefined): number => {
+    if (!autoReleaseDate) return 0
+
+    const date = autoReleaseDate instanceof Date ? autoReleaseDate : new Date(autoReleaseDate)
+    const now = new Date()
+    const diffMs = date.getTime() - now.getTime()
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+    return Math.max(0, diffDays)
   }
 
   if (loading) {
@@ -573,6 +671,111 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                           </div>
                         </div>
                       </div>
+
+                      {/* Employer Completion Review - For Funded Applications */}
+                      {application.status === 'funded' && application.completionRequestedAt && (
+                        <>
+                          {/* Worker Requested Completion - Employer Action Required */}
+                          {!application.completionDisputedAt && (
+                            <div className="bg-purple-50 border-2 border-purple-400 rounded-lg p-4 mt-4">
+                              <div className="flex items-start">
+                                <div className="flex-shrink-0">
+                                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                </div>
+                                <div className="ml-3 flex-1">
+                                  <h3 className="text-base font-bold text-purple-900">
+                                    Worker Requested Completion - Action Required
+                                  </h3>
+                                  <p className="mt-2 text-sm text-purple-800">
+                                    <strong>{application.applicantName}</strong> has marked this gig as completed and is requesting payment release from escrow.
+                                  </p>
+                                  <div className="mt-3 bg-purple-100 rounded p-3 border border-purple-300">
+                                    <p className="text-sm font-semibold text-purple-900 mb-2">
+                                      ⏰ Auto-Release in {calculateDaysUntilAutoRelease(application.completionAutoReleaseAt)} days
+                                    </p>
+                                    <p className="text-sm text-purple-800">
+                                      If you don&apos;t respond, payment will automatically be released to the worker.
+                                      Please review the work and either approve or dispute the completion.
+                                    </p>
+                                  </div>
+                                  <div className="mt-2 flex items-center text-xs text-purple-700">
+                                    <span className="font-medium">Requested:</span>
+                                    <span className="ml-2 px-2 py-1 bg-purple-200 rounded">
+                                      {formatDate(application.completionRequestedAt)}
+                                    </span>
+                                  </div>
+                                  <div className="mt-4 flex space-x-3">
+                                    <Button
+                                      variant="primary"
+                                      size="sm"
+                                      onClick={() => handleApproveCompletionClick(application.id, application.gigTitle || 'this gig')}
+                                      className="bg-green-600 hover:bg-green-700"
+                                    >
+                                      ✓ Approve & Release Payment
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => handleDisputeCompletionClick(application.id, application.gigTitle || 'this gig')}
+                                      className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300"
+                                    >
+                                      Dispute Completion
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Completion Disputed - Awaiting Resolution */}
+                          {application.completionDisputedAt && (
+                            <div className="bg-yellow-50 border-2 border-yellow-400 rounded-lg p-4 mt-4">
+                              <div className="flex items-start">
+                                <div className="flex-shrink-0">
+                                  <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                  </svg>
+                                </div>
+                                <div className="ml-3 flex-1">
+                                  <h3 className="text-base font-bold text-yellow-900">
+                                    Completion Disputed - Resolution Needed
+                                  </h3>
+                                  <p className="mt-2 text-sm text-yellow-800">
+                                    You disputed the completion request from <strong>{application.applicantName}</strong>.
+                                    Auto-release has been paused. Please work together to resolve the issues.
+                                  </p>
+                                  {application.completionDisputeReason && (
+                                    <div className="mt-3 bg-yellow-100 rounded p-3 border border-yellow-300">
+                                      <p className="text-sm font-semibold text-yellow-900 mb-1">Your Dispute Reason:</p>
+                                      <p className="text-sm text-yellow-800">{application.completionDisputeReason}</p>
+                                    </div>
+                                  )}
+                                  <div className="mt-3 text-sm text-yellow-800">
+                                    <p className="font-medium">Next Steps:</p>
+                                    <ul className="list-disc list-inside ml-2 mt-1 space-y-1">
+                                      <li>Use &quot;Contact Worker&quot; to discuss the issues</li>
+                                      <li>Once resolved, approve the completion to release payment</li>
+                                      <li>If issues persist, contact KasiGig support for mediation</li>
+                                    </ul>
+                                  </div>
+                                  <div className="mt-4">
+                                    <Button
+                                      variant="primary"
+                                      size="sm"
+                                      onClick={() => handleApproveCompletionClick(application.id, application.gigTitle || 'this gig')}
+                                      className="bg-green-600 hover:bg-green-700"
+                                    >
+                                      ✓ Issues Resolved - Approve Now
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </>
                   )}
 
@@ -649,6 +852,105 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
             isOpen={showProfileDialog.isOpen}
             onClose={() => setShowProfileDialog({ isOpen: false })}
           />
+        )}
+
+        {/* Approve Completion Confirmation Dialog */}
+        {approveCompletionDialog.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <Card className="max-w-md w-full">
+              <CardHeader>
+                <CardTitle className="text-lg">Approve Completion</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 mb-4">
+                  Are you ready to approve completion for <strong>{approveCompletionDialog.gigTitle}</strong> and release payment to the worker?
+                </p>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-green-800 mb-2">
+                    <strong>This will:</strong>
+                  </p>
+                  <ul className="text-sm text-green-800 list-disc list-inside space-y-1 ml-2">
+                    <li>Mark the gig as completed</li>
+                    <li>Release payment from escrow to the worker</li>
+                    <li>Enable you to leave a review</li>
+                  </ul>
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setApproveCompletionDialog({ isOpen: false, applicationId: '', gigTitle: '' })}
+                    disabled={processingCompletion}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleApproveCompletionConfirm}
+                    disabled={processingCompletion}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {processingCompletion ? 'Approving...' : 'Yes, Approve & Release Payment'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Dispute Completion Dialog */}
+        {disputeCompletionDialog.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <Card className="max-w-md w-full">
+              <CardHeader>
+                <CardTitle className="text-lg">Dispute Completion</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 mb-4">
+                  Please explain why you&apos;re disputing the completion of <strong>{disputeCompletionDialog.gigTitle}</strong>.
+                </p>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Important:</strong> Disputing will pause the auto-release timer. Be specific about what needs to be fixed so the worker can address your concerns.
+                  </p>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Reason for Dispute (minimum 10 characters)
+                  </label>
+                  <textarea
+                    value={disputeReason}
+                    onChange={(e) => setDisputeReason(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[100px]"
+                    placeholder="Please explain what issues need to be resolved..."
+                    disabled={processingCompletion}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {disputeReason.length} / 10 characters minimum
+                  </p>
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setDisputeCompletionDialog({ isOpen: false, applicationId: '', gigTitle: '' })
+                      setDisputeReason('')
+                    }}
+                    disabled={processingCompletion}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleDisputeCompletionConfirm}
+                    disabled={processingCompletion || disputeReason.trim().length < 10}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
+                    {processingCompletion ? 'Disputing...' : 'Submit Dispute'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         )}
       </div>
     </div>

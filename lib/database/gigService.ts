@@ -426,6 +426,168 @@ export class GigService {
     await FirestoreService.update('applications', applicationId, { status: 'withdrawn' });
   }
 
+  // Worker completion request operations
+  static async requestCompletionByWorker(
+    applicationId: string,
+    workerId: string
+  ): Promise<void> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    // Verify the worker is the assigned applicant
+    if (application.applicantId !== workerId) {
+      throw new Error('Only the assigned worker can request completion');
+    }
+
+    // Only funded applications can request completion
+    if (application.status !== 'funded') {
+      throw new Error('Only funded applications can request completion');
+    }
+
+    // Check if completion already requested
+    if (application.completionRequestedAt) {
+      throw new Error('Completion has already been requested for this application');
+    }
+
+    // Set completion request with 7-day auto-release window
+    const now = new Date();
+    const autoReleaseDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+
+    await FirestoreService.update('applications', applicationId, {
+      completionRequestedAt: now,
+      completionRequestedBy: 'worker',
+      completionAutoReleaseAt: autoReleaseDate
+    });
+  }
+
+  // Employer approves worker completion request
+  static async approveCompletion(
+    applicationId: string,
+    employerId: string
+  ): Promise<void> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    // Get the gig to verify employer
+    const gig = await FirestoreService.getById<Gig>('gigs', application.gigId);
+    if (!gig) {
+      throw new Error('Gig not found');
+    }
+
+    // Verify the employer owns this gig
+    if (gig.employerId !== employerId) {
+      throw new Error('Only the gig employer can approve completion');
+    }
+
+    // Verify completion was requested
+    if (!application.completionRequestedAt) {
+      throw new Error('No completion request found for this application');
+    }
+
+    // Update application status to completed
+    await FirestoreService.update('applications', applicationId, { status: 'completed' });
+
+    // Update gig status to completed
+    await this.updateGig(application.gigId, { status: 'completed' });
+
+    // Release escrow if payment exists
+    if (application.paymentId) {
+      const { PaymentService } = await import('../services/paymentService');
+      await PaymentService.releaseEscrow(application.paymentId);
+    }
+  }
+
+  // Employer disputes worker completion request
+  static async disputeCompletion(
+    applicationId: string,
+    employerId: string,
+    disputeReason: string
+  ): Promise<void> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    // Get the gig to verify employer
+    const gig = await FirestoreService.getById<Gig>('gigs', application.gigId);
+    if (!gig) {
+      throw new Error('Gig not found');
+    }
+
+    // Verify the employer owns this gig
+    if (gig.employerId !== employerId) {
+      throw new Error('Only the gig employer can dispute completion');
+    }
+
+    // Verify completion was requested
+    if (!application.completionRequestedAt) {
+      throw new Error('No completion request found for this application');
+    }
+
+    // Check if already disputed
+    if (application.completionDisputedAt) {
+      throw new Error('Completion has already been disputed');
+    }
+
+    // Validate dispute reason
+    if (!disputeReason || disputeReason.trim().length < 10) {
+      throw new Error('Dispute reason must be at least 10 characters');
+    }
+
+    // Mark as disputed and clear auto-release
+    await FirestoreService.update('applications', applicationId, {
+      completionDisputedAt: new Date(),
+      completionDisputeReason: disputeReason,
+      completionAutoReleaseAt: undefined // Remove auto-release when disputed
+    });
+  }
+
+  // Check and process auto-release for applications with expired completion requests
+  static async checkAndProcessAutoRelease(applicationId: string): Promise<boolean> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+
+    if (!application) {
+      return false;
+    }
+
+    // Check if eligible for auto-release
+    if (
+      application.status === 'funded' &&
+      application.completionRequestedAt &&
+      application.completionAutoReleaseAt &&
+      !application.completionDisputedAt
+    ) {
+      const now = new Date();
+      const autoReleaseDate = new Date(application.completionAutoReleaseAt);
+
+      // If auto-release date has passed, automatically complete and release
+      if (now >= autoReleaseDate) {
+        // Update application status to completed
+        await FirestoreService.update('applications', applicationId, { status: 'completed' });
+
+        // Update gig status to completed
+        await this.updateGig(application.gigId, { status: 'completed' });
+
+        // Release escrow if payment exists
+        if (application.paymentId) {
+          const { PaymentService } = await import('../services/paymentService');
+          await PaymentService.releaseEscrow(application.paymentId);
+        }
+
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   // Review operations
   static async createReview(reviewData: Omit<Review, 'id' | 'createdAt'>): Promise<string> {
     const review = {

@@ -25,7 +25,7 @@ interface ApplicationWithGig extends GigApplication {
 
 export default function MyApplications({ onBack, onBrowseGigs, onMessageConversationStart }: MyApplicationsProps) {
   const { user } = useAuth()
-  const { error: showError } = useToast()
+  const { success, error: showError } = useToast()
   const [applications, setApplications] = useState<ApplicationWithGig[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -36,6 +36,12 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
     gigTitle: ''
   })
   const [withdrawing, setWithdrawing] = useState(false)
+  const [completionRequestDialog, setCompletionRequestDialog] = useState<{ isOpen: boolean; applicationId: string; gigTitle: string }>({
+    isOpen: false,
+    applicationId: '',
+    gigTitle: ''
+  })
+  const [requestingCompletion, setRequestingCompletion] = useState(false)
 
   useEffect(() => {
     const loadApplications = async () => {
@@ -168,6 +174,62 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
 
   const handleWithdrawCancel = () => {
     setWithdrawConfirmation({ isOpen: false, applicationId: '', gigTitle: '' })
+  }
+
+  const handleRequestCompletionClick = (applicationId: string, gigTitle: string) => {
+    setCompletionRequestDialog({
+      isOpen: true,
+      applicationId,
+      gigTitle
+    })
+  }
+
+  const handleRequestCompletionConfirm = async () => {
+    if (!user) return
+
+    try {
+      setRequestingCompletion(true)
+      await GigService.requestCompletionByWorker(completionRequestDialog.applicationId, user.id)
+
+      // Update the local state to reflect the completion request
+      setApplications(prevApps =>
+        prevApps.map(app =>
+          app.id === completionRequestDialog.applicationId
+            ? {
+                ...app,
+                completionRequestedAt: new Date(),
+                completionRequestedBy: 'worker' as const,
+                completionAutoReleaseAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days from now
+              }
+            : app
+        )
+      )
+
+      // Close the dialog
+      setCompletionRequestDialog({ isOpen: false, applicationId: '', gigTitle: '' })
+
+      // Show success message
+      success('Completion requested successfully! The employer has been notified and has 7 days to respond.')
+    } catch (error) {
+      console.error('Error requesting completion:', error)
+      showError(error instanceof Error ? error.message : 'Failed to request completion. Please try again.')
+    } finally {
+      setRequestingCompletion(false)
+    }
+  }
+
+  const handleRequestCompletionCancel = () => {
+    setCompletionRequestDialog({ isOpen: false, applicationId: '', gigTitle: '' })
+  }
+
+  const calculateDaysUntilAutoRelease = (autoReleaseDate: Date | undefined): number => {
+    if (!autoReleaseDate) return 0
+
+    const date = autoReleaseDate instanceof Date ? autoReleaseDate : new Date(autoReleaseDate)
+    const now = new Date()
+    const diffMs = date.getTime() - now.getTime()
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
+    return Math.max(0, diffDays)
   }
 
   // Filter applications based on selected status
@@ -512,6 +574,117 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                     </>
                   )}
 
+                  {/* Worker Completion Request - For Funded Applications */}
+                  {application.status === 'funded' && (
+                    <>
+                      {/* Completion Disputed by Employer */}
+                      {application.completionDisputedAt && (
+                        <div className="bg-red-50 border-2 border-red-400 rounded-lg p-4 mb-4">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0">
+                              <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                              </svg>
+                            </div>
+                            <div className="ml-3 flex-1">
+                              <h3 className="text-base font-bold text-red-900">
+                                Completion Request Disputed
+                              </h3>
+                              <p className="mt-2 text-sm text-red-800">
+                                The employer has disputed your completion request. Please review their concerns and work together to resolve them.
+                              </p>
+                              {application.completionDisputeReason && (
+                                <div className="mt-3 bg-red-100 rounded p-3 border border-red-300">
+                                  <p className="text-sm font-semibold text-red-900 mb-1">Dispute Reason:</p>
+                                  <p className="text-sm text-red-800">{application.completionDisputeReason}</p>
+                                </div>
+                              )}
+                              <p className="mt-3 text-xs text-red-700">
+                                Use the &quot;Message Employer&quot; button to discuss and resolve this issue.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Completion Requested - Waiting for Employer Response */}
+                      {application.completionRequestedAt && !application.completionDisputedAt && (
+                        <div className="bg-blue-50 border-2 border-blue-400 rounded-lg p-4 mb-4">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0">
+                              <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </div>
+                            <div className="ml-3 flex-1">
+                              <h3 className="text-base font-bold text-blue-900">
+                                Completion Requested - Awaiting Employer Response
+                              </h3>
+                              <p className="mt-2 text-sm text-blue-800">
+                                You&apos;ve requested completion for this gig. The employer has been notified and can now review and approve your work.
+                              </p>
+                              <div className="mt-3 bg-blue-100 rounded p-3 border border-blue-300">
+                                <p className="text-sm font-semibold text-blue-900 mb-1">
+                                  🛡️ Worker Protection: Auto-Release Escrow
+                                </p>
+                                <p className="text-sm text-blue-800">
+                                  If the employer doesn&apos;t respond within <strong>{calculateDaysUntilAutoRelease(application.completionAutoReleaseAt)} days</strong>,
+                                  payment will automatically be released to you from escrow.
+                                </p>
+                              </div>
+                              <div className="mt-2 flex items-center text-xs text-blue-700">
+                                <span className="font-medium">Requested:</span>
+                                <span className="ml-2 px-2 py-1 bg-blue-200 rounded">
+                                  {formatDate(application.completionRequestedAt)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Request Completion Button - Only if not already requested */}
+                      {!application.completionRequestedAt && (
+                        <div className="bg-purple-50 border-2 border-purple-300 rounded-lg p-4 mb-4">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0">
+                              <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </div>
+                            <div className="ml-3 flex-1">
+                              <h3 className="text-base font-bold text-purple-900">
+                                Work Complete? Request Payment Release
+                              </h3>
+                              <p className="mt-2 text-sm text-purple-800">
+                                When you&apos;ve finished the work, request completion to notify the employer for review.
+                                If approved, payment will be released from escrow.
+                              </p>
+                              <div className="mt-3 bg-purple-100 rounded p-3 border border-purple-300">
+                                <p className="text-sm font-semibold text-purple-900 mb-1">
+                                  🛡️ Worker Protection Guarantee:
+                                </p>
+                                <p className="text-sm text-purple-800">
+                                  If the employer doesn&apos;t respond within 7 days, payment will automatically release to you.
+                                </p>
+                              </div>
+                              <div className="mt-4">
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  onClick={() => handleRequestCompletionClick(application.id, application.gigTitle || 'this gig')}
+                                  className="bg-purple-600 hover:bg-purple-700"
+                                >
+                                  Request Completion
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+
                   {application.status === 'rejected' && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                       <div className="flex items-center">
@@ -581,6 +754,54 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                     className="bg-red-600 hover:bg-red-700"
                   >
                     {withdrawing ? 'Withdrawing...' : 'Yes, Withdraw'}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Request Completion Confirmation Dialog */}
+        {completionRequestDialog.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <Card className="max-w-md w-full">
+              <CardHeader>
+                <CardTitle className="text-lg">Request Completion</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-700 mb-4">
+                  Are you ready to request completion for <strong>{completionRequestDialog.gigTitle}</strong>?
+                </p>
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-green-800 mb-2">
+                    <strong>This will notify the employer to:</strong>
+                  </p>
+                  <ul className="text-sm text-green-800 list-disc list-inside space-y-1 ml-2">
+                    <li>Review your completed work</li>
+                    <li>Approve and release payment from escrow</li>
+                    <li>OR provide feedback if revisions are needed</li>
+                  </ul>
+                </div>
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-purple-800">
+                    <strong>🛡️ Worker Protection:</strong> If the employer doesn&apos;t respond within 7 days, payment will automatically be released to you from escrow.
+                  </p>
+                </div>
+                <div className="flex justify-end space-x-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleRequestCompletionCancel}
+                    disabled={requestingCompletion}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="primary"
+                    onClick={handleRequestCompletionConfirm}
+                    disabled={requestingCompletion}
+                    className="bg-purple-600 hover:bg-purple-700"
+                  >
+                    {requestingCompletion ? 'Requesting...' : 'Yes, Request Completion'}
                   </Button>
                 </div>
               </CardContent>
