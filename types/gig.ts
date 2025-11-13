@@ -34,6 +34,12 @@ export interface GigApplication {
   paymentStatus?: 'unpaid' | 'paid' | 'in_escrow' | 'released' | 'disputed'
   paymentId?: string // Reference to the payment record
   createdAt: Date
+  // Worker completion request fields
+  completionRequestedAt?: Date // When worker requested completion
+  completionRequestedBy?: 'worker' | 'employer' // Who initiated completion request
+  completionAutoReleaseAt?: Date // When escrow will auto-release if no employer response
+  completionDisputedAt?: Date // If employer disputed the completion request
+  completionDisputeReason?: string // Employer's reason for disputing
 }
 
 export interface Review {
