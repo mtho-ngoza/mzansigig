@@ -374,6 +374,24 @@ export class GigService {
     applicationId: string,
     status: GigApplication['status']
   ): Promise<void> {
+    // If accepting, check that no other application is already accepted
+    if (status === 'accepted') {
+      const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+      if (!application) {
+        throw new Error('Application not found');
+      }
+
+      // Check for existing accepted/funded applications for this gig
+      const existingApplications = await this.getApplicationsByGig(application.gigId);
+      const alreadyAccepted = existingApplications.find(
+        app => app.id !== applicationId && (app.status === 'accepted' || app.status === 'funded')
+      );
+
+      if (alreadyAccepted) {
+        throw new Error('Another worker has already been selected for this gig');
+      }
+    }
+
     await FirestoreService.update('applications', applicationId, { status });
 
     // If accepted, update gig status and assign worker
