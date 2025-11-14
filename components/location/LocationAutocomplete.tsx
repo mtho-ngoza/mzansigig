@@ -351,7 +351,7 @@ export default function LocationAutocomplete({
                 </svg>
                 <div>
                   <div className="text-sm font-medium text-gray-900">
-                    Use "{inputValue}"
+                    Use &quot;{inputValue}&quot;
                   </div>
                   <div className="text-xs text-gray-500">
                     Custom location (not in our database)
