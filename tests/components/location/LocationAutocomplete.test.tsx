@@ -362,7 +362,7 @@ describe('LocationAutocomplete', () => {
     const input = screen.getByRole('textbox')
 
     // Start typing
-    await user.type(input, 'M', { delay: 50 })
+    await user.type(input, 'M')
 
     // Should show searching state briefly
     expect(screen.getByText('Searching...')).toBeInTheDocument()
