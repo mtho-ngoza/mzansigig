@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { User } from '@/types/auth'
+import LocationAutocomplete from '@/components/location/LocationAutocomplete'
 
 interface ProfileCompletionData {
   phone: string
@@ -179,16 +180,19 @@ export function ProfileCompletionForm({ onComplete, onCancel }: ProfileCompletio
           required
         />
 
-        <Input
-          label="Location"
-          type="text"
-          name="location"
-          value={formData.location}
-          onChange={handleChange}
-          error={errors.location}
-          placeholder="e.g., Johannesburg, South Africa"
-          required
-        />
+        <div>
+          <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+            Location *
+          </label>
+          <LocationAutocomplete
+            id="location"
+            value={formData.location}
+            onChange={(value) => setFormData(prev => ({ ...prev, location: value }))}
+            placeholder="Search for city, township, or suburb..."
+            error={errors.location}
+            required
+          />
+        </div>
 
         <div className="space-y-1">
           <label htmlFor="userType" className="block text-sm font-medium text-gray-700">

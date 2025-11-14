@@ -1,4 +1,5 @@
 import { Coordinates, LocationData, DistanceInfo, LocationSearchOptions, SA_CITIES } from '@/types/location'
+import { SA_LOCATIONS_DATABASE } from '@/lib/data/saLocations'
 
 /**
  * Calculate the distance between two coordinates using the Haversine formula
@@ -61,36 +62,64 @@ export function isWithinRadius(center: Coordinates, target: Coordinates, radius:
 }
 
 /**
- * Find the nearest SA city to given coordinates
+ * Find the nearest SA location to given coordinates
  * @param coordinates User's coordinates
- * @returns Nearest SA city information
+ * @returns Nearest SA location information
  */
 export function getNearestCity(coordinates: Coordinates) {
-  let nearestCity = SA_CITIES[0]
-  let nearestDistance = calculateDistance(coordinates, SA_CITIES[0].coordinates)
+  // Use comprehensive SA locations database (100+ locations including townships/suburbs)
+  let nearestLocation = SA_LOCATIONS_DATABASE[0]
+  let nearestDistance = calculateDistance(coordinates, SA_LOCATIONS_DATABASE[0].coordinates)
 
-  for (let i = 1; i < SA_CITIES.length; i++) {
-    const distance = calculateDistance(coordinates, SA_CITIES[i].coordinates)
+  for (let i = 1; i < SA_LOCATIONS_DATABASE.length; i++) {
+    const distance = calculateDistance(coordinates, SA_LOCATIONS_DATABASE[i].coordinates)
     if (distance < nearestDistance) {
       nearestDistance = distance
-      nearestCity = SA_CITIES[i]
+      nearestLocation = SA_LOCATIONS_DATABASE[i]
     }
   }
 
+  // Return in the same format as before for backwards compatibility
   return {
-    city: nearestCity,
+    city: {
+      name: nearestLocation.name,
+      coordinates: nearestLocation.coordinates,
+      province: nearestLocation.province
+    },
     distance: nearestDistance
   }
 }
 
 /**
- * Get coordinates for a SA city by name
- * @param cityName Name of the city
+ * Get coordinates for a SA location by name (supports cities, townships, suburbs)
+ * @param locationName Name of the location
  * @returns Coordinates if found, null otherwise
  */
-export function getCityCoordinates(cityName: string): Coordinates | null {
+export function getCityCoordinates(locationName: string): Coordinates | null {
+  const searchTerm = locationName.toLowerCase().trim()
+
+  // Search through comprehensive SA locations database (100+ locations)
+  const location = SA_LOCATIONS_DATABASE.find(loc => {
+    // Check exact name match
+    if (loc.name.toLowerCase() === searchTerm) {
+      return true
+    }
+
+    // Check aliases (e.g., "Jozi" for Johannesburg, "PMB" for Pietermaritzburg)
+    if (loc.aliases) {
+      return loc.aliases.some(alias => alias.toLowerCase() === searchTerm)
+    }
+
+    return false
+  })
+
+  if (location) {
+    return location.coordinates
+  }
+
+  // Fallback to old SA_CITIES array for backwards compatibility
   const city = SA_CITIES.find(c =>
-    c.name.toLowerCase() === cityName.toLowerCase()
+    c.name.toLowerCase() === searchTerm
   )
   return city ? city.coordinates : null
 }

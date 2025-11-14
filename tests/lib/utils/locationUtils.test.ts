@@ -239,7 +239,7 @@ describe('locationUtils', () => {
 
     describe('given coordinates between two cities', () => {
       describe('when finding nearest city', () => {
-        it('then returns the closer city', () => {
+        it('then returns the closer location (Midrand is between Johannesburg and Pretoria)', () => {
           // Given - midpoint between Johannesburg and Pretoria
           const midpoint: Coordinates = {
             latitude: (johannesburgCoords.latitude + pretoriaCoords.latitude) / 2,
@@ -250,7 +250,8 @@ describe('locationUtils', () => {
           const result = getNearestCity(midpoint)
 
           // Then
-          expect(['Johannesburg', 'Pretoria']).toContain(result.city.name)
+          // With comprehensive database, Midrand (which is literally between Jhb and Pta) should be nearest
+          expect(['Johannesburg', 'Pretoria', 'Midrand']).toContain(result.city.name)
           expect(result.distance).toBeLessThan(30)
         })
       })
@@ -302,6 +303,123 @@ describe('locationUtils', () => {
 
           // Then
           expect(coordinates).toBeNull()
+        })
+      })
+    })
+
+    // New comprehensive location tests for 100+ SA locations
+    describe('given a township name', () => {
+      describe('when getting coordinates', () => {
+        it('then returns coordinates for Soweto', () => {
+          // Given
+          const locationName = 'Soweto'
+
+          // When
+          const coordinates = getCityCoordinates(locationName)
+
+          // Then
+          expect(coordinates).not.toBeNull()
+          expect(coordinates?.latitude).toBeDefined()
+          expect(coordinates?.longitude).toBeDefined()
+        })
+
+        it('then returns coordinates for Umlazi', () => {
+          // Given
+          const locationName = 'Umlazi'
+
+          // When
+          const coordinates = getCityCoordinates(locationName)
+
+          // Then
+          expect(coordinates).not.toBeNull()
+          expect(coordinates?.latitude).toBeDefined()
+        })
+
+        it('then returns coordinates for Alexandra', () => {
+          // Given
+          const locationName = 'Alexandra'
+
+          // When
+          const coordinates = getCityCoordinates(locationName)
+
+          // Then
+          expect(coordinates).not.toBeNull()
+          expect(coordinates?.latitude).toBeDefined()
+        })
+      })
+    })
+
+    describe('given a suburb name', () => {
+      describe('when getting coordinates', () => {
+        it('then returns coordinates for Midrand', () => {
+          // Given
+          const locationName = 'Midrand'
+
+          // When
+          const coordinates = getCityCoordinates(locationName)
+
+          // Then
+          expect(coordinates).not.toBeNull()
+          expect(coordinates?.latitude).toBeCloseTo(-25.9953, 1)
+          expect(coordinates?.longitude).toBeCloseTo(28.1289, 1)
+        })
+
+        it('then returns coordinates for Sandton', () => {
+          // Given
+          const locationName = 'Sandton'
+
+          // When
+          const coordinates = getCityCoordinates(locationName)
+
+          // Then
+          expect(coordinates).not.toBeNull()
+          expect(coordinates?.latitude).toBeDefined()
+        })
+      })
+    })
+
+    describe('given an alias', () => {
+      describe('when getting coordinates', () => {
+        it('then returns Johannesburg coordinates for "Jozi" alias', () => {
+          // Given
+          const alias = 'Jozi'
+
+          // When
+          const coordinates = getCityCoordinates(alias)
+
+          // Then
+          expect(coordinates).not.toBeNull()
+          expect(coordinates?.latitude).toBeCloseTo(-26.2041, 2)
+          expect(coordinates?.longitude).toBeCloseTo(28.0473, 2)
+        })
+
+        it('then returns Pietermaritzburg coordinates for "PMB" alias', () => {
+          // Given
+          const alias = 'PMB'
+
+          // When
+          const coordinates = getCityCoordinates(alias)
+
+          // Then
+          expect(coordinates).not.toBeNull()
+          expect(coordinates?.latitude).toBeCloseTo(-29.6017, 1)
+          expect(coordinates?.longitude).toBeCloseTo(30.3794, 1)
+        })
+      })
+    })
+
+    describe('given a location name with whitespace', () => {
+      describe('when getting coordinates', () => {
+        it('then trims whitespace and returns coordinates', () => {
+          // Given
+          const locationName = '  Johannesburg  '
+
+          // When
+          const coordinates = getCityCoordinates(locationName)
+
+          // Then
+          expect(coordinates).not.toBeNull()
+          expect(coordinates?.latitude).toBeCloseTo(-26.2041, 2)
         })
       })
     })

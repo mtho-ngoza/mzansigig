@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/Input'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProfileService } from '@/lib/database/profileService'
 import { useToast } from '@/contexts/ToastContext'
-import { SA_LOCATIONS } from '@/types/location'
+import LocationAutocomplete from '@/components/location/LocationAutocomplete'
 
 interface BasicInfoFormProps {
   onBack?: () => void
@@ -219,18 +219,13 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
                   <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
                     Location *
                   </label>
-                  <select
+                  <LocationAutocomplete
                     id="location"
                     value={formData.location}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                    onChange={(value) => handleInputChange('location', value)}
+                    placeholder="Search for city, township, or suburb..."
                     required
-                  >
-                    <option value="">Select location</option>
-                    {SA_LOCATIONS.map(location => (
-                      <option key={location} value={location}>{location}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
               </div>
 

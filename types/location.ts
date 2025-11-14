@@ -3,6 +3,8 @@ export interface Coordinates {
   longitude: number
 }
 
+export type LocationType = 'City' | 'Township' | 'Suburb' | 'Town' | 'Remote'
+
 export interface LocationData {
   name: string
   coordinates?: Coordinates
@@ -10,6 +12,10 @@ export interface LocationData {
   city: string
   province?: string
   country: string
+  // Enhanced fields for autocomplete
+  type?: LocationType
+  parentCity?: string
+  aliases?: string[]
 }
 
 export interface UserLocation {
