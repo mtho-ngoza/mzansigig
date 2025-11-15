@@ -5,10 +5,12 @@
 
 import { GigService } from '@/lib/database/gigService';
 import { FirestoreService } from '@/lib/database/firestore';
+import { ConfigService } from '@/lib/database/configService';
 import { Gig, GigApplication } from '@/types/gig';
 
 // Mock FirestoreService
 jest.mock('@/lib/database/firestore');
+jest.mock('@/lib/database/configService');
 
 describe('GigService - Application Management', () => {
   const mockGigId = 'test-gig-123';
@@ -18,6 +20,20 @@ describe('GigService - Application Management', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Mock ConfigService to return default values
+    (ConfigService.getValue as jest.Mock).mockImplementation((key: string) => {
+      const defaults: Record<string, number> = {
+        escrowAutoReleaseDays: 7,
+        safetyCheckIntervalHours: 2,
+        gigExpiryTimeoutDays: 7,
+        fundingTimeoutHours: 48,
+        maxActiveApplicationsPerWorker: 20,
+        distanceWarningThresholdKm: 50,
+        reviewDeadlineDays: 30,
+      }
+      return Promise.resolve(defaults[key] || 0)
+    });
   });
 
   describe('getApplicationCountByGig', () => {

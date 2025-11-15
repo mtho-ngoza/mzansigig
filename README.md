@@ -4,7 +4,7 @@ A modern, responsive web platform designed to empower South Africa's informal se
 
 **From kasi to career** - we're bridging the gap between South Africa's 11.2 million unemployed and the R750B informal sector economy.
 
-[![Tests](https://img.shields.io/badge/tests-1005%20passing-brightgreen)](.)
+[![Tests](https://img.shields.io/badge/tests-1241%20passing-brightgreen)](.)
 [![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue)](.)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](.)
 
@@ -26,7 +26,7 @@ Empower all South Africans - from informal sector workers to professionals - by 
 **Readiness**: 🟢 **96% Complete**
 
 ### What's Implemented
-- ✅ **1005 tests passing** | ✅ Zero TypeScript errors | ✅ Build successful
+- ✅ **1241 tests passing** | ✅ Zero TypeScript errors | ✅ Build successful
 - ✅ **All core features implemented and tested**
 - ✅ **Payment system fully functional** (escrow, withdrawals, fees)
 - ✅ **Trust & safety features operational** (ID verification, reviews, trust scores)
@@ -35,14 +35,14 @@ Empower all South Africans - from informal sector workers to professionals - by 
 - ✅ **Comprehensive security rules** deployed
 
 ### Test & Quality Metrics
-- **34 test suites** covering all major features
-- **80%+ code coverage** on critical services
+- **37 test suites** covering all major features
+- **86%+ overall code coverage** on critical services
 - **profileService**: 100% coverage
-- **gigService**: 85%+ coverage
-- **messagingService**: 80%+ coverage
+- **gigService**: 93.8% coverage
+- **messagingService**: 77.8% coverage
 - **documentStorageService**: 96.5% coverage
-- **reviewService**: 98.8% coverage
-- **locationUtils**: 87.8% coverage
+- **reviewService**: 65.4% coverage
+- **locationUtils**: 89.4% coverage
 
 ---
 
@@ -121,14 +121,22 @@ Empower all South Africans - from informal sector workers to professionals - by 
 - 🆔 **Automated ID Verification**: OCR-powered SA ID document verification with Google Vision API
 - 🔍 **Name Cross-Reference**: Intelligent matching between profile and ID document names
 - 🛡️ **Trust Score System**: Dynamic scoring based on verifications, reviews, and platform activity (defaults to 50)
-- ⭐ **Review & Rating System**: Post-gig ratings with anti-fraud validation
+- ⭐ **Review & Rating System**: Post-gig ratings with anti-fraud validation and mutual review reveal (reviews visible only after both parties submit)
 - 📊 **Verification Center**: User-friendly verification dashboard with progress tracking
 - ⚡ **Instant Verification**: Real-time document processing with immediate feedback
 - 🔒 **Secure Processing**: Server-side OCR processing with no document storage
 - 📋 **Admin Document Review**: Full admin dashboard for reviewing pending verification documents
+- 🚨 **Distance Warnings**: Alerts workers when applying to gigs beyond configurable threshold (default 50km) with travel estimates
+- 📍 **Check-in/Check-out System**: GPS tracking and periodic safety checks for physical gigs
+- 💡 **Verification Nudges**: Encouraging informational prompts showing verification benefits to unverified workers
+- 🔒 **Duplicate Application Prevention**: Prevents same worker applying twice (allows re-apply after withdrawal)
+- ⚡ **Race Condition Prevention**: Validation prevents accepting multiple workers simultaneously
+- 📊 **Application Spam Prevention**: Configurable limit on active applications per worker (default 20)
 
 ### Payment System
 - 💳 **Payment Integration**: Secure payment processing with escrow for completed work
+- 💰 **Secure Escrow System**: Worker-initiated completion with configurable auto-release (default 7 days) prevents payment hostage situations
+- ⚖️ **Dispute Resolution**: Admin mediation dashboard with comprehensive audit trail for resolving completion disputes
 - 💰 **Fee Management**: Configurable platform fees with admin controls
 - 🏦 **Payment Methods**: Support for bank accounts and mobile money
 - 👛 **Worker Wallet System**: Digital wallet with pending (escrow) and available balances
@@ -139,7 +147,9 @@ Empower all South Africans - from informal sector workers to professionals - by 
 - 🔄 **Escrow Management**: Automatic balance updates on payment and escrow release
 - ✅ **Role-Based Access**: Proper wallet restrictions by user type
 - ⚙️ **Admin Oversight**: Withdrawal approval system and fee configuration management
-- ⚠️ **Payment Warnings**: Worker protection alerts for unfunded applications
+- ⚠️ **Payment Warnings**: Worker protection alerts for unfunded applications with "Payment after selection" badges
+- ⏰ **Funding Protection**: Auto-cancels accepted applications if not funded within configurable timeout (default 48 hours)
+- 🔄 **Smart Status Updates**: Gig status automatically changes to 'in-progress' when payment is funded
 
 ### Messaging System
 - 💬 **Real-time Messaging**: Direct communication between employers and job seekers
@@ -175,6 +185,23 @@ Empower all South Africans - from informal sector workers to professionals - by 
 - ✨ **Custom Locations**: Fallback option for unlisted locations
 - 📱 **Integrated Everywhere**: Used in registration, profile management, and gig posting forms
 
+### Admin Configuration & Management
+- ⚙️ **Runtime Configuration Dashboard**: Admin UI for configuring all platform constants without code deployments
+- 🔧 **Configurable Constants**: Distance warnings (1-500km), max applications (1-100), review deadline (7-365 days), gig expiry (1-90 days), funding timeout (1-168 hours), escrow auto-release (1-90 days), safety check interval (0.5-24 hours)
+- 💾 **Smart Caching**: 5-minute in-memory cache with automatic invalidation for optimal performance
+- ✅ **Validation & Constraints**: Min/max validation on all configuration values to prevent invalid settings
+- 🔐 **Admin-Only Access**: Firestore security rules ensure only admins can modify platform configuration
+
+### Lifecycle & Workflow Management
+- ⏱️ **Gig Expiry System**: Auto-cancels unfunded gigs and overdue gigs past deadline with configurable timeouts
+- 📅 **Review Deadlines**: Configurable review submission period (default 30 days from completion)
+- 🎯 **Work Type Clarity**: Clear Remote/Physical/Hybrid indicators with visual badges throughout platform
+
+### Market Fairness & Worker Protection
+- 💵 **Minimum Wage Guidance**: Category-specific suggestions based on SA National Minimum Wage (R27.58/hour) and industry standards
+- 📊 **Budget Validation**: Prevents posting below minimum wage with clear error messages
+- 💰 **Real-time Rate Guidance**: Shows minimum and recommended rates per category/duration in gig posting forms
+
 ---
 
 ## 🚀 Next Development Priorities
@@ -189,7 +216,6 @@ Empower all South Africans - from informal sector workers to professionals - by 
 ### Post-Launch Enhancements
 
 #### Month 1-2: UX Improvements
-- ✅ ~~**Location Search Enhancement**~~ - **COMPLETED**: Smart autocomplete with 100+ SA locations (local database, no API needed)
 - **Skills Development Hub** - Integrate learning resources for job seekers
 
 #### Month 3-6: Advanced Features
@@ -207,73 +233,6 @@ Empower all South Africans - from informal sector workers to professionals - by 
 
 ---
 
-## 🔒 Pre-Deploy Security & Trust Review
-
-**Status**: Comprehensive workflow analysis completed. Core functionality solid, identified improvements for production readiness.
-
-### **Philosophy: Progressive Trust Model**
-- 🎯 **Low friction at entry** - Easy posting/applying to maximize platform adoption
-- 🛡️ **Protection at critical moments** - Secure payments and work exchanges
-- 📈 **Trust through behavior** - Incentivize verification and good practices
-
-### **Priority 1: Must Address Before Public Beta**
-
-#### Payment & Escrow
-- ✅ ~~**Unfunded Gig Warnings**~~ - **COMPLETED**: Informational badge shows "Payment after selection" on all open gigs
-- ✅ ~~**Escrow Release Mechanism**~~ - **COMPLETED**: Worker-initiated completion with 7-day auto-release to prevent payment hostage. Includes employer approve/dispute workflow and comprehensive UI for both parties.
-- ✅ ~~**Dispute Resolution System**~~ - **COMPLETED**: Admin mediation dashboard to resolve completion disputes. Admins can review both sides, release payment to worker or require worker to continue/redo work. Includes comprehensive audit trail.
-
-#### Application Flow
-- ✅ ~~**Duplicate Application Prevention**~~ - **COMPLETED**: Compound query prevents same worker applying twice (allows re-apply after withdrawal)
-- ✅ ~~**Multiple Acceptance Prevention**~~ - **COMPLETED**: Validation prevents accepting when another worker is already accepted/funded. Prevents race conditions and payment conflicts.
-- ✅ ~~**Auto-update Gig Status**~~ - **COMPLETED**: Gig status automatically changes to 'in-progress' when payment is funded (not just accepted). Keeps gigs open for backup applications until payment secured.
-
-#### Safety & Fraud
-- ✅ ~~**Duplicate Review Prevention**~~ - **COMPLETED**: One review per party per gig (already implemented with tests)
-- ✅ ~~**Basic Safety Features**~~ - **COMPLETED**: Worker check-in/check-out system with GPS tracking and periodic safety checks for physical gigs
-- ✅ ~~**Location Distance Warnings**~~ - **COMPLETED**: Alerts workers when applying to gigs 50km+ away with travel time estimates and safety considerations
-
-### **Priority 2: Recommended Before Launch**
-
-#### UX & Lifecycle
-- ✅ ~~**Gig Expiry**~~ - **COMPLETED**: Auto-cancels unfunded gigs after 7 days and overdue gigs past deadline. Includes batch processing and individual checks.
-- ✅ ~~**Funding Timeout**~~ - **COMPLETED**: Auto-cancels accepted applications if not funded within 48 hours. Includes batch processing and individual checks with 48-hour window.
-- ✅ ~~**Work Type Clarification**~~ - **COMPLETED**: Clear Remote/Physical/Hybrid indicators with visual badges, filter support, and form selectors throughout the platform.
-- ✅ ~~**Application Limits**~~ - **COMPLETED**: Prevents spam by limiting workers to 20 active applications (pending/accepted/funded). Workers see helpful error message suggesting they wait for responses or withdraw applications. Includes comprehensive tests.
-
-#### Trust & Verification
-- ✅ ~~**Soft Verification Nudges**~~ - **COMPLETED**: Encouraging informational nudges for unverified workers showing "3x more responses" stats. Displayed in ProfileManagement (banner), ApplicationForm (inline), with 3 variants (banner/card/inline) for flexible placement. Non-intrusive soft encouragement with clear CTA to verification center.
-- ✅ ~~**Review Improvements**~~ - **COMPLETED**: Mutual review reveal (reviews only visible after both parties submit), 30-day review deadline from gig completion, automatic review linking and reveal. Ratings only updated with revealed reviews to ensure fairness and prevent gaming.
-- ✅ ~~**Market Rate Guidance**~~ - **COMPLETED**: Category-specific minimum wage suggestions based on SA National Minimum Wage (R27.58/hour) and industry standards. Real-time budget guidance in PostGigForm shows minimum and recommended rates per category/duration. Budget validation prevents posting below minimum wage with clear error messages. Comprehensive test coverage (35+ tests).
-
-### **Priority 3: Scale & Polish**
-
-#### Advanced Features
-- 🚀 **Milestone Payments** - Split payments for long-duration gigs (3+ months)
-- 🚀 **Proof of Work** - Check-in/check-out for physical work, deliverable uploads for digital
-- 🚀 **Pattern Detection** - Flag suspicious behavior (same device, rapid cancellations)
-- 🚀 **Communication Evidence** - Link messages to gigs for dispute resolution
-
-#### Platform Configuration
-- 🔧 **Admin-Configurable Constants** - Move hardcoded values to admin dashboard for easy adjustment without code changes:
-  - Gig expiry timeouts (currently 7 days for unfunded gigs)
-  - Funding timeouts (currently 48 hours)
-  - Escrow auto-release period (currently 7 days)
-  - Distance warning threshold (currently 50km)
-  - Safety check intervals (currently 2 hours)
-  - Application limits per worker
-  - Platform fee percentages
-  - Review deadline periods
-
-### **Implementation Approach**
-- ✅ **Phase 1** (Beta): Soft warnings and basic protections without blocking user flow
-- ✅ **Phase 2** (Launch): Enforce critical security at payment/work exchange points
-- ✅ **Phase 3** (Scale): Advanced fraud detection and trust systems
-
-**Note**: All gaps documented for transparency. Core platform is production-ready with escrow system, verification, and reviews in place. These improvements enhance trust and reduce friction points identified through workflow analysis. Configuration values are currently hardcoded but can be moved to admin-configurable settings for operational flexibility.
-
----
-
 ## 🛠 Tech Stack
 
 - **Frontend**: Next.js 15 with TypeScript & App Router
@@ -284,7 +243,7 @@ Empower all South Africans - from informal sector workers to professionals - by 
 - **OCR**: Google Cloud Vision API for ID verification
 - **State Management**: React Context API
 - **Error Handling**: React Error Boundaries
-- **Testing**: Jest with React Testing Library (935 passing tests)
+- **Testing**: Jest with React Testing Library (1241 passing tests)
 - **Development**: Hot reload, TypeScript checking, ESLint
 
 ---
@@ -347,10 +306,10 @@ npm run test:coverage
 ```
 
 ### Test Coverage
-- ✅ **935 tests passing**
-- ✅ **51 test suites**
-- ✅ **80%+ overall coverage** (production-ready quality)
-- ✅ **100% coverage on critical paths**: profileService, reviewService, documentStorageService
+- ✅ **1241 tests passing**
+- ✅ **54 test suites**
+- ✅ **86%+ overall coverage** (production-ready quality)
+- ✅ **100% coverage on critical paths**: profileService
 
 ### Pre-commit Checks
 ```bash
@@ -416,7 +375,8 @@ npm run test:ci
 - [x] Admin document review dashboard
 - [x] Enhanced gig filtering with sector-based skills and presets
 - [x] Performance optimization for 2G/3G networks
-- [x] Comprehensive test coverage (935 tests, 80%+)
+- [x] Admin configurable platform constants with Firebase backend
+- [x] Comprehensive test coverage (1241 tests, 86%+)
 
 ### 📋 Pre-Launch Requirements
 - [ ] Payment gateway integration (PayFast/Yoco)
@@ -428,7 +388,6 @@ npm run test:ci
 ### 🔮 Future Enhancements
 
 **Infrastructure Ready** (can be implemented quickly):
-- Location search with autocomplete (LocationService built, needs Google Places API)
 - Enhanced verification with background checks (UI ready, marked "Coming Q2 2025")
 - Premium verification (UI ready, marked "Coming Later")
 
@@ -547,4 +506,4 @@ This project is licensed under the ISC License.
 
 **Built with ❤️ for South Africa's informal sector workers and their communities** 🇿🇦
 
-**Status**: Production Ready | **Tests**: 935 Passing | **Coverage**: 80%+ | **Build**: Successful
+**Status**: Production Ready | **Tests**: 1241 Passing | **Coverage**: 86%+ | **Build**: Successful

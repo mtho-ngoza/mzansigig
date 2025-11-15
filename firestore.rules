@@ -749,6 +749,21 @@ service cloud.firestore {
                       request.resource.data.userId == request.auth.uid;
     }
     // ========================================
+    // Platform Configuration Collection (Admin Only)
+    // ========================================
+    match /platformConfig/{configId} {
+      // Anyone can read platform configuration (needed for app functionality)
+      allow read: if true;
+
+      // Only admins can create or update platform config
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+
+      // Only admins can delete platform config
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
     // Default Deny All Other Collections
     // Security by default: deny all access to undefined collections
     // ========================================

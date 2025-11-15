@@ -788,7 +788,7 @@ export default function PublicGigBrowser({
     }
   }
 
-  const handleApplyClick = (gig: Gig) => {
+  const handleApplyClick = async (gig: Gig) => {
     if (!currentUser) {
       onSignUpClick()
       return
@@ -808,7 +808,7 @@ export default function PublicGigBrowser({
     setSelectedGig(gig)
 
     // Check if distance warning is needed for physical gigs
-    const warningInfo = checkDistanceWarning(gig, currentCoordinates)
+    const warningInfo = await checkDistanceWarning(gig, currentCoordinates)
 
     if (warningInfo && warningInfo.shouldWarn) {
       // Show distance warning dialog first

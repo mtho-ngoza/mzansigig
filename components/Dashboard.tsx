@@ -17,11 +17,12 @@ import EmployerPaymentDashboard from './payment/EmployerPaymentDashboard'
 import WithdrawalApprovalDashboard from './admin/WithdrawalApprovalDashboard'
 import FeeConfigManager from './admin/FeeConfigManager'
 import PendingDocumentReview from './admin/PendingDocumentReview'
+import PlatformConfigDashboard from './admin/PlatformConfigDashboard'
 import BrowseTalent from './BrowseTalent'
 import { isAdmin } from '@/lib/utils/adminAuth'
 import VerificationCenter from './safety/VerificationCenter'
 
-type DashboardView = 'dashboard' | 'post-gig' | 'manage-gigs' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments' | 'admin-withdrawals' | 'admin-fees' | 'admin-documents' | 'browse-talent' | 'verification'
+type DashboardView = 'dashboard' | 'post-gig' | 'manage-gigs' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments' | 'admin-withdrawals' | 'admin-fees' | 'admin-documents' | 'admin-platform-config' | 'browse-talent' | 'verification'
 
 interface DashboardProps {
   onBrowseGigs?: () => void
@@ -333,6 +334,37 @@ export default function Dashboard({
     )
   }
 
+  // Show admin platform configuration page if user is on that view
+  if (currentView === 'admin-platform-config') {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <PageHeader
+          title="Platform Configuration"
+          description="Manage platform-wide settings and timeouts"
+          breadcrumbs={[{
+            label: 'Home',
+            onClick: onBrowseGigs || (() => {})
+          }, {
+            label: 'Dashboard',
+            onClick: () => handleViewChange('dashboard')
+          }, {
+            label: 'Platform Configuration',
+            isCurrentPage: true
+          }]}
+          backButton={{
+            label: 'Back to Dashboard',
+            onClick: () => handleViewChange('dashboard')
+          }}
+        />
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="px-4 py-6 sm:px-0">
+            <PlatformConfigDashboard />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Dashboard Header */}
@@ -442,6 +474,13 @@ export default function Dashboard({
                         onClick={() => handleViewChange('admin-fees')}
                       >
                         Fee Configuration
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => handleViewChange('admin-platform-config')}
+                      >
+                        Platform Settings
                       </Button>
                       <Button
                         variant="outline"
