@@ -230,13 +230,13 @@ Empower all South Africans - from informal sector workers to professionals - by 
 
 #### Safety & Fraud
 - ✅ ~~**Duplicate Review Prevention**~~ - **COMPLETED**: One review per party per gig (already implemented with tests)
-- ⚠️ **Basic Safety Features** - Emergency contacts and check-in system for physical gigs
-- ⚠️ **Location Distance Warnings** - Alert when worker applies to gigs far from their location
+- ✅ ~~**Basic Safety Features**~~ - **COMPLETED**: Worker check-in/check-out system with GPS tracking and periodic safety checks for physical gigs
+- ✅ ~~**Location Distance Warnings**~~ - **COMPLETED**: Alerts workers when applying to gigs 50km+ away with travel time estimates and safety considerations
 
 ### **Priority 2: Recommended Before Launch**
 
 #### UX & Lifecycle
-- 💡 **Gig Expiry** - Auto-close unfunded gigs after 7 days, completed gigs after deadline
+- ✅ ~~**Gig Expiry**~~ - **COMPLETED**: Auto-cancels unfunded gigs after 7 days and overdue gigs past deadline. Includes batch processing and individual checks.
 - 💡 **Funding Timeout** - Auto-cancel accepted applications if not funded within 48 hours
 - 💡 **Work Type Clarification** - Clear Remote/Physical/Hybrid indicators
 - 💡 **Application Limits** - Prevent spam by limiting active applications per worker (~20)
@@ -254,12 +254,23 @@ Empower all South Africans - from informal sector workers to professionals - by 
 - 🚀 **Pattern Detection** - Flag suspicious behavior (same device, rapid cancellations)
 - 🚀 **Communication Evidence** - Link messages to gigs for dispute resolution
 
+#### Platform Configuration
+- 🔧 **Admin-Configurable Constants** - Move hardcoded values to admin dashboard for easy adjustment without code changes:
+  - Gig expiry timeouts (currently 7 days for unfunded gigs)
+  - Funding timeouts (currently 48 hours)
+  - Escrow auto-release period (currently 7 days)
+  - Distance warning threshold (currently 50km)
+  - Safety check intervals (currently 2 hours)
+  - Application limits per worker
+  - Platform fee percentages
+  - Review deadline periods
+
 ### **Implementation Approach**
 - ✅ **Phase 1** (Beta): Soft warnings and basic protections without blocking user flow
 - ✅ **Phase 2** (Launch): Enforce critical security at payment/work exchange points
 - ✅ **Phase 3** (Scale): Advanced fraud detection and trust systems
 
-**Note**: All gaps documented for transparency. Core platform is production-ready with escrow system, verification, and reviews in place. These improvements enhance trust and reduce friction points identified through workflow analysis.
+**Note**: All gaps documented for transparency. Core platform is production-ready with escrow system, verification, and reviews in place. These improvements enhance trust and reduce friction points identified through workflow analysis. Configuration values are currently hardcoded but can be moved to admin-configurable settings for operational flexibility.
 
 ---
 
