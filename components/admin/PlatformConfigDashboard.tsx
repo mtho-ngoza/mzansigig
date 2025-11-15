@@ -162,7 +162,7 @@ export default function PlatformConfigDashboard() {
             {config.updatedAt instanceof Date
               ? config.updatedAt.toLocaleString()
               : typeof config.updatedAt === 'object' && 'toDate' in config.updatedAt
-              ? (config.updatedAt as any).toDate().toLocaleString()
+              ? (config.updatedAt as { toDate: () => Date }).toDate().toLocaleString()
               : new Date(config.updatedAt).toLocaleString()}{' '}
             {config.updatedBy === 'system' ? 'by System' : `by ${user?.firstName || 'Admin'}`}
           </p>
