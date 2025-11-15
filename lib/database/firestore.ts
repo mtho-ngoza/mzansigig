@@ -6,6 +6,7 @@ import {
   getDocs,
   updateDoc,
   deleteDoc,
+  setDoc,
   query,
   where,
   orderBy,
@@ -30,6 +31,22 @@ export class FirestoreService {
       return docRef.id;
     } catch (error: unknown) {
       throw new Error(`Error creating document: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Set a document with a specific ID (creates or overwrites)
+   */
+  static async setDocument<T extends DocumentData>(
+    collectionName: string,
+    docId: string,
+    data: T
+  ): Promise<void> {
+    try {
+      const docRef = doc(db, collectionName, docId);
+      await setDoc(docRef, data);
+    } catch (error: unknown) {
+      throw new Error(`Error setting document: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

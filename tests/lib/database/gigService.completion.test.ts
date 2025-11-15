@@ -6,11 +6,13 @@
 import { GigService } from '@/lib/database/gigService'
 import { FirestoreService } from '@/lib/database/firestore'
 import { PaymentService } from '@/lib/services/paymentService'
+import { ConfigService } from '@/lib/database/configService'
 import { Gig, GigApplication } from '@/types/gig'
 
 // Mock dependencies
 jest.mock('@/lib/database/firestore')
 jest.mock('@/lib/services/paymentService')
+jest.mock('@/lib/database/configService')
 
 describe('GigService - Completion Workflows', () => {
   const mockGigId = 'gig-123'
@@ -52,6 +54,20 @@ describe('GigService - Completion Workflows', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+
+    // Mock ConfigService to return default values
+    ;(ConfigService.getValue as jest.Mock).mockImplementation((key: string) => {
+      const defaults: Record<string, number> = {
+        escrowAutoReleaseDays: 7,
+        safetyCheckIntervalHours: 2,
+        gigExpiryTimeoutDays: 7,
+        fundingTimeoutHours: 48,
+        maxActiveApplicationsPerWorker: 20,
+        distanceWarningThresholdKm: 50,
+        reviewDeadlineDays: 30,
+      }
+      return Promise.resolve(defaults[key] || 0)
+    })
   })
 
   describe('requestCompletionByWorker', () => {

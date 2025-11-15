@@ -9,8 +9,10 @@ import {
   getCityCoordinates
 } from '@/lib/utils/locationUtils';
 import type { DocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { ConfigService } from './configService';
 
-// Application limits to prevent spam
+// Application limits to prevent spam (configurable via admin)
+// Fallback to 20 if config not available
 const MAX_ACTIVE_APPLICATIONS_PER_WORKER = 20;
 
 export class GigService {
@@ -322,10 +324,11 @@ export class GigService {
     applicationData: Omit<GigApplication, 'id' | 'createdAt' | 'status'>
   ): Promise<string> {
     // Check if worker has reached the active applications limit (spam prevention)
+    const maxApplications = await ConfigService.getValue('maxActiveApplicationsPerWorker').catch(() => MAX_ACTIVE_APPLICATIONS_PER_WORKER);
     const activeApplicationsCount = await this.countActiveApplicationsByWorker(applicationData.applicantId);
-    if (activeApplicationsCount >= MAX_ACTIVE_APPLICATIONS_PER_WORKER) {
+    if (activeApplicationsCount >= maxApplications) {
       throw new Error(
-        `You have reached the maximum limit of ${MAX_ACTIVE_APPLICATIONS_PER_WORKER} active applications. ` +
+        `You have reached the maximum limit of ${maxApplications} active applications. ` +
         `Please wait for responses on your current applications or withdraw some before applying to more gigs.`
       );
     }
@@ -539,9 +542,10 @@ export class GigService {
       throw new Error('Completion has already been requested for this application');
     }
 
-    // Set completion request with 7-day auto-release window
+    // Set completion request with auto-release window (configurable)
     const now = new Date();
-    const autoReleaseDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
+    const escrowAutoReleaseDays = await ConfigService.getValue('escrowAutoReleaseDays').catch(() => 7);
+    const autoReleaseDate = new Date(now.getTime() + escrowAutoReleaseDays * 24 * 60 * 60 * 1000);
 
     await FirestoreService.update('applications', applicationId, {
       completionRequestedAt: now,
@@ -924,12 +928,13 @@ export class GigService {
     const isCheckedIn = !!application.checkInAt && !application.checkOutAt;
     const missedSafetyChecks = application.missedSafetyChecks || 0;
 
-    // Need safety check if checked in and last check was more than 2 hours ago
+    // Need safety check if checked in and last check was more than configured interval
     let needsSafetyCheck = false;
     if (isCheckedIn && application.lastSafetyCheckAt) {
+      const safetyCheckInterval = await ConfigService.getValue('safetyCheckIntervalHours').catch(() => 2);
       const hoursSinceLastCheck =
         (Date.now() - application.lastSafetyCheckAt.getTime()) / (1000 * 60 * 60);
-      needsSafetyCheck = hoursSinceLastCheck >= 2;
+      needsSafetyCheck = hoursSinceLastCheck >= safetyCheckInterval;
     }
 
     return {
@@ -953,7 +958,8 @@ export class GigService {
     total: number
   }> {
     const now = new Date()
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+    const gigExpiryTimeoutDays = await ConfigService.getValue('gigExpiryTimeoutDays').catch(() => 7);
+    const expiryDate = new Date(now.getTime() - gigExpiryTimeoutDays * 24 * 60 * 60 * 1000)
 
     let unfundedExpired = 0
     let overdueExpired = 0
@@ -965,8 +971,8 @@ export class GigService {
 
     for (const gig of allGigs) {
       try {
-        // Check for unfunded gigs older than 7 days (open status only)
-        if (gig.status === 'open' && gig.createdAt <= sevenDaysAgo) {
+        // Check for unfunded gigs older than configured timeout (open status only)
+        if (gig.status === 'open' && gig.createdAt <= expiryDate) {
           // Check if gig has any funded applications
           const applications = await this.getApplicationsByGig(gig.id)
           const hasFundedApplication = applications.some(app => app.status === 'funded')
@@ -1052,7 +1058,7 @@ export class GigService {
   }
 
   /**
-   * Timeout unfunded accepted applications after 48 hours
+   * Timeout unfunded accepted applications after configured timeout
    * This function can be called manually or scheduled to run periodically
    * @returns Object with count of timed-out applications
    */
@@ -1060,7 +1066,8 @@ export class GigService {
     timedOut: number
   }> {
     const now = new Date()
-    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000)
+    const fundingTimeoutHours = await ConfigService.getValue('fundingTimeoutHours').catch(() => 48);
+    const timeoutDate = new Date(now.getTime() - fundingTimeoutHours * 60 * 60 * 1000)
 
     let timedOut = 0
 
@@ -1074,8 +1081,8 @@ export class GigService {
 
     for (const application of acceptedApplications) {
       try {
-        // Check if application was accepted more than 48 hours ago
-        if (application.acceptedAt && application.acceptedAt <= fortyEightHoursAgo) {
+        // Check if application was accepted more than configured timeout ago
+        if (application.acceptedAt && application.acceptedAt <= timeoutDate) {
           // Timeout the application (reject it)
           await FirestoreService.update('applications', application.id, {
             status: 'rejected'
@@ -1121,15 +1128,16 @@ export class GigService {
       return false
     }
 
-    // Check if acceptedAt timestamp exists and is older than 48 hours
+    // Check if acceptedAt timestamp exists and is older than configured timeout
     if (!application.acceptedAt) {
       return false
     }
 
     const now = new Date()
-    const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000)
+    const fundingTimeoutHours = await ConfigService.getValue('fundingTimeoutHours').catch(() => 48);
+    const timeoutDate = new Date(now.getTime() - fundingTimeoutHours * 60 * 60 * 1000)
 
-    if (application.acceptedAt <= fortyEightHoursAgo) {
+    if (application.acceptedAt <= timeoutDate) {
       // Timeout the application
       await FirestoreService.update('applications', application.id, {
         status: 'rejected'

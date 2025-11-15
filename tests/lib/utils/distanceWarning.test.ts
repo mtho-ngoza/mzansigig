@@ -27,50 +27,50 @@ describe('Distance Warning Utilities', () => {
   })
 
   describe('checkDistanceWarning', () => {
-    it('should return null for remote gigs', () => {
+    it('should return null for remote gigs', async () => {
       const gig = createMockGig('remote', farGigLocationPretoria) as Gig
-      const result = checkDistanceWarning(gig, userLocation)
+      const result = await checkDistanceWarning(gig, userLocation)
       expect(result).toBeNull()
     })
 
-    it('should return null for gigs without coordinates', () => {
+    it('should return null for gigs without coordinates', async () => {
       const gig = createMockGig('physical') as Gig
-      const result = checkDistanceWarning(gig, userLocation)
+      const result = await checkDistanceWarning(gig, userLocation)
       expect(result).toBeNull()
     })
 
-    it('should return null when user has no location', () => {
+    it('should return null when user has no location', async () => {
       const gig = createMockGig('physical', farGigLocationPretoria) as Gig
-      const result = checkDistanceWarning(gig, null)
+      const result = await checkDistanceWarning(gig, null)
       expect(result).toBeNull()
     })
 
-    it('should return warning info with shouldWarn=false for nearby physical gigs (< 50km)', () => {
+    it('should return warning info with shouldWarn=false for nearby physical gigs (< 50km)', async () => {
       // Create a gig very close to user location (< 50km)
       const closeLocation: Coordinates = {
         latitude: -26.2500, // ~5km from Johannesburg
         longitude: 28.0500
       }
       const gig = createMockGig('physical', closeLocation) as Gig
-      const result = checkDistanceWarning(gig, userLocation)
+      const result = await checkDistanceWarning(gig, userLocation)
 
       expect(result).not.toBeNull()
       expect(result?.shouldWarn).toBe(false)
       expect(result?.distance).toBeLessThan(DISTANCE_WARNING_THRESHOLD_KM)
     })
 
-    it('should return warning info with shouldWarn=true for far physical gigs (>= 50km)', () => {
+    it('should return warning info with shouldWarn=true for far physical gigs (>= 50km)', async () => {
       const gig = createMockGig('physical', farGigLocationPretoria) as Gig
-      const result = checkDistanceWarning(gig, userLocation)
+      const result = await checkDistanceWarning(gig, userLocation)
 
       expect(result).not.toBeNull()
       expect(result?.shouldWarn).toBe(true)
       expect(result?.distance).toBeGreaterThanOrEqual(DISTANCE_WARNING_THRESHOLD_KM)
     })
 
-    it('should return correct distance and travel time', () => {
+    it('should return correct distance and travel time', async () => {
       const gig = createMockGig('physical', farGigLocation) as Gig
-      const result = checkDistanceWarning(gig, userLocation)
+      const result = await checkDistanceWarning(gig, userLocation)
 
       expect(result).not.toBeNull()
       expect(result?.distance).toBeGreaterThan(500) // Johannesburg to Durban
@@ -79,10 +79,10 @@ describe('Distance Warning Utilities', () => {
       expect(result?.userLocation).toEqual(userLocation)
     })
 
-    it('should check hybrid gigs with coordinates', () => {
+    it('should check hybrid gigs with coordinates', async () => {
       // Hybrid gigs should also be checked for distance since they require physical presence
       const gig = createMockGig('hybrid', farGigLocationPretoria) as Gig
-      const result = checkDistanceWarning(gig, userLocation)
+      const result = await checkDistanceWarning(gig, userLocation)
 
       expect(result).not.toBeNull()
       expect(result?.shouldWarn).toBe(true)

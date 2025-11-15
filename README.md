@@ -4,7 +4,7 @@ A modern, responsive web platform designed to empower South Africa's informal se
 
 **From kasi to career** - we're bridging the gap between South Africa's 11.2 million unemployed and the R750B informal sector economy.
 
-[![Tests](https://img.shields.io/badge/tests-1005%20passing-brightgreen)](.)
+[![Tests](https://img.shields.io/badge/tests-1241%20passing-brightgreen)](.)
 [![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue)](.)
 [![Build](https://img.shields.io/badge/build-passing-brightgreen)](.)
 
@@ -26,7 +26,7 @@ Empower all South Africans - from informal sector workers to professionals - by 
 **Readiness**: 🟢 **96% Complete**
 
 ### What's Implemented
-- ✅ **1005 tests passing** | ✅ Zero TypeScript errors | ✅ Build successful
+- ✅ **1241 tests passing** | ✅ Zero TypeScript errors | ✅ Build successful
 - ✅ **All core features implemented and tested**
 - ✅ **Payment system fully functional** (escrow, withdrawals, fees)
 - ✅ **Trust & safety features operational** (ID verification, reviews, trust scores)
@@ -35,14 +35,14 @@ Empower all South Africans - from informal sector workers to professionals - by 
 - ✅ **Comprehensive security rules** deployed
 
 ### Test & Quality Metrics
-- **34 test suites** covering all major features
-- **80%+ code coverage** on critical services
+- **37 test suites** covering all major features
+- **86%+ overall code coverage** on critical services
 - **profileService**: 100% coverage
-- **gigService**: 85%+ coverage
-- **messagingService**: 80%+ coverage
+- **gigService**: 93.8% coverage
+- **messagingService**: 77.8% coverage
 - **documentStorageService**: 96.5% coverage
-- **reviewService**: 98.8% coverage
-- **locationUtils**: 87.8% coverage
+- **reviewService**: 65.4% coverage
+- **locationUtils**: 89.4% coverage
 
 ---
 
@@ -255,15 +255,14 @@ Empower all South Africans - from informal sector workers to professionals - by 
 - 🚀 **Communication Evidence** - Link messages to gigs for dispute resolution
 
 #### Platform Configuration
-- 🔧 **Admin-Configurable Constants** - Move hardcoded values to admin dashboard for easy adjustment without code changes:
-  - Gig expiry timeouts (currently 7 days for unfunded gigs)
-  - Funding timeouts (currently 48 hours)
-  - Escrow auto-release period (currently 7 days)
-  - Distance warning threshold (currently 50km)
-  - Safety check intervals (currently 2 hours)
-  - Application limits per worker
-  - Platform fee percentages
-  - Review deadline periods
+- ✅ ~~**Admin-Configurable Constants**~~ - **COMPLETED**: All platform constants moved to Firebase with admin dashboard for runtime configuration. Includes 5-minute in-memory caching, validation, and comprehensive UI:
+  - Distance warning threshold (default 50km, range 1-500km)
+  - Max active applications per worker (default 20, range 1-100)
+  - Review deadline (default 30 days, range 7-365 days)
+  - Unfunded gig expiry timeout (default 7 days, range 1-90 days)
+  - Funding timeout for accepted applications (default 48 hours, range 1-168 hours)
+  - Escrow auto-release period (default 7 days, range 1-90 days)
+  - Safety check interval (default 2 hours, range 0.5-24 hours)
 
 ### **Implementation Approach**
 - ✅ **Phase 1** (Beta): Soft warnings and basic protections without blocking user flow
@@ -284,7 +283,7 @@ Empower all South Africans - from informal sector workers to professionals - by 
 - **OCR**: Google Cloud Vision API for ID verification
 - **State Management**: React Context API
 - **Error Handling**: React Error Boundaries
-- **Testing**: Jest with React Testing Library (935 passing tests)
+- **Testing**: Jest with React Testing Library (1241 passing tests)
 - **Development**: Hot reload, TypeScript checking, ESLint
 
 ---
@@ -347,10 +346,10 @@ npm run test:coverage
 ```
 
 ### Test Coverage
-- ✅ **935 tests passing**
-- ✅ **51 test suites**
-- ✅ **80%+ overall coverage** (production-ready quality)
-- ✅ **100% coverage on critical paths**: profileService, reviewService, documentStorageService
+- ✅ **1241 tests passing**
+- ✅ **54 test suites**
+- ✅ **86%+ overall coverage** (production-ready quality)
+- ✅ **100% coverage on critical paths**: profileService
 
 ### Pre-commit Checks
 ```bash
@@ -416,7 +415,8 @@ npm run test:ci
 - [x] Admin document review dashboard
 - [x] Enhanced gig filtering with sector-based skills and presets
 - [x] Performance optimization for 2G/3G networks
-- [x] Comprehensive test coverage (935 tests, 80%+)
+- [x] Admin configurable platform constants with Firebase backend
+- [x] Comprehensive test coverage (1241 tests, 86%+)
 
 ### 📋 Pre-Launch Requirements
 - [ ] Payment gateway integration (PayFast/Yoco)
@@ -547,4 +547,4 @@ This project is licensed under the ISC License.
 
 **Built with ❤️ for South Africa's informal sector workers and their communities** 🇿🇦
 
-**Status**: Production Ready | **Tests**: 935 Passing | **Coverage**: 80%+ | **Build**: Successful
+**Status**: Production Ready | **Tests**: 1241 Passing | **Coverage**: 86%+ | **Build**: Successful

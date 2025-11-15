@@ -1,8 +1,10 @@
 import { Coordinates } from '@/types/location'
 import { Gig } from '@/types/gig'
 import { calculateDistance, getDistanceInfo } from './locationUtils'
+import { ConfigService } from '@/lib/database/configService'
 
-// Distance threshold in kilometers for warning
+// Distance threshold in kilometers for warning (configurable)
+// Fallback to 50km if config not available
 export const DISTANCE_WARNING_THRESHOLD_KM = 50
 
 /**
@@ -19,10 +21,10 @@ export interface DistanceWarningInfo {
   shouldWarn: boolean
 }
 
-export function checkDistanceWarning(
+export async function checkDistanceWarning(
   gig: Gig,
   userLocation: Coordinates | null
-): DistanceWarningInfo | null {
+): Promise<DistanceWarningInfo | null> {
   // Only check for physical and hybrid gigs (remote gigs don't need location checks)
   if (gig.workType === 'remote') {
     return null
@@ -41,7 +43,9 @@ export function checkDistanceWarning(
   const distance = calculateDistance(userLocation, gig.coordinates)
   const distanceInfo = getDistanceInfo(userLocation, gig.coordinates)
 
-  const shouldWarn = distance >= DISTANCE_WARNING_THRESHOLD_KM
+  // Get threshold from config (with fallback)
+  const threshold = await ConfigService.getValue('distanceWarningThresholdKm').catch(() => DISTANCE_WARNING_THRESHOLD_KM)
+  const shouldWarn = distance >= threshold
 
   return {
     distance,

@@ -1,6 +1,7 @@
 import { Review, Gig } from '@/types/gig'
 import { FirestoreService } from './firestore'
 import { GigService } from './gigService'
+import { ConfigService } from './configService'
 
 /**
  * ReviewService - Handles all review and rating operations
@@ -72,9 +73,10 @@ export class ReviewService {
       throw new Error('You have already reviewed this user for this gig')
     }
 
-    // Calculate review deadline (30 days from gig completion)
+    // Calculate review deadline (configurable, defaults to 30 days from gig completion)
+    const reviewDeadlineDays = await ConfigService.getValue('reviewDeadlineDays').catch(() => 30);
     const reviewDeadline = new Date()
-    reviewDeadline.setDate(reviewDeadline.getDate() + 30)
+    reviewDeadline.setDate(reviewDeadline.getDate() + reviewDeadlineDays)
 
     const review: Omit<Review, 'id'> = {
       ...reviewData,

@@ -12,7 +12,10 @@ jest.mock('@/lib/database/firestore', () => ({
   }
 }))
 
+jest.mock('@/lib/database/configService')
+
 const { FirestoreService } = require('@/lib/database/firestore')
+const { ConfigService } = require('@/lib/database/configService')
 
 describe('GigService - Check-In Functions', () => {
   const mockGig: Gig = {
@@ -53,6 +56,20 @@ describe('GigService - Check-In Functions', () => {
     jest.clearAllMocks()
     // Mock Date.now() for consistent testing
     jest.spyOn(Date, 'now').mockReturnValue(new Date('2025-01-01T12:00:00Z').getTime())
+
+    // Mock ConfigService to return default values
+    ConfigService.getValue = jest.fn().mockImplementation((key: string) => {
+      const defaults: Record<string, number> = {
+        escrowAutoReleaseDays: 7,
+        safetyCheckIntervalHours: 2,
+        gigExpiryTimeoutDays: 7,
+        fundingTimeoutHours: 48,
+        maxActiveApplicationsPerWorker: 20,
+        distanceWarningThresholdKm: 50,
+        reviewDeadlineDays: 30,
+      }
+      return Promise.resolve(defaults[key] || 0)
+    })
   })
 
   afterEach(() => {
