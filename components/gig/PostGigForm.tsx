@@ -56,6 +56,41 @@ const DURATIONS = [
   'Ongoing'
 ]
 
+// Smart workType suggestions based on category
+const getSuggestedWorkType = (category: string): 'remote' | 'physical' | 'hybrid' => {
+  const remoteCategories = ['Technology', 'Design', 'Writing', 'Marketing']
+  const physicalCategories = ['Construction', 'Transportation', 'Cleaning', 'Healthcare']
+  const hybridCategories = ['Education', 'Finance', 'Legal']
+
+  if (remoteCategories.includes(category)) {
+    return 'remote'
+  } else if (physicalCategories.includes(category)) {
+    return 'physical'
+  } else if (hybridCategories.includes(category)) {
+    return 'hybrid'
+  }
+  return 'physical' // Default for 'Other' and unknown categories
+}
+
+// Category-specific title examples
+const getTitlePlaceholder = (category: string): string => {
+  const examples: Record<string, string> = {
+    'Technology': 'e.g., Website Development for Small Business',
+    'Design': 'e.g., Logo Design for New Restaurant',
+    'Writing': 'e.g., Blog Content Writing for Travel Website',
+    'Marketing': 'e.g., Social Media Management for Local Shop',
+    'Construction': 'e.g., Bathroom Renovation in Sandton',
+    'Transportation': 'e.g., Furniture Delivery Service - Johannesburg to Pretoria',
+    'Cleaning': 'e.g., Weekly Office Cleaning - 3 Rooms',
+    'Education': 'e.g., Mathematics Tutoring for Grade 10 Student',
+    'Healthcare': 'e.g., Home Nursing Care for Elderly Patient',
+    'Finance': 'e.g., Bookkeeping Services for Small Business',
+    'Legal': 'e.g., Contract Review and Legal Consultation',
+    'Other': 'e.g., Describe your gig clearly and specifically'
+  }
+  return examples[category] || 'e.g., Describe your gig clearly and specifically'
+}
+
 export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFormProps) {
   const { success, error: showError } = useToast()
   const { user } = useAuth()
@@ -137,7 +172,18 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
   const skillsConfig = getSkillsConfig()
 
   const handleInputChange = (field: keyof GigFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    // Auto-update workType when category changes (smart suggestion)
+    if (field === 'category' && value) {
+      const suggestedWorkType = getSuggestedWorkType(value)
+      setFormData(prev => ({
+        ...prev,
+        [field]: value,
+        workType: suggestedWorkType
+      }))
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }))
+    }
+
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
     }
@@ -297,7 +343,7 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
             <Input
               id="title"
               type="text"
-              placeholder="e.g., Website Development for Small Business"
+              placeholder={formData.category ? getTitlePlaceholder(formData.category) : "e.g., Website Development for Small Business"}
               value={formData.title}
               onChange={(e) => handleInputChange('title', e.target.value)}
               className={errors.title ? 'border-red-500' : ''}
@@ -366,6 +412,21 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
                 error={errors.location}
                 required
               />
+              {formData.workType === 'remote' && (
+                <p className="mt-1 text-xs text-gray-500">
+                  💡 For remote work, location helps workers find opportunities in their timezone/region
+                </p>
+              )}
+              {formData.workType === 'physical' && (
+                <p className="mt-1 text-xs text-gray-500">
+                  📍 Be specific - workers will travel to this location
+                </p>
+              )}
+              {formData.workType === 'hybrid' && (
+                <p className="mt-1 text-xs text-gray-500">
+                  🔄 Location for on-site days - specify hybrid schedule in description
+                </p>
+              )}
             </div>
           </div>
 
@@ -463,6 +524,11 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
                 </span>
               </label>
             </div>
+            {formData.category && (
+              <p className="mt-2 text-xs text-gray-500">
+                💡 Auto-suggested based on {formData.category} category. You can change this if needed.
+              </p>
+            )}
           </div>
 
           {/* Skills Required / Work Description */}
