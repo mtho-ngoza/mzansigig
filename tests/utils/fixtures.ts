@@ -18,6 +18,7 @@ export const mockOpenGig: Gig = {
   employerId: 'employer-1',
   employerName: 'Test Employer',
   status: 'open',
+  workType: 'remote',
   applicants: [],
   deadline: new Date('2025-12-31'),
   createdAt: new Date('2025-01-01'),
@@ -30,6 +31,7 @@ export const mockInProgressGig: Gig = {
   title: 'Plumbing Repair',
   category: 'home_services',
   status: 'in-progress',
+  workType: 'physical',
   assignedTo: 'worker-1',
   applicants: ['worker-1'],
 }

@@ -18,7 +18,7 @@ export interface Gig {
   createdAt: Date
   updatedAt: Date
   deadline?: Date
-  isRemote?: boolean
+  workType: 'remote' | 'physical' | 'hybrid' // Clear work type classification
   maxTravelDistance?: number
   maxApplicants?: number // Maximum number of applicants employer wants to review
 }

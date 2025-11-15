@@ -26,6 +26,7 @@ interface GigFormData {
   skillsRequired: string
   deadline: string
   maxApplicants: string
+  workType: 'remote' | 'physical' | 'hybrid'
 }
 
 const CATEGORIES = [
@@ -69,7 +70,8 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
     duration: '',
     skillsRequired: '',
     deadline: '',
-    maxApplicants: ''
+    maxApplicants: '',
+    workType: 'physical' // Default to physical work
   })
 
   // Populate form when editing
@@ -84,7 +86,8 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
         duration: editGig.duration,
         skillsRequired: editGig.skillsRequired.join(', '),
         deadline: editGig.deadline ? (editGig.deadline instanceof Date ? editGig.deadline.toISOString().split('T')[0] : editGig.deadline) : '',
-        maxApplicants: editGig.maxApplicants?.toString() || ''
+        maxApplicants: editGig.maxApplicants?.toString() || '',
+        workType: editGig.workType
       })
     }
   }, [editGig])
@@ -237,6 +240,7 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
         employerName: `${user.firstName} ${user.lastName}`,
         applicants: [],
         status: 'open' as const,
+        workType: formData.workType,
         ...(formData.deadline && { deadline: new Date(formData.deadline) }),
         ...(formData.maxApplicants.trim() && { maxApplicants: parseInt(formData.maxApplicants) })
       }
@@ -258,7 +262,8 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
           duration: '',
           skillsRequired: '',
           deadline: '',
-          maxApplicants: ''
+          maxApplicants: '',
+          workType: 'physical'
         })
       }
 
@@ -409,6 +414,54 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
               {errors.duration && (
                 <p className="mt-1 text-sm text-red-600">{errors.duration}</p>
               )}
+            </div>
+          </div>
+
+          {/* Work Type */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-3">
+              Work Type *
+            </label>
+            <div className="space-y-2">
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="workType"
+                  checked={formData.workType === 'remote'}
+                  onChange={() => handleInputChange('workType', 'remote')}
+                  className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="ml-2 text-gray-700">
+                  <span className="text-sm font-medium">Remote</span>
+                  <span className="ml-1 text-xs text-gray-500">(Work from anywhere)</span>
+                </span>
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="workType"
+                  checked={formData.workType === 'physical'}
+                  onChange={() => handleInputChange('workType', 'physical')}
+                  className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="ml-2 text-gray-700">
+                  <span className="text-sm font-medium">Physical</span>
+                  <span className="ml-1 text-xs text-gray-500">(On-site work)</span>
+                </span>
+              </label>
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="radio"
+                  name="workType"
+                  checked={formData.workType === 'hybrid'}
+                  onChange={() => handleInputChange('workType', 'hybrid')}
+                  className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+                />
+                <span className="ml-2 text-gray-700">
+                  <span className="text-sm font-medium">Hybrid</span>
+                  <span className="ml-1 text-xs text-gray-500">(Mix of remote & on-site)</span>
+                </span>
+              </label>
             </div>
           </div>
 

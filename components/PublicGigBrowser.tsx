@@ -41,6 +41,7 @@ import { calculateDistance, formatDistance } from '@/lib/utils/locationUtils'
 import { checkDistanceWarning, DistanceWarningInfo } from '@/lib/utils/distanceWarning'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
 import PaymentInfoBadge from '@/components/gig/PaymentInfoBadge'
+import { WorkTypeBadge } from '@/components/gig/WorkTypeBadge'
 import { Footer } from '@/components/layout/Footer'
 import { FilterPanel } from '@/components/gig/FilterPanel'
 import { SortDropdown, SortOption } from '@/components/gig/SortDropdown'
@@ -198,10 +199,8 @@ export default function PublicGigBrowser({
     }
 
     // Apply work type filter
-    if (filters.workType === 'remote') {
-      result = result.filter((gig) => gig.isRemote === true)
-    } else if (filters.workType === 'physical') {
-      result = result.filter((gig) => gig.isRemote !== true)
+    if (filters.workType !== 'all') {
+      result = result.filter((gig) => gig.workType === filters.workType)
     }
 
     // Apply urgency filter
@@ -386,6 +385,7 @@ export default function PublicGigBrowser({
             employerId: 'employer-1',
             employerName: 'Cape Town Bakery',
             status: 'open' as const,
+            workType: 'remote',
             applicants: ['user-1', 'user-2'],
             createdAt: new Date('2024-09-15'),
             updatedAt: new Date('2024-09-15')
@@ -403,6 +403,7 @@ export default function PublicGigBrowser({
             employerId: 'employer-2',
             employerName: 'AI Innovations',
             status: 'open' as const,
+            workType: 'remote',
             applicants: ['user-3'],
             createdAt: new Date('2024-09-18'),
             updatedAt: new Date('2024-09-18')
@@ -420,6 +421,7 @@ export default function PublicGigBrowser({
             employerId: 'employer-3',
             employerName: 'SA Travel Guide',
             status: 'open' as const,
+            workType: 'remote',
             applicants: [],
             createdAt: new Date('2024-09-20'),
             updatedAt: new Date('2024-09-20')
@@ -437,6 +439,7 @@ export default function PublicGigBrowser({
             employerId: 'employer-4',
             employerName: 'Mama\'s Kitchen',
             status: 'open' as const,
+            workType: 'hybrid',
             applicants: ['user-4', 'user-5', 'user-6'],
             createdAt: new Date('2024-09-19'),
             updatedAt: new Date('2024-09-19')
@@ -454,6 +457,7 @@ export default function PublicGigBrowser({
             employerId: 'employer-5',
             employerName: 'Johnson Family',
             status: 'open' as const,
+            workType: 'physical',
             applicants: [],
             createdAt: new Date('2024-09-21'),
             updatedAt: new Date('2024-09-21')
@@ -471,6 +475,7 @@ export default function PublicGigBrowser({
             employerId: 'employer-5',
             employerName: 'FitTrack Solutions',
             status: 'open' as const,
+            workType: 'remote',
             applicants: ['user-7'],
             createdAt: new Date('2024-09-21'),
             updatedAt: new Date('2024-09-21')
@@ -500,6 +505,7 @@ export default function PublicGigBrowser({
         employerId: 'demo-employer',
         employerName: 'Demo Company',
         status: 'open' as const,
+        workType: 'remote',
         applicants: [],
         createdAt: new Date(),
         updatedAt: new Date()
@@ -1135,7 +1141,10 @@ export default function PublicGigBrowser({
                 {filteredAndSortedGigs.map((gig) => (
               <Card key={gig.id} className="hover:shadow-xl hover:scale-[1.02] transition-all duration-200 cursor-pointer border-l-4 border-l-transparent hover:border-l-primary-500">
                 <CardHeader>
-                  <CardTitle className="text-lg">{gig.title}</CardTitle>
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-lg flex-1">{gig.title}</CardTitle>
+                    {gig.workType && <WorkTypeBadge workType={gig.workType} size="sm" />}
+                  </div>
                   <div className="flex items-center justify-between text-sm text-gray-500">
                     <span>{gig.category}</span>
                     <div className="flex items-center space-x-2">

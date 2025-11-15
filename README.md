@@ -237,8 +237,8 @@ Empower all South Africans - from informal sector workers to professionals - by 
 
 #### UX & Lifecycle
 - ✅ ~~**Gig Expiry**~~ - **COMPLETED**: Auto-cancels unfunded gigs after 7 days and overdue gigs past deadline. Includes batch processing and individual checks.
-- 💡 **Funding Timeout** - Auto-cancel accepted applications if not funded within 48 hours
-- 💡 **Work Type Clarification** - Clear Remote/Physical/Hybrid indicators
+- ✅ ~~**Funding Timeout**~~ - **COMPLETED**: Auto-cancels accepted applications if not funded within 48 hours. Includes batch processing and individual checks with 48-hour window.
+- ✅ ~~**Work Type Clarification**~~ - **COMPLETED**: Clear Remote/Physical/Hybrid indicators with visual badges, filter support, and form selectors throughout the platform.
 - 💡 **Application Limits** - Prevent spam by limiting active applications per worker (~20)
 
 #### Trust & Verification

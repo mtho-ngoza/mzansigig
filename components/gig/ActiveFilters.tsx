@@ -32,7 +32,11 @@ export function ActiveFilters({ filters, onRemoveFilter, onClearAll }: ActiveFil
 
   // Work type filter
   if (filters.workType !== 'all') {
-    const label = filters.workType === 'remote' ? 'Remote Only' : 'Physical Only'
+    const label = filters.workType === 'remote'
+      ? 'Remote Only'
+      : filters.workType === 'physical'
+      ? 'Physical Only'
+      : 'Hybrid'
     activeFilters.push({ key: 'workType', label })
   }
 

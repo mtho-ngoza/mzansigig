@@ -4,7 +4,7 @@ export interface GigFilterOptions {
   budgetMin?: number
   budgetMax?: number
   durations: string[]
-  workType: 'all' | 'remote' | 'physical'
+  workType: 'all' | 'remote' | 'physical' | 'hybrid'
   urgency: 'all' | 'urgent' | 'week' | 'month'
   skills: string[]
   showNearbyOnly: boolean

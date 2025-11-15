@@ -186,6 +186,19 @@ export function FilterPanel({
               <span className="ml-1 text-xs text-gray-500">(On-site work)</span>
             </span>
           </label>
+          <label className="flex items-center cursor-pointer">
+            <input
+              type="radio"
+              name="workType"
+              checked={filters.workType === 'hybrid'}
+              onChange={() => onFiltersChange({ workType: 'hybrid' })}
+              className="w-4 h-4 text-primary-600 focus:ring-primary-500"
+            />
+            <span className="ml-2 text-gray-700">
+              <span className="text-sm">Hybrid</span>
+              <span className="ml-1 text-xs text-gray-500">(Mix of remote & on-site)</span>
+            </span>
+          </label>
         </div>
       </div>
 

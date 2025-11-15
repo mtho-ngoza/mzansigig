@@ -29,7 +29,7 @@ describe('GigService - Check-In Functions', () => {
     status: 'in-progress',
     applicants: ['worker-1'],
     assignedTo: 'worker-1',
-    isRemote: false,
+    workType: 'physical',
     createdAt: new Date(),
     updatedAt: new Date()
   }

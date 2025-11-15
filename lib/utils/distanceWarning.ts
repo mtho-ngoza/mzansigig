@@ -23,8 +23,8 @@ export function checkDistanceWarning(
   gig: Gig,
   userLocation: Coordinates | null
 ): DistanceWarningInfo | null {
-  // Only check for physical gigs (non-remote)
-  if (gig.isRemote) {
+  // Only check for physical and hybrid gigs (remote gigs don't need location checks)
+  if (gig.workType === 'remote') {
     return null
   }
 
