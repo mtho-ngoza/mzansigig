@@ -40,6 +40,11 @@ export interface GigApplication {
   completionAutoReleaseAt?: Date // When escrow will auto-release if no employer response
   completionDisputedAt?: Date // If employer disputed the completion request
   completionDisputeReason?: string // Employer's reason for disputing
+  // Admin dispute resolution fields
+  completionResolvedAt?: Date // When admin resolved the dispute
+  completionResolvedBy?: string // Admin ID who resolved the dispute
+  completionResolution?: 'approved' | 'rejected' // Admin's ruling (approved = worker wins, rejected = employer wins)
+  completionResolutionNotes?: string // Admin's explanation of the resolution
 }
 
 export interface Review {

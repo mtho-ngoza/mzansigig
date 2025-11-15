@@ -617,6 +617,96 @@ export class GigService {
     return false;
   }
 
+  // Admin dispute resolution operations
+  static async getAllDisputedApplications(): Promise<GigApplication[]> {
+    const allApplications = await FirestoreService.getAll<GigApplication>('applications');
+
+    // Filter for applications with active disputes
+    return allApplications.filter(app =>
+      app.status === 'funded' &&
+      app.completionRequestedAt &&
+      app.completionDisputedAt &&
+      !app.completionResolvedAt
+    );
+  }
+
+  static async resolveDisputeInFavorOfWorker(
+    applicationId: string,
+    adminId: string,
+    resolutionNotes?: string
+  ): Promise<void> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    // Verify this is a disputed application
+    if (!application.completionDisputedAt) {
+      throw new Error('This application does not have an active dispute');
+    }
+
+    if (application.completionResolvedAt) {
+      throw new Error('This dispute has already been resolved');
+    }
+
+    // Mark dispute as resolved in favor of worker
+    await FirestoreService.update('applications', applicationId, {
+      completionResolvedAt: new Date(),
+      completionResolvedBy: adminId,
+      completionResolution: 'approved',
+      completionResolutionNotes: resolutionNotes,
+      status: 'completed'
+    });
+
+    // Update gig status to completed
+    await this.updateGig(application.gigId, { status: 'completed' });
+
+    // Release escrow to worker
+    if (application.paymentId) {
+      const { PaymentService } = await import('../services/paymentService');
+      await PaymentService.releaseEscrow(application.paymentId);
+    }
+  }
+
+  static async resolveDisputeInFavorOfEmployer(
+    applicationId: string,
+    adminId: string,
+    resolutionNotes?: string
+  ): Promise<void> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    // Verify this is a disputed application
+    if (!application.completionDisputedAt) {
+      throw new Error('This application does not have an active dispute');
+    }
+
+    if (application.completionResolvedAt) {
+      throw new Error('This dispute has already been resolved');
+    }
+
+    // Mark dispute as resolved in favor of employer
+    // Worker needs to continue work or redo the work
+    await FirestoreService.update('applications', applicationId, {
+      completionResolvedAt: new Date(),
+      completionResolvedBy: adminId,
+      completionResolution: 'rejected',
+      completionResolutionNotes: resolutionNotes,
+      // Clear completion request fields so worker can request again after fixes
+      completionRequestedAt: undefined,
+      completionRequestedBy: undefined,
+      completionDisputedAt: undefined,
+      completionDisputeReason: undefined
+    });
+
+    // Note: Gig stays in 'in-progress' status, worker should continue/redo work
+    // Escrow remains locked until work is properly completed
+  }
+
   // Review operations
   static async createReview(reviewData: Omit<Review, 'id' | 'createdAt'>): Promise<string> {
     const review = {
