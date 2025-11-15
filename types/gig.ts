@@ -45,6 +45,13 @@ export interface GigApplication {
   completionResolvedBy?: string // Admin ID who resolved the dispute
   completionResolution?: 'approved' | 'rejected' // Admin's ruling (approved = worker wins, rejected = employer wins)
   completionResolutionNotes?: string // Admin's explanation of the resolution
+  // Safety check-in fields (for physical gigs)
+  checkInAt?: Date // When worker checked in at work location
+  checkInLocation?: Coordinates // GPS coordinates of check-in
+  checkOutAt?: Date // When worker checked out
+  checkOutLocation?: Coordinates // GPS coordinates of check-out
+  lastSafetyCheckAt?: Date // Last time worker confirmed they're safe
+  missedSafetyChecks?: number // Number of missed safety check-ins
 }
 
 export interface Review {

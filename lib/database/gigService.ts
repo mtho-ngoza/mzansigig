@@ -744,4 +744,143 @@ export class GigService {
     const totalRating = reviews.reduce((sum, review) => sum + review.rating, 0);
     return Math.round((totalRating / reviews.length) * 10) / 10; // Round to 1 decimal place
   }
+
+  // Safety Check-in functions
+
+  /**
+   * Worker checks in at the gig location
+   * @param applicationId The application ID
+   * @param userId The user ID (for verification)
+   * @param location GPS coordinates of check-in
+   */
+  static async checkIn(
+    applicationId: string,
+    userId: string,
+    location?: Coordinates
+  ): Promise<void> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    if (application.applicantId !== userId) {
+      throw new Error('Unauthorized: Only the assigned worker can check in');
+    }
+
+    if (application.status !== 'funded') {
+      throw new Error('Can only check in for funded gigs');
+    }
+
+    if (application.checkInAt) {
+      throw new Error('Already checked in');
+    }
+
+    const now = new Date();
+    await FirestoreService.update('applications', applicationId, {
+      checkInAt: now,
+      checkInLocation: location,
+      lastSafetyCheckAt: now,
+      missedSafetyChecks: 0
+    });
+  }
+
+  /**
+   * Worker checks out from the gig location
+   * @param applicationId The application ID
+   * @param userId The user ID (for verification)
+   * @param location GPS coordinates of check-out
+   */
+  static async checkOut(
+    applicationId: string,
+    userId: string,
+    location?: Coordinates
+  ): Promise<void> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    if (application.applicantId !== userId) {
+      throw new Error('Unauthorized: Only the assigned worker can check out');
+    }
+
+    if (!application.checkInAt) {
+      throw new Error('Must check in before checking out');
+    }
+
+    if (application.checkOutAt) {
+      throw new Error('Already checked out');
+    }
+
+    await FirestoreService.update('applications', applicationId, {
+      checkOutAt: new Date(),
+      checkOutLocation: location
+    });
+  }
+
+  /**
+   * Worker performs a safety check (confirms they're safe)
+   * @param applicationId The application ID
+   * @param userId The user ID (for verification)
+   */
+  static async performSafetyCheck(
+    applicationId: string,
+    userId: string
+  ): Promise<void> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    if (application.applicantId !== userId) {
+      throw new Error('Unauthorized');
+    }
+
+    if (!application.checkInAt || application.checkOutAt) {
+      throw new Error('Safety check only available during active work');
+    }
+
+    await FirestoreService.update('applications', applicationId, {
+      lastSafetyCheckAt: new Date(),
+      missedSafetyChecks: 0
+    });
+  }
+
+  /**
+   * Get check-in status for an application
+   * @param applicationId The application ID
+   */
+  static async getCheckInStatus(applicationId: string): Promise<{
+    isCheckedIn: boolean;
+    checkInAt?: Date;
+    checkOutAt?: Date;
+    lastSafetyCheckAt?: Date;
+    missedSafetyChecks: number;
+    needsSafetyCheck: boolean;
+  }> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    const isCheckedIn = !!application.checkInAt && !application.checkOutAt;
+    const missedSafetyChecks = application.missedSafetyChecks || 0;
+
+    // Need safety check if checked in and last check was more than 2 hours ago
+    let needsSafetyCheck = false;
+    if (isCheckedIn && application.lastSafetyCheckAt) {
+      const hoursSinceLastCheck =
+        (Date.now() - application.lastSafetyCheckAt.getTime()) / (1000 * 60 * 60);
+      needsSafetyCheck = hoursSinceLastCheck >= 2;
+    }
+
+    return {
+      isCheckedIn,
+      checkInAt: application.checkInAt,
+      checkOutAt: application.checkOutAt,
+      lastSafetyCheckAt: application.lastSafetyCheckAt,
+      missedSafetyChecks,
+      needsSafetyCheck
+    };
+  }
 }
