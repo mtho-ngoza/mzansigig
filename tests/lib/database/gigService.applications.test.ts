@@ -97,7 +97,7 @@ describe('GigService - Application Management', () => {
       expect(FirestoreService.update).toHaveBeenCalledWith(
         'applications',
         mockApplicationId,
-        { status: 'accepted' }
+        { status: 'accepted', acceptedAt: expect.any(Date) }
       );
     });
 

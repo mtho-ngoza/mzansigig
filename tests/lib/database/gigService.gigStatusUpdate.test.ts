@@ -58,7 +58,7 @@ describe('GigService - Gig Status Auto-Update', () => {
       expect(FirestoreService.update).toHaveBeenCalledWith(
         'applications',
         mockApplicationId,
-        { status: 'accepted' }
+        { status: 'accepted', acceptedAt: expect.any(Date) }
       )
 
       // Verify gig was updated with assignedTo but NOT status

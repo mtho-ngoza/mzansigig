@@ -66,7 +66,7 @@ describe('GigService - Multiple Acceptance Prevention', () => {
       expect(FirestoreService.update).toHaveBeenCalledWith(
         'applications',
         mockApplicationId1,
-        { status: 'accepted' }
+        { status: 'accepted', acceptedAt: expect.any(Date) }
       )
 
       // Verify gig was updated with assigned worker (but NOT status - that happens on funding)
@@ -178,7 +178,7 @@ describe('GigService - Multiple Acceptance Prevention', () => {
       expect(FirestoreService.update).toHaveBeenCalledWith(
         'applications',
         mockApplicationId2,
-        { status: 'accepted' }
+        { status: 'accepted', acceptedAt: expect.any(Date) }
       )
     })
 
@@ -202,7 +202,7 @@ describe('GigService - Multiple Acceptance Prevention', () => {
       expect(FirestoreService.update).toHaveBeenCalledWith(
         'applications',
         mockApplicationId2,
-        { status: 'accepted' }
+        { status: 'accepted', acceptedAt: expect.any(Date) }
       )
     })
 
@@ -226,7 +226,7 @@ describe('GigService - Multiple Acceptance Prevention', () => {
       expect(FirestoreService.update).toHaveBeenCalledWith(
         'applications',
         mockApplicationId2,
-        { status: 'accepted' }
+        { status: 'accepted', acceptedAt: expect.any(Date) }
       )
     })
   })
