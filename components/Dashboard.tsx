@@ -19,8 +19,9 @@ import FeeConfigManager from './admin/FeeConfigManager'
 import PendingDocumentReview from './admin/PendingDocumentReview'
 import BrowseTalent from './BrowseTalent'
 import { isAdmin } from '@/lib/utils/adminAuth'
+import VerificationCenter from './safety/VerificationCenter'
 
-type DashboardView = 'dashboard' | 'post-gig' | 'manage-gigs' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments' | 'admin-withdrawals' | 'admin-fees' | 'admin-documents' | 'browse-talent'
+type DashboardView = 'dashboard' | 'post-gig' | 'manage-gigs' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments' | 'admin-withdrawals' | 'admin-fees' | 'admin-documents' | 'browse-talent' | 'verification'
 
 interface DashboardProps {
   onBrowseGigs?: () => void
@@ -194,6 +195,11 @@ export default function Dashboard({
   // Show profile management page if user is on that view
   if (currentView === 'profile') {
     return <ProfileManagement onBack={() => handleViewChange('dashboard')} />
+  }
+
+  // Show verification center if user is on that view
+  if (currentView === 'verification') {
+    return <VerificationCenter onBack={() => handleViewChange('dashboard')} />
   }
 
   // Show messaging page if user is on that view
