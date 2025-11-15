@@ -82,9 +82,11 @@ describe('GigService - Max Applicants Feature', () => {
 
     it('should auto-close gig to "reviewing" when max applicants reached after new application', async () => {
       (FirestoreService.getById as jest.Mock).mockResolvedValue(mockGigWithMax);
-      // First call (before create): 4 applications
-      // Second call (after create): 5 applications
+      // First call: worker's applications (for application limits check) - worker has no other applications
+      // Second call (before create): 4 applications for the gig
+      // Third call (after create): 5 applications for the gig
       (FirestoreService.getWhere as jest.Mock)
+        .mockResolvedValueOnce([]) // Worker's applications (application limits check)
         .mockResolvedValueOnce([
           { id: 'app-1' },
           { id: 'app-2' },
@@ -113,8 +115,11 @@ describe('GigService - Max Applicants Feature', () => {
 
     it('should not auto-close gig when under max limit', async () => {
       (FirestoreService.getById as jest.Mock).mockResolvedValue(mockGigWithMax);
-      // Before create: 2 applications, After create: 3 applications
+      // First call: worker's applications (for application limits check)
+      // Second call (before create): 2 applications for the gig
+      // Third call (after create): 3 applications for the gig
       (FirestoreService.getWhere as jest.Mock)
+        .mockResolvedValueOnce([]) // Worker's applications (application limits check)
         .mockResolvedValueOnce([
           { id: 'app-1' },
           { id: 'app-2' }
@@ -204,8 +209,11 @@ describe('GigService - Max Applicants Feature', () => {
     it('should handle exact maxApplicants boundary correctly', async () => {
       const gigWithMax3 = { ...mockGigWithMax, maxApplicants: 3 };
       (FirestoreService.getById as jest.Mock).mockResolvedValue(gigWithMax3);
-      // Exactly 2 existing applications (1 slot left)
+      // First call: worker's applications (for application limits check)
+      // Second call: Exactly 2 existing applications for the gig (1 slot left)
+      // Third call: 3 applications after create (at max)
       (FirestoreService.getWhere as jest.Mock)
+        .mockResolvedValueOnce([]) // Worker's applications (application limits check)
         .mockResolvedValueOnce([
           { id: 'app-1' },
           { id: 'app-2' }
