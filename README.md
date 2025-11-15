@@ -432,6 +432,9 @@ npm run test:ci
 - Enhanced verification with background checks (UI ready, marked "Coming Q2 2025")
 - Premium verification (UI ready, marked "Coming Later")
 
+**Planned UX Improvements**:
+- **Gig Posting Form Reordering**: Optimize form flow by placing Category field first, since it drives dynamic behavior for Title placeholders, Work Type suggestions, Location hints, and Skills examples. Current implementation has smart category-aware features, but form ordering could be optimized for better progressive disclosure.
+
 **Planned Features**:
 - Emergency SMS notifications (Twilio integration)
 - Multi-language support (isiZulu, Afrikaans)

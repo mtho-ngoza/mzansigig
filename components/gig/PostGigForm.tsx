@@ -130,7 +130,7 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
   // Determine if this is an informal work category
   const isInformalWork = ['Construction', 'Transportation', 'Cleaning', 'Healthcare', 'Other'].includes(formData.category)
 
-  // Get appropriate field configuration
+  // Get appropriate field configuration with category-specific skill examples
   const getSkillsConfig = () => {
     if (isInformalWork) {
       let placeholder = 'Describe what help you need'
@@ -160,9 +160,36 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
         required: false
       }
     } else {
+      // Category-specific skill examples for professional/digital work
+      let placeholder = 'e.g., React, Node.js, Database Design'
+
+      switch (formData.category) {
+        case 'Technology':
+          placeholder = 'e.g., React, TypeScript, Node.js, Python, Database Design, AWS'
+          break
+        case 'Design':
+          placeholder = 'e.g., Adobe Illustrator, Figma, Photoshop, UI/UX Design, Branding'
+          break
+        case 'Writing':
+          placeholder = 'e.g., Content Writing, Copywriting, SEO, Proofreading, Research'
+          break
+        case 'Marketing':
+          placeholder = 'e.g., Social Media, Google Ads, SEO, Email Marketing, Analytics'
+          break
+        case 'Education':
+          placeholder = 'e.g., Mathematics, English, Science, Online Teaching, Curriculum Development'
+          break
+        case 'Finance':
+          placeholder = 'e.g., Bookkeeping, QuickBooks, Tax Preparation, Financial Analysis, Payroll'
+          break
+        case 'Legal':
+          placeholder = 'e.g., Contract Law, Legal Research, Compliance, Document Drafting'
+          break
+      }
+
       return {
         label: 'Skills Required',
-        placeholder: 'e.g., React, Node.js, Database Design',
+        placeholder,
         helpText: 'Separate multiple skills with commas',
         required: true
       }
