@@ -420,7 +420,9 @@ describe('GigService - Additional Coverage', () => {
         revieweeId: 'user-456',
         rating: 5,
         comment: 'Great work!',
-        type: 'employer-to-worker'
+        type: 'employer-to-worker',
+        isRevealed: true,
+        reviewDeadline: new Date('2025-12-31')
       }
 
       mockFirestore.create.mockResolvedValue('review-123')
@@ -444,7 +446,9 @@ describe('GigService - Additional Coverage', () => {
       rating: 5,
       comment: 'Great!',
       type: 'employer-to-worker',
-      createdAt: new Date()
+      createdAt: new Date(),
+      isRevealed: true,
+      reviewDeadline: new Date('2025-12-31')
     }
 
     it('should get reviews as reviewee when type is employer-to-worker', async () => {
@@ -489,7 +493,9 @@ describe('GigService - Additional Coverage', () => {
         rating: 5,
         comment: 'Great!',
         type: 'employer-to-worker',
-        createdAt: new Date()
+        createdAt: new Date(),
+        isRevealed: true,
+        reviewDeadline: new Date('2025-12-31')
       }]
 
       mockFirestore.getWhere.mockResolvedValue(mockReviews)
@@ -512,7 +518,9 @@ describe('GigService - Additional Coverage', () => {
           rating: 5,
           comment: 'Great!',
           type: 'employer-to-worker',
-          createdAt: new Date()
+          createdAt: new Date(),
+          isRevealed: true,
+          reviewDeadline: new Date('2025-12-31')
         },
         {
           id: 'review-2',
@@ -522,7 +530,9 @@ describe('GigService - Additional Coverage', () => {
           rating: 3,
           comment: 'Good',
           type: 'employer-to-worker',
-          createdAt: new Date()
+          createdAt: new Date(),
+          isRevealed: true,
+          reviewDeadline: new Date('2025-12-31')
         }
       ]
 

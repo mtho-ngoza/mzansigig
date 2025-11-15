@@ -64,4 +64,9 @@ export interface Review {
   comment: string
   type: 'employer-to-worker' | 'worker-to-employer'
   createdAt: Date
+  // Mutual review reveal - reviews only visible after both parties submit
+  isRevealed: boolean // Whether this review is visible to the reviewee
+  counterReviewId?: string // Reference to the other party's review (for mutual reveal)
+  // Review deadline - 30 days from gig completion
+  reviewDeadline: Date // Deadline for submitting reviews (30 days from completion)
 }

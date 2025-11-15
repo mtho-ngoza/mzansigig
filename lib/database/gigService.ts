@@ -65,6 +65,31 @@ export class GigService {
   }
 
   /**
+   * Get completed gigs where user was involved (as employer or worker)
+   * Used for review opportunities and history
+   */
+  static async getCompletedGigsByUser(userId: string): Promise<Gig[]> {
+    // Get gigs where user was the employer
+    const employerGigs = await FirestoreService.getWhereCompound<Gig>('gigs', [
+      { field: 'employerId', operator: '==', value: userId },
+      { field: 'status', operator: '==', value: 'completed' }
+    ]);
+
+    // Get gigs where user was the assigned worker
+    const workerGigs = await FirestoreService.getWhereCompound<Gig>('gigs', [
+      { field: 'assignedTo', operator: '==', value: userId },
+      { field: 'status', operator: '==', value: 'completed' }
+    ]);
+
+    // Combine and deduplicate (shouldn't have duplicates, but just in case)
+    const allGigs = [...employerGigs, ...workerGigs];
+    const uniqueGigs = Array.from(new Map(allGigs.map(gig => [gig.id, gig])).values());
+
+    // Sort by completion date (most recent first)
+    return uniqueGigs.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  }
+
+  /**
    * Get gigs by status with cursor-based pagination
    * Returns both gigs and the last document snapshot for next page
    */

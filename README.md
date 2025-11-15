@@ -243,7 +243,7 @@ Empower all South Africans - from informal sector workers to professionals - by 
 
 #### Trust & Verification
 - ✅ ~~**Soft Verification Nudges**~~ - **COMPLETED**: Encouraging informational nudges for unverified workers showing "3x more responses" stats. Displayed in ProfileManagement (banner), ApplicationForm (inline), with 3 variants (banner/card/inline) for flexible placement. Non-intrusive soft encouragement with clear CTA to verification center.
-- 💡 **Review Improvements** - Mutual review reveal, 30-day review deadline
+- ✅ ~~**Review Improvements**~~ - **COMPLETED**: Mutual review reveal (reviews only visible after both parties submit), 30-day review deadline from gig completion, automatic review linking and reveal. Ratings only updated with revealed reviews to ensure fairness and prevent gaming.
 - 💡 **Market Rate Guidance** - Category-specific minimum wage suggestions
 
 ### **Priority 3: Scale & Polish**

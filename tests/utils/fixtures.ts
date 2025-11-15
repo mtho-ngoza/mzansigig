@@ -129,6 +129,8 @@ export const mockEmployerReview: Review = {
   comment: 'Excellent work, very professional',
   type: 'employer-to-worker',
   createdAt: new Date('2025-01-21'),
+  isRevealed: true,
+  reviewDeadline: new Date('2025-12-31'),
 }
 
 export const mockWorkerReview: Review = {
@@ -140,6 +142,8 @@ export const mockWorkerReview: Review = {
   comment: 'Good employer, clear communication',
   type: 'worker-to-employer',
   createdAt: new Date('2025-01-21'),
+  isRevealed: true,
+  reviewDeadline: new Date('2025-12-31'),
 }
 
 // Mock Fee Configuration

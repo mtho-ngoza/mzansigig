@@ -76,6 +76,8 @@ export default function ReviewForm({
         rating,
         comment: comment.trim(),
         type: reviewType,
+        isRevealed: true,
+        reviewDeadline: new Date('2025-12-31'),
       }
 
       await ReviewService.createReview(reviewData)
