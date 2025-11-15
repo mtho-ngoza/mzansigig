@@ -883,4 +883,113 @@ export class GigService {
       needsSafetyCheck
     };
   }
+
+  /**
+   * Expire old unfunded gigs and overdue gigs
+   * This function can be called manually or scheduled to run periodically
+   * @returns Object with counts of expired gigs
+   */
+  static async expireOldGigs(): Promise<{
+    unfundedExpired: number
+    overdueExpired: number
+    total: number
+  }> {
+    const now = new Date()
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+    let unfundedExpired = 0
+    let overdueExpired = 0
+
+    // Get all open and in-progress gigs to check for expiry
+    const openGigs = await this.getGigsByStatus('open')
+    const inProgressGigs = await this.getGigsByStatus('in-progress')
+    const allGigs = [...openGigs, ...inProgressGigs]
+
+    for (const gig of allGigs) {
+      try {
+        // Check for unfunded gigs older than 7 days (open status only)
+        if (gig.status === 'open' && gig.createdAt <= sevenDaysAgo) {
+          // Check if gig has any funded applications
+          const applications = await this.getApplicationsByGig(gig.id)
+          const hasFundedApplication = applications.some(app => app.status === 'funded')
+
+          if (!hasFundedApplication) {
+            // Cancel unfunded gig
+            await this.updateGig(gig.id, {
+              status: 'cancelled'
+            })
+            unfundedExpired++
+            console.log(`Expired unfunded gig ${gig.id} (created ${gig.createdAt.toISOString()})`)
+            continue // Skip deadline check since we already cancelled
+          }
+        }
+
+        // Check for gigs past their deadline
+        if (gig.deadline && now > gig.deadline) {
+          // Cancel overdue gigs that are still open or in-progress
+          if (gig.status === 'open' || gig.status === 'in-progress') {
+            await this.updateGig(gig.id, {
+              status: 'cancelled'
+            })
+            overdueExpired++
+            console.log(`Expired overdue gig ${gig.id} (deadline ${gig.deadline.toISOString()})`)
+          }
+        }
+      } catch (error) {
+        console.error(`Error expiring gig ${gig.id}:`, error)
+        // Continue processing other gigs even if one fails
+      }
+    }
+
+    const total = unfundedExpired + overdueExpired
+    console.log(`Gig expiry complete: ${unfundedExpired} unfunded, ${overdueExpired} overdue, ${total} total`)
+
+    return {
+      unfundedExpired,
+      overdueExpired,
+      total
+    }
+  }
+
+  /**
+   * Check if a single gig should be expired and expire it if needed
+   * Useful for on-demand expiry checks
+   * @param gigId The gig ID to check
+   * @returns Whether the gig was expired
+   */
+  static async checkAndExpireGig(gigId: string): Promise<boolean> {
+    const gig = await this.getGigById(gigId)
+    if (!gig) {
+      return false
+    }
+
+    // Only check open and in-progress gigs
+    if (gig.status !== 'open' && gig.status !== 'in-progress') {
+      return false
+    }
+
+    const now = new Date()
+    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+
+    // Check for unfunded gigs older than 7 days
+    if (gig.status === 'open' && gig.createdAt <= sevenDaysAgo) {
+      const applications = await this.getApplicationsByGig(gig.id)
+      const hasFundedApplication = applications.some(app => app.status === 'funded')
+
+      if (!hasFundedApplication) {
+        await this.updateGig(gig.id, { status: 'cancelled' })
+        console.log(`Expired unfunded gig ${gig.id}`)
+        return true
+      }
+    }
+
+    // Check for gigs past their deadline
+    if (gig.deadline && now > gig.deadline) {
+      await this.updateGig(gig.id, { status: 'cancelled' })
+      console.log(`Expired overdue gig ${gig.id}`)
+      return true
+    }
+
+    return false
+  }
 }
