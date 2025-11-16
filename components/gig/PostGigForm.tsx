@@ -21,6 +21,7 @@ interface GigFormData {
   title: string
   description: string
   category: string
+  otherCategoryDescription: string
   location: string
   budget: string
   duration: string
@@ -106,6 +107,7 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
     title: '',
     description: '',
     category: '',
+    otherCategoryDescription: '',
     location: '',
     budget: '',
     duration: '',
@@ -122,6 +124,7 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
         title: editGig.title,
         description: editGig.description,
         category: editGig.category,
+        otherCategoryDescription: '',
         location: editGig.location,
         budget: editGig.budget.toString(),
         duration: editGig.duration,
@@ -259,6 +262,12 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
       newErrors.category = 'Category is required'
     }
 
+    if (formData.category === 'Other' && !formData.otherCategoryDescription.trim()) {
+      newErrors.otherCategoryDescription = 'Please describe what category you need'
+    } else if (formData.otherCategoryDescription.trim() && formData.otherCategoryDescription.length < 3) {
+      newErrors.otherCategoryDescription = 'Description must be at least 3 characters'
+    }
+
     if (!formData.location) {
       newErrors.location = 'Location is required'
     }
@@ -360,6 +369,7 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
           title: '',
           description: '',
           category: '',
+          otherCategoryDescription: '',
           location: '',
           budget: '',
           duration: '',
@@ -392,6 +402,55 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
 
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Category - FIRST for context-aware suggestions */}
+          <div>
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
+              Category *
+            </label>
+            <select
+              id="category"
+              value={formData.category}
+              onChange={(e) => handleInputChange('category', e.target.value)}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                errors.category ? 'border-red-500' : ''
+              }`}
+            >
+              <option value="">Select a category</option>
+              {CATEGORIES.map(category => (
+                <option key={category} value={category}>{category}</option>
+              ))}
+            </select>
+            {errors.category && (
+              <p className="mt-1 text-sm text-red-600">{errors.category}</p>
+            )}
+            <p className="mt-1 text-sm text-gray-500">
+              Select a category to see tailored suggestions for your gig
+            </p>
+          </div>
+
+          {/* Other Category Description - Only shown when "Other" is selected */}
+          {formData.category === 'Other' && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <label htmlFor="otherCategoryDescription" className="block text-sm font-medium text-gray-700 mb-2">
+                What category is missing? *
+              </label>
+              <Input
+                id="otherCategoryDescription"
+                type="text"
+                placeholder="e.g., Event Planning, Photography, Gardening, Pet Care..."
+                value={formData.otherCategoryDescription}
+                onChange={(e) => handleInputChange('otherCategoryDescription', e.target.value)}
+                className={errors.otherCategoryDescription ? 'border-red-500' : ''}
+              />
+              {errors.otherCategoryDescription && (
+                <p className="mt-1 text-sm text-red-600">{errors.otherCategoryDescription}</p>
+              )}
+              <p className="mt-1 text-sm text-gray-600">
+                Help us improve - tell us what category you would like to see added
+              </p>
+            </div>
+          )}
+
           {/* Title */}
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
@@ -433,62 +492,60 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
             </p>
           </div>
 
-          {/* Category and Location */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-2">
-                Category *
-              </label>
-              <select
-                id="category"
-                value={formData.category}
-                onChange={(e) => handleInputChange('category', e.target.value)}
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                  errors.category ? 'border-red-500' : ''
-                }`}
-              >
-                <option value="">Select a category</option>
-                {CATEGORIES.map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </select>
-              {errors.category && (
-                <p className="mt-1 text-sm text-red-600">{errors.category}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
-                Location *
-              </label>
-              <LocationAutocomplete
-                id="location"
-                value={formData.location}
-                onChange={(value) => handleInputChange('location', value)}
-                placeholder="Search for city, township, or suburb..."
-                error={errors.location}
-                required
-              />
-              {formData.workType === 'remote' && (
-                <p className="mt-1 text-xs text-gray-500">
-                  💡 For remote work, location helps workers find opportunities in their timezone/region
-                </p>
-              )}
-              {formData.workType === 'physical' && (
-                <p className="mt-1 text-xs text-gray-500">
-                  📍 Be specific - workers will travel to this location
-                </p>
-              )}
-              {formData.workType === 'hybrid' && (
-                <p className="mt-1 text-xs text-gray-500">
-                  🔄 Location for on-site days - specify hybrid schedule in description
-                </p>
-              )}
-            </div>
+          {/* Location */}
+          <div>
+            <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
+              Location *
+            </label>
+            <LocationAutocomplete
+              id="location"
+              value={formData.location}
+              onChange={(value) => handleInputChange('location', value)}
+              placeholder="Search for city, township, or suburb..."
+              error={errors.location}
+              required
+            />
+            {formData.workType === 'remote' && (
+              <p className="mt-1 text-xs text-gray-500">
+                💡 For remote work, location helps workers find opportunities in their timezone/region
+              </p>
+            )}
+            {formData.workType === 'physical' && (
+              <p className="mt-1 text-xs text-gray-500">
+                📍 Be specific - workers will travel to this location
+              </p>
+            )}
+            {formData.workType === 'hybrid' && (
+              <p className="mt-1 text-xs text-gray-500">
+                🔄 Location for on-site days - specify hybrid schedule in description
+              </p>
+            )}
           </div>
 
-          {/* Budget and Duration */}
+          {/* Duration and Budget - Duration first to enable budget suggestions */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
+                Expected Duration *
+              </label>
+              <select
+                id="duration"
+                value={formData.duration}
+                onChange={(e) => handleInputChange('duration', e.target.value)}
+                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
+                  errors.duration ? 'border-red-500' : ''
+                }`}
+              >
+                <option value="">Select duration</option>
+                {DURATIONS.map(duration => (
+                  <option key={duration} value={duration}>{duration}</option>
+                ))}
+              </select>
+              {errors.duration && (
+                <p className="mt-1 text-sm text-red-600">{errors.duration}</p>
+              )}
+            </div>
+
             <div>
               <label htmlFor="budget" className="block text-sm font-medium text-gray-700 mb-2">
                 Budget (ZAR) *
@@ -539,28 +596,6 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
 
               {!budgetSuggestion && (
                 <p className="mt-1 text-sm text-gray-500">Minimum R100</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="duration" className="block text-sm font-medium text-gray-700 mb-2">
-                Expected Duration *
-              </label>
-              <select
-                id="duration"
-                value={formData.duration}
-                onChange={(e) => handleInputChange('duration', e.target.value)}
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
-                  errors.duration ? 'border-red-500' : ''
-                }`}
-              >
-                <option value="">Select duration</option>
-                {DURATIONS.map(duration => (
-                  <option key={duration} value={duration}>{duration}</option>
-                ))}
-              </select>
-              {errors.duration && (
-                <p className="mt-1 text-sm text-red-600">{errors.duration}</p>
               )}
             </div>
           </div>
