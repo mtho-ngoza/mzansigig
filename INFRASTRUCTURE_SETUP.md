@@ -204,7 +204,7 @@ Kasigig requires a payment gateway for escrow payments between employers and wor
 
 2. **Configure Authorized Domains**
    - Go to Authentication → Settings → Authorized domains
-   - Add your production domain: `kasigig.co.za` (example)
+   - Add your production domain: `kasigigs.co.za` (example)
    - Add staging domain if you have one
 
 3. **Email Templates**
@@ -321,7 +321,7 @@ GOOGLE_CLOUD_CREDENTIALS='{"type":"service_account","project_id":"..."}'
 2. Create credentials → API key
 3. Restrict API key:
    - Application restrictions: HTTP referrers
-   - Add your domain: `kasigig.co.za/*`
+   - Add your domain: `kasigigs.co.za/*`
    - API restrictions: Cloud Vision API only
 
 ```bash
@@ -464,7 +464,7 @@ We respect your privacy and comply with POPIA...
 - Regular security audits
 
 ## 7. Contact Us
-For privacy concerns: privacy@kasigig.co.za
+For privacy concerns: privacy@kasigigs.co.za
 ```
 
 #### 4.3 Cookie Policy (If using analytics)
@@ -586,23 +586,23 @@ GOOGLE_APPLICATION_CREDENTIALS=/etc/secrets/google-credentials.json
 # ------------------
 # Application URLs
 # ------------------
-NEXT_PUBLIC_APP_URL=https://kasigig.co.za
-NEXT_PUBLIC_API_URL=https://kasigig.co.za/api
+NEXT_PUBLIC_APP_URL=https://kasigigs.co.za
+NEXT_PUBLIC_API_URL=https://kasigigs.co.za/api
 
 # ------------------
 # Security
 # ------------------
 NEXTAUTH_SECRET=generate_with_openssl_rand_base64_32
-NEXTAUTH_URL=https://kasigig.co.za
+NEXTAUTH_URL=https://kasigigs.co.za
 
 # ------------------
 # Email (Optional - for notifications)
 # ------------------
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=noreply@kasigig.co.za
+SMTP_USER=noreply@kasigigs.co.za
 SMTP_PASSWORD=your_app_password
-SMTP_FROM=Kasigig <noreply@kasigig.co.za>
+SMTP_FROM=Mzansigig <noreply@kasigigs.co.za>
 
 # ------------------
 # SMS (Optional - for emergency notifications)

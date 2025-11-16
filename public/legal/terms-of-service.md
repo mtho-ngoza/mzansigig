@@ -324,7 +324,7 @@ We are not liable for failures due to circumstances beyond our control.
 
 For questions about these Terms:
 
-**Email**: legal@kasigig.co.za
+**Email**: legal@mzansigig.co.za
 **Address**: [TO BE INSERTED]
 **Phone**: [TO BE INSERTED]
 

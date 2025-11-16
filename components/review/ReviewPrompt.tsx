@@ -87,7 +87,7 @@ export default function ReviewPrompt({
                 Why reviews matter:
               </p>
               <ul className="text-sm text-secondary-700 space-y-1">
-                <li>• Help build trust in the KasiGig community</li>
+                <li>• Help build trust in the MzansiGig community</li>
                 <li>• Guide others in making informed decisions</li>
                 <li>• Recognize great work and professionalism</li>
                 <li>• Only takes 2 minutes</li>

@@ -757,7 +757,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                                     <ul className="list-disc list-inside ml-2 mt-1 space-y-1">
                                       <li>Use &quot;Contact Worker&quot; to discuss the issues</li>
                                       <li>Once resolved, approve the completion to release payment</li>
-                                      <li>If issues persist, contact KasiGig support for mediation</li>
+                                      <li>If issues persist, contact MzansiGig support for mediation</li>
                                     </ul>
                                   </div>
                                   <div className="mt-4">

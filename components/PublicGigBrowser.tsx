@@ -865,10 +865,10 @@ export default function PublicGigBrowser({
       <section className="bg-gradient-to-br from-primary-600 via-primary-600 to-primary-700 text-white py-20 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className={`text-5xl md:text-6xl font-bold mb-6 leading-tight transition-all duration-700 ${heroAnimated ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-            From Kasi to Career 🇿🇦
+            Mzansi&apos;s Gig Connection: Work Starts Here
           </h2>
           <p className={`text-2xl md:text-3xl mb-4 max-w-4xl mx-auto font-light transition-all duration-700 delay-100 ${heroAnimated ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
-            South Africa&apos;s first gig platform built for informal sector workers
+            Connecting all South Africans with safe, accessible gig opportunities
           </p>
           <p className={`text-lg mb-10 opacity-95 flex items-center justify-center gap-6 flex-wrap max-w-3xl mx-auto transition-all duration-700 delay-200 ${heroAnimated ? 'opacity-95 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
             <span className="flex items-center gap-2">
@@ -1404,7 +1404,7 @@ export default function PublicGigBrowser({
                   <div className="text-sm text-gray-600">Plumber, Soweto</div>
                 </div>
               </div>
-              <p className="text-gray-600 italic mb-3">&quot;KasiGig changed my life. I went from struggling to find work to having steady income. The payment protection means I always get paid.&quot;</p>
+              <p className="text-gray-600 italic mb-3">&quot;MzansiGig changed my life. I went from struggling to find work to having steady income. The payment protection means I always get paid.&quot;</p>
               <div className="flex text-accent-400">★★★★★</div>
             </div>
             <div className={`bg-white p-6 rounded-lg shadow-sm transition-all duration-700 ${testimonialsInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: testimonialsInView ? '150ms' : '0ms' }}>
@@ -1426,7 +1426,7 @@ export default function PublicGigBrowser({
                   <div className="text-sm text-gray-600">Employer, Cape Town</div>
                 </div>
               </div>
-              <p className="text-gray-600 italic mb-3">&quot;Finding reliable workers used to be a nightmare. KasiGig&apos;s verification system gives me peace of mind.&quot;</p>
+              <p className="text-gray-600 italic mb-3">&quot;Finding reliable workers used to be a nightmare. MzansiGig&apos;s verification system gives me peace of mind.&quot;</p>
               <div className="flex text-accent-400">★★★★★</div>
             </div>
           </div>
@@ -1442,7 +1442,7 @@ export default function PublicGigBrowser({
           </div>
           <div className="space-y-6">
             <div className={`bg-gray-50 p-6 rounded-lg transition-all duration-700 ${faqInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: faqInView ? '0ms' : '0ms' }}>
-              <h3 className="font-bold text-gray-900 mb-2">Is KasiGig really free to use?</h3>
+              <h3 className="font-bold text-gray-900 mb-2">Is MzansiGig really free to use?</h3>
               <p className="text-gray-600">Yes! Creating an account and browsing gigs is completely free. We only take a small commission when you successfully complete a job.</p>
             </div>
             <div className={`bg-gray-50 p-6 rounded-lg transition-all duration-700 ${faqInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: faqInView ? '100ms' : '0ms' }}>

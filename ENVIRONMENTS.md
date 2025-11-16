@@ -1,4 +1,4 @@
-# KasiGig - Environment Setup Guide
+# MzansiGig - Environment Setup Guide
 
 This project uses a **3-tier environment strategy** for safe development and deployment.
 
@@ -81,7 +81,7 @@ This starts:
 2. Scroll to "Your apps" section
 3. If no web app exists:
    - Click "Add app" → Web (</>) icon
-   - Name: "KasiGig Dev"
+   - Name: "MzansiGig Dev"
    - Register app
 4. Copy the config values
 

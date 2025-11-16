@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { Footer } from '@/components/layout/Footer'
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy - KasiGig',
-  description: 'How KasiGig collects, uses, and protects your personal information'
+  title: 'Privacy Policy - MzansiGig',
+  description: 'How MzansiGig collects, uses, and protects your personal information'
 }
 
 export default function PrivacyPolicy() {
@@ -14,7 +14,7 @@ export default function PrivacyPolicy() {
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <span className="text-2xl font-bold text-primary-600">KasiGig</span>
+            <span className="text-2xl font-bold text-primary-600">MzansiGig</span>
           </Link>
           <Link
             href="/"
@@ -47,10 +47,10 @@ export default function PrivacyPolicy() {
             <section className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Introduction</h2>
               <p className="text-gray-700 mb-4">
-                KasiGig (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Platform.
+                MzansiGig (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;) respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our Platform.
               </p>
               <p className="text-gray-700">
-                By using KasiGig, you consent to the data practices described in this policy. If you do not agree with our policies, please do not use the Platform.
+                By using MzansiGig, you consent to the data practices described in this policy. If you do not agree with our policies, please do not use the Platform.
               </p>
             </section>
 
@@ -148,14 +148,14 @@ export default function PrivacyPolicy() {
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2 mb-4">
                 <li>Comply with legal process or government requests</li>
-                <li>Protect the rights, property, or safety of KasiGig, users, or others</li>
+                <li>Protect the rights, property, or safety of MzansiGig, users, or others</li>
                 <li>Enforce our Terms of Service</li>
                 <li>Investigate fraud or security issues</li>
               </ul>
 
               <h3 className="text-xl font-semibold text-gray-900 mb-3">4.4 Business Transfers</h3>
               <p className="text-gray-700">
-                If KasiGig is involved in a merger, acquisition, or sale of assets, your information may be transferred. We will notify you before your information becomes subject to a different privacy policy.
+                If MzansiGig is involved in a merger, acquisition, or sale of assets, your information may be transferred. We will notify you before your information becomes subject to a different privacy policy.
               </p>
             </section>
 
@@ -191,7 +191,7 @@ export default function PrivacyPolicy() {
                 <li><strong>Withdraw Consent:</strong> Withdraw consent for marketing communications</li>
               </ul>
               <p className="text-gray-700">
-                To exercise these rights, contact our Information Officer at <a href="mailto:privacy@kasigig.co.za" className="text-primary-600 hover:underline">privacy@kasigig.co.za</a>. See our <Link href="/popia" className="text-primary-600 hover:underline">POPIA Compliance page</Link> for detailed procedures.
+                To exercise these rights, contact our Information Officer at <a href="mailto:privacy@mzansigig.co.za" className="text-primary-600 hover:underline">privacy@mzansigig.co.za</a>. See our <Link href="/popia" className="text-primary-600 hover:underline">POPIA Compliance page</Link> for detailed procedures.
               </p>
             </section>
 
@@ -214,7 +214,7 @@ export default function PrivacyPolicy() {
             <section className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Children&apos;s Privacy</h2>
               <p className="text-gray-700">
-                KasiGig is not intended for users under 18 years of age. We do not knowingly collect personal information from children. If you believe we have collected information from a child, please contact us immediately.
+                MzansiGig is not intended for users under 18 years of age. We do not knowingly collect personal information from children. If you believe we have collected information from a child, please contact us immediately.
               </p>
             </section>
 
@@ -238,9 +238,9 @@ export default function PrivacyPolicy() {
                 For privacy-related questions or to exercise your rights:
               </p>
               <p className="text-gray-700">
-                <strong>Information Officer:</strong> Privacy Officer, KasiGig (Pty) Ltd<br />
-                <strong>Email:</strong> <a href="mailto:privacy@kasigig.co.za" className="text-primary-600 hover:underline">privacy@kasigig.co.za</a><br />
-                <strong>Physical Address:</strong> KasiGig (Pty) Ltd, Johannesburg, South Africa<br />
+                <strong>Information Officer:</strong> Privacy Officer, MzansiGig (Pty) Ltd<br />
+                <strong>Email:</strong> <a href="mailto:privacy@mzansigig.co.za" className="text-primary-600 hover:underline">privacy@mzansigig.co.za</a><br />
+                <strong>Physical Address:</strong> MzansiGig (Pty) Ltd, Johannesburg, South Africa<br />
                 <strong>Postal Address:</strong> P.O. Box 12345, Johannesburg, 2000, South Africa<br />
                 <strong>Information Regulator:</strong> If you are not satisfied with our response, you may lodge a complaint with the Information Regulator at <a href="https://inforegulator.org.za" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">inforegulator.org.za</a>
               </p>
@@ -248,7 +248,7 @@ export default function PrivacyPolicy() {
 
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mt-8">
               <p className="text-sm text-gray-700 mb-2">
-                <strong>Acknowledgment:</strong> By using KasiGig, you acknowledge that you have read and understood this Privacy Policy.
+                <strong>Acknowledgment:</strong> By using MzansiGig, you acknowledge that you have read and understood this Privacy Policy.
               </p>
               <p className="text-sm text-gray-600">
                 Version 1.0 | Effective January 2025 | POPIA Compliant

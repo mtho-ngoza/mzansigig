@@ -1,18 +1,18 @@
-# Project Proposal: KasiGig
+# Project Proposal: MzansiGig
 *From kasi to career - Empowering South Africa's Informal Sector Through Secure, Inclusive Opportunities*
 
 ---
 
-## Brand Positioning: Why "KasiGig"?
+## Brand Positioning: Why "MzansiGig"?
 
-**KasiGig** - The name connects authentically with our target market:
+**MzansiGig** - The name connects authentically with our target market:
 - **"Kasi"** is South African slang for "township" (from Afrikaans "lokasie")
 - Represents community, authenticity, and home - where most of our users live and work
 - Proven naming pattern: successful SA brands like **Bathu** (township word for shoe) use kasi culture
 - Township consumers respond to brands that "speak their language" and cultural identity
 - No trademark conflicts - clean brand registration path available
 
-**Why This Matters**: Unlike corporate platforms (Uber, SweepSouth), KasiGig signals "built FOR the kasi, BY people who understand it" - critical for trust and adoption in our target communities.
+**Why This Matters**: Unlike corporate platforms (Uber, SweepSouth), MzansiGig signals "built FOR the kasi, BY people who understand it" - critical for trust and adoption in our target communities.
 
 ---
 
@@ -27,8 +27,8 @@ South Africa faces a critical unemployment crisis affecting **11.2 million peopl
 
 ---
 
-## 2. The Solution: KasiGig
-**KasiGig** is a **comprehensive, inclusive** web-based platform designed to bridge the gap between South Africa's **11.2 million unemployed** and the **R750 billion informal sector economy**. It functions as a **trusted and secure marketplace** for short-term jobs ("gigs") and entry-level tasks, combined with a skills development hub.
+## 2. The Solution: MzansiGig
+**MzansiGig** is a **comprehensive, inclusive** web-based platform designed to bridge the gap between South Africa's **11.2 million unemployed** and the **R750 billion informal sector economy**. It functions as a **trusted and secure marketplace** for short-term jobs ("gigs") and entry-level tasks, combined with a skills development hub.
 
 **Our Mission**: To empower all South Africans - from informal workers to professionals - by providing a **safe, barrier-free path** to earning an income, gaining practical experience, and building essential life skills.
 

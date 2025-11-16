@@ -1,4 +1,4 @@
-# KasiGig - Empowering South Africa's Informal Sector
+# MzansiGig - Empowering South Africa's Informal Sector
 
 A modern, responsive web platform designed to empower South Africa's informal sector workers and unemployed population through secure, accessible gig opportunities. Built with enhanced safety features to create trust in South Africa's challenging environment while maintaining barrier-free access for all.
 
@@ -6,7 +6,7 @@ A modern, responsive web platform designed to empower South Africa's informal se
 
 ## 🌍 **Mission: Inclusive Employment Through Safe Opportunities**
 
-KasiGig empowers all South Africans - from informal sector workers to professionals - by providing:
+MzansiGig empowers all South Africans - from informal sector workers to professionals - by providing:
 - **Informal sector focus** - Built specifically for SA's underserved informal economy
 - **Barrier-free access** - Accessible to all via smartphone with context-aware UX
 - **Trust & Safety** - Enhanced security features addressing SA's unique challenges
@@ -1410,7 +1410,7 @@ For questions, suggestions, or issues:
 
 ---
 
-## 🎯 **Why "KasiGig"?**
+## 🎯 **Why "MzansiGig"?**
 
 **Kasi** (from Afrikaans "lokasie") is South African slang for "township" - representing community, authenticity, and home. It's where most of our target users live and work.
 

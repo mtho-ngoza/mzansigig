@@ -1,4 +1,4 @@
-# KasiGig: Brand Identity & Marketing Strategy
+# MzansiGig: Brand Identity & Marketing Strategy
 **From kasi to career - Empowering South Africa's Informal Sector**
 
 ---
@@ -221,7 +221,7 @@
 
 #### 1. Facebook (PRIMARY)
 **Why:** Most popular in South African townships, older demographic overlap
-**Handle:** @KasiGig
+**Handle:** @MzansiGig
 **Content Strategy:**
 - **Daily posts:** Success stories, tips, featured gigs
 - **Live videos:** Q&A sessions, platform tutorials
@@ -257,7 +257,7 @@
 ---
 
 #### 3. Instagram (GROWTH)
-**Handle:** @KasiGig
+**Handle:** @MzansiGig
 **Content Strategy:**
 - **Visual storytelling:** Before/after success stories
 - **Reels:** Quick tips, platform tutorials (15-30 sec)
@@ -274,14 +274,14 @@
 - 💪 **Sunday:** Inspirational quotes/planning
 
 **Hashtags:**
-- Branded: #KasiGig #FromKasiToCareer #KasiStrong
+- Branded: #MzansiGig #FromKasiToCareer #KasiStrong
 - SA-specific: #SouthAfrica #Township #Kasi #Mzansi
 - Industry: #GigWork #FreelanceWork #JobsSA #WorkSA
 
 ---
 
 #### 4. LinkedIn (B2B FOCUS)
-**Handle:** @KasiGig
+**Handle:** @MzansiGig
 **Target Audience:**
 - Employers (SMEs, corporates)
 - Investors and partners
@@ -298,7 +298,7 @@
 ---
 
 #### 5. Twitter/X (NEWS & UPDATES)
-**Handle:** @KasiGig
+**Handle:** @MzansiGig
 **Content Strategy:**
 - Quick updates and announcements
 - Engage with SA tech/startup community
@@ -310,7 +310,7 @@
 ---
 
 #### 6. TikTok (FUTURE - Month 3+)
-**Handle:** @KasiGig
+**Handle:** @MzansiGig
 **Why Wait:** Requires consistent video content creation
 **When Ready:**
 - Quick success stories
@@ -333,7 +333,7 @@
 - [ ] Design 10 branded social media templates (Canva)
 
 #### Content to Create:
-- **Brand Story Video** (60 sec): Why we built KasiGig
+- **Brand Story Video** (60 sec): Why we built MzansiGig
 - **Platform Explainer Graphics** (5 slides): How it works
 - **Safety Feature Highlights** (infographics)
 - **Founder/Team Intro** (humanize the brand)
@@ -379,7 +379,7 @@
 #### Tactics:
 
 **1. Beta Tester Recruitment:**
-- Post in community groups: "Be among the first to try KasiGig"
+- Post in community groups: "Be among the first to try MzansiGig"
 - Offer incentives: Free verification, featured profiles
 - Target diverse users: workers + employers
 
@@ -458,7 +458,7 @@
 - **Street Team:** 5 brand ambassadors in key townships
 
 **3. Referral Program:**
-- "Share KasiGig, Get Rewarded"
+- "Share MzansiGig, Get Rewarded"
 - Workers: Refer 3 friends, get free verification
 - Employers: Refer 2 businesses, get 2 free gig posts
 
@@ -582,7 +582,7 @@
 ### Campaign 1: "My First Gig Story"
 **Duration:** Ongoing
 **Format:** User-generated video content
-**Description:** Workers share their first gig experience on KasiGig
+**Description:** Workers share their first gig experience on MzansiGig
 **Distribution:** All social channels, especially Instagram Reels and TikTok
 **Goal:** Build trust through authentic stories
 
@@ -602,7 +602,7 @@
 **Format:** Short educational videos (60 sec)
 **Description:** Quick skills tips that help workers get hired
 **Distribution:** Instagram, TikTok, WhatsApp
-**Goal:** Position KasiGig as skills development partner
+**Goal:** Position MzansiGig as skills development partner
 
 ---
 
@@ -652,7 +652,7 @@
 
 ### This Week:
 - [ ] Choose logo concept (or brief designer with concepts)
-- [ ] Register social media handles (@KasiGig)
+- [ ] Register social media handles (@MzansiGig)
 - [ ] Create branded email (hello@kasigig.co.za)
 - [ ] Set up Canva account with brand colors
 - [ ] Draft 10 social media posts for launch
@@ -676,9 +676,9 @@
 ## 📞 Brand Voice Examples
 
 ### Welcome Message:
-**Option 1 (Warm):** "Sawubona! Welcome to KasiGig - where your skills meet opportunity. Ready to find work or post a gig? Let's get started! 🎯"
+**Option 1 (Warm):** "Sawubona! Welcome to MzansiGig - where your skills meet opportunity. Ready to find work or post a gig? Let's get started! 🎯"
 
-**Option 2 (Direct):** "Welcome to KasiGig! Find work today, build your career tomorrow. No CV needed - just your skills and willingness to work."
+**Option 2 (Direct):** "Welcome to MzansiGig! Find work today, build your career tomorrow. No CV needed - just your skills and willingness to work."
 
 ### Error Message:
 **DON'T:** "Error 404: Page Not Found"
@@ -724,7 +724,7 @@
 
 ---
 
-**Ready to launch? Let's take KasiGig from concept to community!** 🚀
+**Ready to launch? Let's take MzansiGig from concept to community!** 🚀
 
 ---
 

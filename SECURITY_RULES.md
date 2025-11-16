@@ -2,7 +2,7 @@
 
 ## 🔐 Security Overview
 
-KasiGig's Firestore security rules implement **defense-in-depth** security for all platform data. All rules follow the principle of **least privilege** - users can only access data they explicitly need.
+MzansiGig's Firestore security rules implement **defense-in-depth** security for all platform data. All rules follow the principle of **least privilege** - users can only access data they explicitly need.
 
 ## ✅ Security Fix Applied
 

@@ -3,8 +3,8 @@ import Link from 'next/link'
 import { Footer } from '@/components/layout/Footer'
 
 export const metadata: Metadata = {
-  title: 'Terms of Service - KasiGig',
-  description: 'Terms and conditions for using KasiGig platform'
+  title: 'Terms of Service - MzansiGig',
+  description: 'Terms and conditions for using MzansiGig platform'
 }
 
 export default function TermsOfService() {
@@ -14,7 +14,7 @@ export default function TermsOfService() {
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <span className="text-2xl font-bold text-primary-600">KasiGig</span>
+            <span className="text-2xl font-bold text-primary-600">MzansiGig</span>
           </Link>
           <Link
             href="/"
@@ -37,23 +37,23 @@ export default function TermsOfService() {
           <div className="prose prose-gray max-w-none">
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8">
               <p className="text-sm text-amber-900 mb-0">
-                <strong>Legal Notice:</strong> These terms are provided as a template and should be reviewed by a qualified South African attorney before use. KasiGig is subject to South African law.
+                <strong>Legal Notice:</strong> These terms are provided as a template and should be reviewed by a qualified South African attorney before use. MzansiGig is subject to South African law.
               </p>
             </div>
 
             <section className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">1. Agreement to Terms</h2>
               <p className="text-gray-700 mb-4">
-                By accessing or using KasiGig (&quot;the Platform&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, you may not use the Platform.
+                By accessing or using MzansiGig (&quot;the Platform&quot;, &quot;we&quot;, &quot;us&quot;, or &quot;our&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, you may not use the Platform.
               </p>
               <p className="text-gray-700">
-                KasiGig is a South African platform connecting job seekers with employers for short-term work opportunities (&quot;Gigs&quot;). These terms govern your use of our services.
+                MzansiGig is a South African platform connecting job seekers with employers for short-term work opportunities (&quot;Gigs&quot;). These terms govern your use of our services.
               </p>
             </section>
 
             <section className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">2. Eligibility</h2>
-              <p className="text-gray-700 mb-4">To use KasiGig, you must:</p>
+              <p className="text-gray-700 mb-4">To use MzansiGig, you must:</p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
                 <li>Be at least 18 years old</li>
                 <li>Be a South African citizen or have legal right to work in South Africa</li>
@@ -67,7 +67,7 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-bold text-gray-900 mb-4">3. User Accounts</h2>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">3.1 Account Types</h3>
               <p className="text-gray-700 mb-4">
-                KasiGig offers two account types: Job Seekers (Workers) and Employers. You may create one account per type.
+                MzansiGig offers two account types: Job Seekers (Workers) and Employers. You may create one account per type.
               </p>
 
               <h3 className="text-xl font-semibold text-gray-900 mb-3">3.2 Verification</h3>
@@ -85,7 +85,7 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-bold text-gray-900 mb-4">4. Services and Fees</h2>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">4.1 Platform Services</h3>
               <p className="text-gray-700 mb-4">
-                KasiGig provides a marketplace for posting, finding, and completing Gigs. We facilitate payments through our escrow system but are not party to the employment relationship between Workers and Employers.
+                MzansiGig provides a marketplace for posting, finding, and completing Gigs. We facilitate payments through our escrow system but are not party to the employment relationship between Workers and Employers.
               </p>
 
               <h3 className="text-xl font-semibold text-gray-900 mb-3">4.2 Service Fees</h3>
@@ -125,7 +125,7 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-bold text-gray-900 mb-4">6. Gig Relationships</h2>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">6.1 Independent Contractors</h3>
               <p className="text-gray-700 mb-4">
-                Workers are independent contractors, not employees of KasiGig or the Employers. The Platform facilitates connections but does not create employment relationships.
+                Workers are independent contractors, not employees of MzansiGig or the Employers. The Platform facilitates connections but does not create employment relationships.
               </p>
 
               <h3 className="text-xl font-semibold text-gray-900 mb-3">6.2 Compliance</h3>
@@ -138,7 +138,7 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-bold text-gray-900 mb-4">7. Dispute Resolution</h2>
               <h3 className="text-xl font-semibold text-gray-900 mb-3">7.1 Platform Mediation</h3>
               <p className="text-gray-700 mb-4">
-                In the event of disputes between Workers and Employers, KasiGig will attempt to mediate. Our decision regarding escrow release is final but does not prevent parties from seeking legal remedies.
+                In the event of disputes between Workers and Employers, MzansiGig will attempt to mediate. Our decision regarding escrow release is final but does not prevent parties from seeking legal remedies.
               </p>
 
               <h3 className="text-xl font-semibold text-gray-900 mb-3">7.2 Governing Law</h3>
@@ -150,7 +150,7 @@ export default function TermsOfService() {
             <section className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">8. Limitation of Liability</h2>
               <p className="text-gray-700 mb-4">
-                KasiGig provides a platform for connecting users but does not guarantee the quality, safety, legality, or accuracy of Gigs or users. To the maximum extent permitted by South African law:
+                MzansiGig provides a platform for connecting users but does not guarantee the quality, safety, legality, or accuracy of Gigs or users. To the maximum extent permitted by South African law:
               </p>
               <ul className="list-disc pl-6 text-gray-700 space-y-2">
                 <li>We are not liable for disputes between Workers and Employers</li>
@@ -180,15 +180,15 @@ export default function TermsOfService() {
                 For questions about these Terms, contact us at:
               </p>
               <p className="text-gray-700">
-                Email: legal@kasigig.co.za<br />
-                Physical Address: KasiGig (Pty) Ltd, Johannesburg, South Africa<br />
+                Email: legal@mzansigig.co.za<br />
+                Physical Address: MzansiGig (Pty) Ltd, Johannesburg, South Africa<br />
                 Postal Address: P.O. Box 12345, Johannesburg, 2000, South Africa
               </p>
             </section>
 
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-6 mt-8">
               <p className="text-sm text-gray-700 mb-2">
-                <strong>Acknowledgment:</strong> By using KasiGig, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
+                <strong>Acknowledgment:</strong> By using MzansiGig, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
               </p>
               <p className="text-sm text-gray-600">
                 Version 1.0 | Effective January 2025

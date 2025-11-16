@@ -1,11 +1,11 @@
-# KasiGig Brand Guidelines - Quick Reference
+# MzansiGig Brand Guidelines - Quick Reference
 
-## Logo (RECOMMENDED: Concept 1 - "The Kasi Connection")
+## Logo
 
 ### Visual Description
 Two hands reaching/connecting in center, forming a bridge
 - Clean, modern linework
-- Forms subtle "KG" initials
+- Forms subtle "MG" initials
 - Scalable from app icon to billboard
 
 ### Logo Specifications
@@ -129,12 +129,12 @@ Small: 14px / 0.875rem
 | **Warm** | "Welcome friend!" vs "Dear User" |
 | **Clear** | "Set up your profile" vs "Proceed to profile optimization" |
 | **Encouraging** | "You've got this!" vs "Complete the following" |
-| **Authentic** | "From kasi to career" vs "Professional advancement platform" |
+| **Authentic** | "Mzansi's Gig Connection" vs "Professional advancement platform" |
 
 ### Writing Guidelines
 - Use active voice
 - Keep sentences under 20 words
-- Use local language where appropriate (kasi, gig, spaza)
+- Use local language where appropriate (Mzansi, gig, spaza)
 - Address user as "you", platform as "we"
 - Use contractions (we're, you'll) for warmth
 
@@ -207,24 +207,24 @@ padding: 16px (Mobile), 24px (Desktop)
 
 ## Social Media Handles
 
-All platforms: **@KasiGig**
+All platforms: **@MzansiGig**
 
 ### Bios (Adapt per platform)
 
 **Short (Twitter/Instagram):**
-"From kasi to career. Find work. Post gigs. Build your future. 🇿🇦 #FromKasiToCareer"
+"Mzansi's Gig Connection: Work Starts Here. Find work. Post gigs. Build your future. 🇿🇦 #MzansiGigs #WorkStartsHere"
 
 **Medium (Facebook/LinkedIn):**
-"KasiGig connects South Africa's informal sector workers with safe, accessible gig opportunities. From cleaning to tech work - if you've got the skills, we've got the gigs. Free for job seekers. 🇿🇦"
+"MzansiGig connects all South Africans with safe, accessible gig opportunities. From cleaning to tech work - if you've got the skills, we've got the gigs. Free for job seekers. 🇿🇦"
 
 **Long (Website/About sections):**
-"KasiGig is South Africa's first gig platform built specifically for informal sector workers and the unemployed. We're bridging the gap between 11.2 million unemployed South Africans and the R750B informal economy through safe, barrier-free work opportunities. Whether you're looking for your next gig or need to hire trusted workers, KasiGig makes it simple, safe, and accessible to all."
+"MzansiGig is South Africa's gig platform built for all of Mzansi. We're bridging the gap between 11.2 million unemployed South Africans and the R750B informal economy through safe, barrier-free work opportunities. Whether you're looking for your next gig or need to hire trusted workers, MzansiGig makes it simple, safe, and accessible to all."
 
 ### Hashtags
 **Branded:**
-- #KasiGig
-- #FromKasiToCareer
-- #KasiStrong
+- #MzansiGigs
+- #WorkStartsHere
+- #MzansiGigStory
 
 **Industry:**
 - #GigWork
@@ -235,9 +235,8 @@ All platforms: **@KasiGig**
 
 **Community:**
 - #Mzansi
-- #Kasi
-- #Township
 - #SouthAfrica
+- #BuildYourFuture
 
 ---
 
@@ -245,14 +244,14 @@ All platforms: **@KasiGig**
 
 ### Social Media Assets
 ```
-kasigig_[platform]_[type]_[date]_[version]
-Example: kasigig_facebook_ad_20250115_v2.png
+mzansigig_[platform]_[type]_[date]_[version]
+Example: mzansigig_facebook_ad_20250115_v2.png
 ```
 
 ### Marketing Materials
 ```
-kasigig_[category]_[description]_[version]
-Example: kasigig_flyer_launch_v1.pdf
+mzansigig_[category]_[description]_[version]
+Example: mzansigig_flyer_launch_v1.pdf
 ```
 
 ---
@@ -332,10 +331,10 @@ Example: kasigig_flyer_launch_v1.pdf
 
 ## Contact & Resources
 
-**Full Branding Document:** `/BRANDING_AND_MARKETING.md`
-**Logo Specifications:** `/docs/branding/LOGO_SPECIFICATIONS.md`
-**Theme Implementation:** `/docs/branding/THEME_REBRAND_SUMMARY.md`
-**Logo Files:** `/public/logo-*.svg`
+**Full Branding Document:** `/MZANSIGIG_BRAND_GUIDELINES.md`
+**Logo Specifications:** `/docs/branding/LOGO_SPECIFICATIONS.md` (if available)
+**Theme Implementation:** `/docs/branding/THEME_REBRAND_SUMMARY.md` (if available)
+**Logo Files:** `/public/logo-*.svg` or `/public/logo-*.png`
 **Design Assets:** `/assets/brand/` (when created)
 
 **Need Help?**
@@ -345,4 +344,4 @@ Example: kasigig_flyer_launch_v1.pdf
 
 ---
 
-*Quick Reference v1.0 | Last Updated: 2025-11-10*
+*Quick Reference v2.0 | Last Updated: 2025-11-16 | Rebrand to MzansiGig*

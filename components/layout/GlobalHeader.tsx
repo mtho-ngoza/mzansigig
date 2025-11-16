@@ -61,7 +61,7 @@ export function GlobalHeader({
               <div className="flex items-center cursor-pointer" onClick={() => onNavigate?.('browse')}>
                 <img
                   src="/logo-full.png"
-                  alt="KasiGig - From kasi to career"
+                  alt="MzansiGig - Mzansi's Gig Connection: Work Starts Here"
                   className="h-15 w-auto"
                 />
               </div>

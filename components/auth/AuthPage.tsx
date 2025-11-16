@@ -27,10 +27,10 @@ export default function AuthPage({ onBackClick }: AuthPageProps) {
 
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Welcome to KasiGig
+            Welcome to MzansiGig
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            From kasi to career - secure gig opportunities for all
+            Mzansi&apos;s Gig Connection: Work Starts Here - secure opportunities for all South Africans
           </p>
         </div>
 

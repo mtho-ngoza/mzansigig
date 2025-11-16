@@ -2,7 +2,7 @@ import { Gig } from '@/types/gig';
 
 // Cache duration: 5 minutes for 2G/3G optimization
 const CACHE_DURATION_MS = 5 * 60 * 1000;
-const CACHE_KEY_PREFIX = 'kasigig_gigs_';
+const CACHE_KEY_PREFIX = 'mzansigig_gigs_';
 
 interface CacheEntry<T> {
   data: T;

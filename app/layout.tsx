@@ -15,8 +15,8 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export const metadata: Metadata = {
-  title: 'KasiGig - Empowering South Africa\'s Informal Sector',
-  description: 'Secure, inclusive gig opportunities for all South Africans. From kasi to career - find work, build skills, earn income.',
+  title: 'MzansiGig - Mzansi\'s Gig Connection: Work Starts Here',
+  description: 'Secure, inclusive gig opportunities for all South Africans. Mzansi\'s Gig Connection - find work, post gigs, build your future across all of Mzansi.',
   manifest: '/manifest.json',
   icons: {
     icon: [
@@ -32,14 +32,14 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'KasiGig'
+    title: 'MzansiGig'
   },
   other: {
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'default',
-    'apple-mobile-web-app-title': 'KasiGig',
-    'application-name': 'KasiGig',
+    'apple-mobile-web-app-title': 'MzansiGig',
+    'application-name': 'MzansiGig',
     'msapplication-TileColor': '#f97316',
     'msapplication-config': '/browserconfig.xml'
   }

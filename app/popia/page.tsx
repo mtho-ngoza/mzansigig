@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { Footer } from '@/components/layout/Footer'
 
 export const metadata: Metadata = {
-  title: 'POPIA Compliance - KasiGig',
+  title: 'POPIA Compliance - MzansiGig',
   description: 'Protection of Personal Information Act (POPIA) compliance and your data rights'
 }
 
@@ -14,7 +14,7 @@ export default function POPIACompliance() {
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
-            <span className="text-2xl font-bold text-primary-600">KasiGig</span>
+            <span className="text-2xl font-bold text-primary-600">MzansiGig</span>
           </Link>
           <Link
             href="/"
@@ -38,7 +38,7 @@ export default function POPIACompliance() {
             <div className="bg-secondary-50 border-l-4 border-secondary-600 p-6 mb-8">
               <h3 className="text-lg font-bold text-secondary-900 mb-2 mt-0">We Protect Your Privacy</h3>
               <p className="text-secondary-800 mb-0">
-                KasiGig is committed to complying with the Protection of Personal Information Act (POPIA), Act 4 of 2013. This page explains your rights and how we protect your personal information.
+                MzansiGig is committed to complying with the Protection of Personal Information Act (POPIA), Act 4 of 2013. This page explains your rights and how we protect your personal information.
               </p>
             </div>
 
@@ -48,7 +48,7 @@ export default function POPIACompliance() {
                 The Protection of Personal Information Act (POPIA) is South African legislation that regulates how organizations process personal information. POPIA gives you control over your personal data and holds us accountable for protecting it.
               </p>
               <p className="text-gray-700">
-                KasiGig processes your personal information in accordance with POPIA&apos;s eight conditions for lawful processing: accountability, processing limitation, purpose specification, further processing limitation, information quality, openness, security safeguards, and data subject participation.
+                MzansiGig processes your personal information in accordance with POPIA&apos;s eight conditions for lawful processing: accountability, processing limitation, purpose specification, further processing limitation, information quality, openness, security safeguards, and data subject participation.
               </p>
             </section>
 
@@ -146,10 +146,10 @@ export default function POPIACompliance() {
                   To exercise any of your rights, contact our Information Officer:
                 </p>
                 <div className="text-primary-900">
-                  <p className="mb-2"><strong>Information Officer:</strong> Privacy Officer, KasiGig (Pty) Ltd</p>
-                  <p className="mb-2"><strong>Email:</strong> <a href="mailto:privacy@kasigig.co.za" className="underline hover:text-primary-700">privacy@kasigig.co.za</a></p>
+                  <p className="mb-2"><strong>Information Officer:</strong> Privacy Officer, MzansiGig (Pty) Ltd</p>
+                  <p className="mb-2"><strong>Email:</strong> <a href="mailto:privacy@mzansigig.co.za" className="underline hover:text-primary-700">privacy@mzansigig.co.za</a></p>
                   <p className="mb-2"><strong>Phone:</strong> +27 (0) 11 123 4567</p>
-                  <p className="mb-2"><strong>Physical Address:</strong> KasiGig (Pty) Ltd, Johannesburg, South Africa</p>
+                  <p className="mb-2"><strong>Physical Address:</strong> MzansiGig (Pty) Ltd, Johannesburg, South Africa</p>
                   <p className="mb-2"><strong>Postal Address:</strong> P.O. Box 12345, Johannesburg, 2000, South Africa</p>
                 </div>
               </div>
@@ -264,7 +264,7 @@ export default function POPIACompliance() {
                 If you have questions about POPIA compliance or your data rights, we&apos;re here to help.
               </p>
               <p className="text-secondary-800">
-                Contact our Information Officer at <a href="mailto:privacy@kasigig.co.za" className="underline hover:text-secondary-700">privacy@kasigig.co.za</a>
+                Contact our Information Officer at <a href="mailto:privacy@mzansigig.co.za" className="underline hover:text-secondary-700">privacy@mzansigig.co.za</a>
               </p>
             </div>
           </div>

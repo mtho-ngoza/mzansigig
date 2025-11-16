@@ -178,7 +178,7 @@ As a South African resident, you have the following rights:
 
 You can request a copy of all personal information we hold about you.
 
-**How**: Email privacy@kasigig.co.za with subject "Data Access Request"
+**How**: Email privacy@mzansigig.co.za with subject "Data Access Request"
 
 ### 5.2 Right to Correction
 
@@ -190,7 +190,7 @@ You can request correction of inaccurate or incomplete information.
 
 You can request deletion of your personal information (subject to legal retention requirements).
 
-**How**: Email privacy@kasigig.co.za with subject "Data Deletion Request"
+**How**: Email privacy@mzansigig.co.za with subject "Data Deletion Request"
 
 ### 5.4 Right to Object
 
@@ -202,13 +202,13 @@ You can object to processing of your data for direct marketing or other purposes
 
 You can request that we limit how we use your data.
 
-**How**: Email privacy@kasigig.co.za
+**How**: Email privacy@mzansigig.co.za
 
 ### 5.6 Right to Data Portability
 
 You can request your data in a machine-readable format.
 
-**How**: Email privacy@kasigig.co.za with subject "Data Portability Request"
+**How**: Email privacy@mzansigig.co.za with subject "Data Portability Request"
 
 ### 5.7 Right to Lodge a Complaint
 
@@ -289,7 +289,7 @@ After retention periods expire, we securely delete data through:
 
 Kasigig is not intended for users under 18. We do not knowingly collect information from children. If we discover we've collected a child's information, we will delete it immediately.
 
-If you believe a child has provided information to us, contact: privacy@kasigig.co.za
+If you believe a child has provided information to us, contact: privacy@mzansigig.co.za
 
 ---
 
@@ -354,7 +354,7 @@ With your consent, we may send:
 You can opt out at any time:
 - Click "Unsubscribe" in any email
 - Update preferences in account settings
-- Email optout@kasigig.co.za
+- Email optout@mzansigig.co.za
 
 We will still send essential service emails (password resets, transaction confirmations).
 
@@ -386,13 +386,13 @@ Continued use after changes constitutes acceptance of the updated policy.
 
 For questions about this policy or your data:
 
-**Email**: privacy@kasigig.co.za
+**Email**: privacy@mzansigig.co.za
 **Subject Line**: "Privacy Inquiry"
 
 ### 13.2 Data Protection Officer
 
 **Name**: [TO BE APPOINTED]
-**Email**: dpo@kasigig.co.za
+**Email**: dpo@mzansigig.co.za
 **Phone**: [TO BE INSERTED]
 
 ### 13.3 Company Information
@@ -401,14 +401,14 @@ For questions about this policy or your data:
 **Registration Number**: [TO BE INSERTED]
 **Physical Address**: [TO BE INSERTED]
 **Postal Address**: [TO BE INSERTED]
-**Website**: https://kasigig.co.za
+**Website**: https://mzansigig.co.za
 
 ### 13.4 POPIA Information Officer
 
 As required by POPIA:
 
 **Name**: [TO BE APPOINTED]
-**Email**: infofficer@kasigig.co.za
+**Email**: infofficer@mzansigig.co.za
 **Phone**: [TO BE INSERTED]
 **Address**: [TO BE INSERTED]
 
@@ -424,7 +424,7 @@ By using Kasigig, you consent to:
 
 You can withdraw consent at any time by:
 - Closing your account
-- Contacting privacy@kasigig.co.za
+- Contacting privacy@mzansigig.co.za
 - Limiting data sharing in settings
 
 ---

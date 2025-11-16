@@ -1,7 +1,7 @@
 /**
  * Comprehensive South African Location Database
  * Includes major cities, townships, suburbs, and towns across all 9 provinces
- * Optimized for KasiGig's target users in informal sector
+ * Optimized for MzansiGig's target users in informal sector
  */
 
 import { Coordinates } from '@/types/location'

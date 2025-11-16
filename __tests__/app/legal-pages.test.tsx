@@ -27,7 +27,7 @@ describe('Legal Pages - Footer Presence', () => {
       render(<TermsOfService />)
 
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
-      expect(screen.getByText('KasiGig')).toBeInTheDocument()
+      expect(screen.getByText('MzansiGig')).toBeInTheDocument()
     })
 
     it('should have legal notice disclaimer', () => {
@@ -46,7 +46,7 @@ describe('Legal Pages - Footer Presence', () => {
     it('should have contact email', () => {
       render(<TermsOfService />)
 
-      expect(screen.getByText(/legal@kasigig.co.za/)).toBeInTheDocument()
+      expect(screen.getByText(/legal@mzansigig.co.za/)).toBeInTheDocument()
     })
 
     it('should have version information', () => {
@@ -73,7 +73,7 @@ describe('Legal Pages - Footer Presence', () => {
       render(<PrivacyPolicy />)
 
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
-      expect(screen.getByText('KasiGig')).toBeInTheDocument()
+      expect(screen.getByText('MzansiGig')).toBeInTheDocument()
     })
 
     it('should have POPIA compliance notice', () => {
@@ -94,7 +94,7 @@ describe('Legal Pages - Footer Presence', () => {
     it('should have contact email', () => {
       render(<PrivacyPolicy />)
 
-      expect(screen.getAllByText(/privacy@kasigig.co.za/).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/privacy@mzansigig.co.za/).length).toBeGreaterThan(0)
     })
 
     it('should have POPIA compliant label', () => {
@@ -121,7 +121,7 @@ describe('Legal Pages - Footer Presence', () => {
       render(<POPIACompliance />)
 
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
-      expect(screen.getByText('KasiGig')).toBeInTheDocument()
+      expect(screen.getByText('MzansiGig')).toBeInTheDocument()
     })
 
     it('should explain POPIA protection', () => {
@@ -162,7 +162,7 @@ describe('Legal Pages - Footer Presence', () => {
     it('should have privacy contact email', () => {
       render(<POPIACompliance />)
 
-      expect(screen.getAllByText(/privacy@kasigig.co.za/).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/privacy@mzansigig.co.za/).length).toBeGreaterThan(0)
     })
 
     it('should have data categories grid', () => {
@@ -177,17 +177,17 @@ describe('Legal Pages - Footer Presence', () => {
   describe('Cross-Page Consistency', () => {
     it('should have consistent navigation header across all legal pages', () => {
       const { unmount: unmountTerms } = render(<TermsOfService />)
-      expect(screen.getByText('KasiGig')).toBeInTheDocument()
+      expect(screen.getByText('MzansiGig')).toBeInTheDocument()
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
       unmountTerms()
 
       const { unmount: unmountPrivacy } = render(<PrivacyPolicy />)
-      expect(screen.getByText('KasiGig')).toBeInTheDocument()
+      expect(screen.getByText('MzansiGig')).toBeInTheDocument()
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
       unmountPrivacy()
 
       render(<POPIACompliance />)
-      expect(screen.getByText('KasiGig')).toBeInTheDocument()
+      expect(screen.getByText('MzansiGig')).toBeInTheDocument()
       expect(screen.getByText('Back to Home')).toBeInTheDocument()
     })
 
@@ -206,15 +206,15 @@ describe('Legal Pages - Footer Presence', () => {
 
     it('should have contact email on all legal pages', () => {
       const { unmount: unmountTerms } = render(<TermsOfService />)
-      expect(screen.getAllByText(/kasigig.co.za/).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/mzansigig.co.za/).length).toBeGreaterThan(0)
       unmountTerms()
 
       const { unmount: unmountPrivacy } = render(<PrivacyPolicy />)
-      expect(screen.getAllByText(/kasigig.co.za/).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/mzansigig.co.za/).length).toBeGreaterThan(0)
       unmountPrivacy()
 
       render(<POPIACompliance />)
-      expect(screen.getAllByText(/kasigig.co.za/).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/mzansigig.co.za/).length).toBeGreaterThan(0)
     })
   })
 
@@ -223,24 +223,24 @@ describe('Legal Pages - Footer Presence', () => {
       render(<TermsOfService />)
 
       const homeLinks = screen.getAllByRole('link')
-      const kasigigLink = homeLinks.find(link => link.textContent === 'KasiGig')
-      expect(kasigigLink).toHaveAttribute('href', '/')
+      const mzansigigLink = homeLinks.find(link => link.textContent === 'MzansiGig')
+      expect(mzansigigLink).toHaveAttribute('href', '/')
     })
 
     it('should have working home link in Privacy header', () => {
       render(<PrivacyPolicy />)
 
       const homeLinks = screen.getAllByRole('link')
-      const kasigigLink = homeLinks.find(link => link.textContent === 'KasiGig')
-      expect(kasigigLink).toHaveAttribute('href', '/')
+      const mzansigigLink = homeLinks.find(link => link.textContent === 'MzansiGig')
+      expect(mzansigigLink).toHaveAttribute('href', '/')
     })
 
     it('should have working home link in POPIA header', () => {
       render(<POPIACompliance />)
 
       const homeLinks = screen.getAllByRole('link')
-      const kasigigLink = homeLinks.find(link => link.textContent === 'KasiGig')
-      expect(kasigigLink).toHaveAttribute('href', '/')
+      const mzansigigLink = homeLinks.find(link => link.textContent === 'MzansiGig')
+      expect(mzansigigLink).toHaveAttribute('href', '/')
     })
   })
 })

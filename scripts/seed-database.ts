@@ -1,6 +1,6 @@
 #!/usr/bin/env ts-node
 /**
- * Database Seeding Script for KasiGig
+ * Database Seeding Script for MzansiGig
  *
  * This script initializes required data in Firebase Firestore for each environment.
  * Similar to Liquibase migrations for backend apps.

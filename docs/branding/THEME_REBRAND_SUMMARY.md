@@ -1,4 +1,4 @@
-# KasiGig Theme Rebrand Summary
+# MzansiGig Theme Rebrand Summary
 
 ## 🎨 Complete UI Transformation: Blue → Orange & Teal
 

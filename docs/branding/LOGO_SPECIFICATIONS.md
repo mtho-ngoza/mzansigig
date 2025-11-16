@@ -1,4 +1,4 @@
-# KasiGig Logo Specifications
+# MzansiGig Logo Specifications
 
 ## Overview
 
@@ -13,7 +13,7 @@
 
 ### Symbolism
 
-The KasiGig logo represents the platform's core mission through three interconnected elements:
+The MzansiGig logo represents the platform's core mission through three interconnected elements:
 
 1. **Left Hand (Orange #F97316)** - The Worker
    - Reaching upward from below
@@ -28,7 +28,7 @@ The KasiGig logo represents the platform's core mission through three interconne
 3. **Connection Point (Yellow #FCD34D)** - The Bridge
    - Where the two hands meet
    - Represents hope, transformation, and success
-   - Symbolizes KasiGig's role in connecting both sides
+   - Symbolizes MzansiGig's role in connecting both sides
 
 ### Visual Language
 
@@ -120,7 +120,7 @@ The KasiGig logo represents the platform's core mission through three interconne
 
 ## Typography in Logo
 
-### Wordmark: "KasiGig"
+### Wordmark: "MzansiGig"
 - **Font:** Inter Bold (weight: 700) or Poppins Bold
 - **Size:** 42px (in 400px wide logo)
 - **Color:** #1F2937 (Charcoal)
@@ -386,7 +386,7 @@ Create multiple sizes for browser compatibility:
 - **Size:** 150-200px width
 - **Format:** PNG (for compatibility)
 - **Link:** Link to kasigig.co.za
-- **Alt text:** "KasiGig - From kasi to career"
+- **Alt text:** "MzansiGig - From kasi to career"
 
 ### PowerPoint/Presentations
 - **Position:** Top left or bottom right
@@ -414,7 +414,7 @@ SVG logos are compatible with:
 - ✅ Mobile browsers (iOS Safari, Chrome Mobile)
 
 ### Accessibility
-- Include alt text: "KasiGig logo" or "KasiGig - From kasi to career"
+- Include alt text: "MzansiGig logo" or "MzansiGig - From kasi to career"
 - Ensure sufficient color contrast (already met)
 - Don't rely on color alone to convey meaning
 - Logo is recognizable even in monochrome
@@ -531,5 +531,5 @@ For logo usage questions or custom applications:
 
 ---
 
-**KasiGig Logo © 2025**
+**MzansiGig Logo © 2025**
 **From kasi to career 🇿🇦**

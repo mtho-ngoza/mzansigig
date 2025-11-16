@@ -1,8 +1,8 @@
-# KasiGig - Empowering South Africa's Informal Sector
+# MzansiGig - Mzansi's Gig Connection: Work Starts Here
 
-A modern, responsive web platform designed to empower South Africa's informal sector workers and unemployed population through secure, accessible gig opportunities. Built with enhanced safety features to create trust in South Africa's challenging environment while maintaining barrier-free access for all.
+A modern, responsive web platform empowering all South Africans - from informal sector workers to professionals - through secure, accessible gig opportunities. Built with enhanced safety features to create trust in South Africa's challenging environment while maintaining barrier-free access for everyone.
 
-**From kasi to career** - we're bridging the gap between South Africa's 11.2 million unemployed and the R750B informal sector economy.
+**Mzansi's Gig Connection: Work Starts Here** - we're bridging the gap between South Africa's 11.2 million unemployed and the R750B informal economy, creating pathways to income for all.
 
 [![Tests](https://img.shields.io/badge/tests-1241%20passing-brightgreen)](.)
 [![TypeScript](https://img.shields.io/badge/TypeScript-100%25-blue)](.)
@@ -12,12 +12,12 @@ A modern, responsive web platform designed to empower South Africa's informal se
 
 ## 🌍 Mission
 
-Empower all South Africans - from informal sector workers to professionals - by providing:
-- **Informal sector focus**: Built specifically for SA's underserved informal economy
-- **Barrier-free access**: Accessible to all via smartphone with context-aware UX
+Empower all of Mzansi (South Africa) - from informal sector workers to professionals - by providing:
+- **Inclusive platform**: Built for all South Africans, from townships to cities
+- **Barrier-free access**: Accessible to everyone via smartphone with context-aware UX
 - **Trust & Safety**: Enhanced security features addressing SA's unique challenges
 - **Skills development**: Integrated learning hub for practical and employability skills
-- **True inclusion**: No age restrictions, welcoming to all seeking work opportunities
+- **True inclusion**: No age restrictions, welcoming to all seeking work opportunities across Mzansi
 
 ---
 
@@ -259,7 +259,7 @@ Empower all South Africans - from informal sector workers to professionals - by 
 1. **Clone the repository**
 ```bash
 git clone <repository-url>
-cd kasigig
+cd mzansigig
 ```
 
 2. **Install dependencies**
@@ -456,14 +456,14 @@ firebase deploy --only firestore:rules,storage
 
 ## 🎯 Social Impact Goals
 
-**Primary Mission**: Empower South Africa's informal sector workers and unemployed population through secure, accessible gig opportunities.
+**Primary Mission**: Empower all South Africans - from informal sector workers to professionals - through secure, accessible gig opportunities across Mzansi.
 
 **Target Impact**:
-- **50,000+ informal workers** earning sustainable income within 24 months
-- **R240M+ economic impact** through worker earnings annually
+- **50,000+ workers** earning sustainable income within 24 months (informal & formal sectors)
+- **R240M+ economic impact** through worker earnings annually across all of Mzansi
 - **Skills development** for 100,000+ people through integrated learning hub
-- **Safe work environment** with <0.1% safety incidents per 1000 gigs
-- **Community empowerment** in townships, rural areas, and informal settlements
+- **Safe work environment** with <0.1% safety incidents per 1000 gigs nationwide
+- **Community empowerment** across townships, cities, rural areas, and everywhere in Mzansi
 
 ---
 
@@ -486,15 +486,16 @@ For questions, suggestions, or issues:
 
 ---
 
-## 🎯 Why "KasiGig"?
+## 🎯 Why "MzansiGig"?
 
-**Kasi** (from Afrikaans "lokasie") is South African slang for "township" - representing community, authenticity, and home. It's where most of our target users live and work.
+**Mzansi** is South African slang for South Africa itself - representing unity, national pride, and belonging to ALL South Africans. It's who we are as a nation.
 
 **The name signals:**
-- 🏘️ **Township roots** - We're built FOR the kasi, BY people who understand it
-- 🤝 **Cultural authenticity** - Not another corporate platform, but a community solution
-- 💪 **Empowerment** - From informal work in the kasi to building a career path
-- 🇿🇦 **Proudly South African** - Local slang that resonates with our community
+- 🇿🇦 **All of Mzansi** - We're built FOR all South Africans, from townships to cities
+- 🤝 **Unity & Connection** - Connecting workers and opportunities across the entire nation
+- 💪 **Empowerment for All** - Creating pathways to income for everyone, everywhere
+- 🔥 **Proudly South African** - Local slang that resonates with everyone in Mzansi
+- ⚡ **Work Starts Here** - Making it simple for anyone in SA to find work or hire workers
 
 ---
 
@@ -504,6 +505,6 @@ This project is licensed under the ISC License.
 
 ---
 
-**Built with ❤️ for South Africa's informal sector workers and their communities** 🇿🇦
+**Built with ❤️ for all of Mzansi (South Africa)** 🇿🇦
 
-**Status**: Production Ready | **Tests**: 1241 Passing | **Coverage**: 86%+ | **Build**: Successful
+**MzansiGig Pty Ltd** | **Status**: Production Ready | **Tests**: 1241 Passing | **Coverage**: 86%+ | **Build**: Successful

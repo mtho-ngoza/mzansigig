@@ -1,7 +1,7 @@
 {
-  "name": "kasigig",
+  "name": "mzansigig",
   "version": "1.0.0",
-  "description": "KasiGig - Empowering South Africa's Informal Sector Through Secure, Inclusive Gig Opportunities",
+  "description": "MzansiGig - Mzansi's Gig Connection: Work Starts Here. Empowering All South Africans Through Secure, Inclusive Gig Opportunities",
   "main": "index.js",
   "scripts": {
     "dev": "concurrently \"firebase emulators:start --only auth,firestore,storage\" \"next dev\"",
@@ -24,7 +24,10 @@
     "gig",
     "economy",
     "south-africa",
-    "platform"
+    "mzansi",
+    "platform",
+    "work",
+    "jobs"
   ],
   "author": "",
   "license": "ISC",

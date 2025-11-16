@@ -8,7 +8,7 @@ if (!fs.existsSync(iconsDir)) {
   fs.mkdirSync(iconsDir, { recursive: true });
 }
 
-// KasiGig brand color (vibrant orange from theme)
+// MzansiGig brand color (vibrant orange from theme)
 const brandColor = '#f97316';
 
 // Icon sizes needed

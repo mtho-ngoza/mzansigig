@@ -15,12 +15,12 @@ export function Footer() {
             <div className="flex items-center mb-4">
               <img
                 src="/logo-white.svg"
-                alt="KasiGig"
+                alt="MzansiGig"
                 className="h-10 w-auto"
               />
             </div>
             <p className="text-sm text-gray-400 mb-4">
-              South Africa&apos;s first gig platform built for informal sector workers. From kasi to career.
+              Mzansi&apos;s Gig Connection: Work Starts Here. Connecting all South Africans with safe, accessible gig opportunities.
             </p>
             <div className="flex space-x-4">
               {/* Social Media Icons - Placeholders */}
@@ -119,9 +119,9 @@ export function Footer() {
         <div className="border-t border-gray-800 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <div className="flex items-center space-x-6 text-sm">
-              <span>© {currentYear} KasiGig. All rights reserved.</span>
+              <span>© {currentYear} MzansiGig Pty Ltd. All rights reserved.</span>
               <span className="hidden md:inline text-gray-500">•</span>
-              <span className="hidden md:inline">Built with ❤️ for South Africa&apos;s informal sector workers</span>
+              <span className="hidden md:inline">Built with ❤️ for all of Mzansi</span>
             </div>
             <div className="flex items-center space-x-4 text-sm">
               <span className="flex items-center">
