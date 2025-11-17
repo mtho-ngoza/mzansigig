@@ -62,7 +62,42 @@ export function RegisterForm() {
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match'
     }
-    if (!formData.phone) newErrors.phone = 'Phone number is required'
+
+    // Phone number validation (South African format)
+    if (!formData.phone) {
+      newErrors.phone = 'Phone number is required'
+    } else {
+      // Remove spaces and special characters for validation
+      const cleanPhone = formData.phone.replace(/[\s\-()]/g, '')
+
+      // Check if it's all digits (optionally with + at start)
+      if (!/^[\+]?\d+$/.test(cleanPhone)) {
+        newErrors.phone = 'Phone number must contain only digits'
+      } else {
+        // Check SA phone number format
+        // Valid formats: +27XXXXXXXXX (12 digits) or 0XXXXXXXXX (10 digits)
+        const isInternational = cleanPhone.startsWith('+27') && cleanPhone.length === 12
+        const isLocal = cleanPhone.startsWith('0') && cleanPhone.length === 10
+
+        if (!isInternational && !isLocal) {
+          newErrors.phone = 'Please enter a valid SA number (e.g., +27821234567 or 0821234567)'
+        }
+
+        // Additional validation: check if it's a mobile number (starts with +276/7/8 or 06/7/8)
+        if (isInternational) {
+          const mobilePrefix = cleanPhone.substring(3, 4) // Get digit after +27
+          if (!['6', '7', '8'].includes(mobilePrefix)) {
+            newErrors.phone = 'Please enter a valid SA mobile number (06x, 07x, or 08x)'
+          }
+        } else if (isLocal) {
+          const mobilePrefix = cleanPhone.substring(1, 2) // Get digit after 0
+          if (!['6', '7', '8'].includes(mobilePrefix)) {
+            newErrors.phone = 'Please enter a valid SA mobile number (06x, 07x, or 08x)'
+          }
+        }
+      }
+    }
+
     if (!formData.location) newErrors.location = 'Location is required'
 
     // Work Sector validation for job-seekers
@@ -251,15 +286,21 @@ export function RegisterForm() {
         required
       />
 
-      <Input
-        label="Phone Number"
-        type="tel"
-        name="phone"
-        value={formData.phone}
-        onChange={handleChange}
-        error={errors.phone}
-        required
-      />
+      <div>
+        <Input
+          label="Phone Number"
+          type="tel"
+          name="phone"
+          value={formData.phone}
+          onChange={handleChange}
+          error={errors.phone}
+          placeholder="+27821234567 or 0821234567"
+          required
+        />
+        <p className="text-xs text-gray-600 mt-1">
+          SA mobile number (must start with 06, 07, or 08)
+        </p>
+      </div>
 
       <div>
         <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
