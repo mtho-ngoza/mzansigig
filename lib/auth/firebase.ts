@@ -146,12 +146,10 @@ export class FirebaseAuthService {
     } catch (error: unknown) {
       const firebaseError = error as FirebaseError;
 
-      // More specific error handling
-      if (firebaseError?.code === 'auth/user-not-found') {
-        throw new Error('No account found with this email. Please check your email or create a new account.');
-      } else if (firebaseError?.code === 'auth/wrong-password') {
-        throw new Error('Incorrect password. Please try again.');
-      } else if (firebaseError?.code === 'auth/invalid-credential') {
+      // Generic error handling for security (don't reveal account existence)
+      if (firebaseError?.code === 'auth/user-not-found' ||
+          firebaseError?.code === 'auth/wrong-password' ||
+          firebaseError?.code === 'auth/invalid-credential') {
         throw new Error('Invalid email or password. Please check your credentials and try again.');
       } else if (firebaseError?.code === 'auth/too-many-requests') {
         throw new Error('Too many failed attempts. Please wait a few minutes before trying again.');
