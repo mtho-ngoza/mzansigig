@@ -84,9 +84,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, message: 'Passwords do not match' }
       }
 
-      if (data.password.length < 6) {
+      if (data.password.length < 8) {
         setIsLoading(false)
-        return { success: false, message: 'Password must be at least 6 characters long' }
+        return { success: false, message: 'Password must be at least 8 characters long' }
       }
 
       const user = await FirebaseAuthService.signUp(data)

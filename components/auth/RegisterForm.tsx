@@ -22,14 +22,23 @@ export function RegisterForm() {
     userType: 'job-seeker',
     workSector: undefined,
     idNumber: '',
+    acceptTerms: false,
+    acceptPrivacy: false,
+    acceptPopia: false,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showProfileCompletion, setShowProfileCompletion] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    const { name, value, type } = e.target
+    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }))
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }))
     }
@@ -38,22 +47,85 @@ export function RegisterForm() {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
 
-    if (!formData.firstName) newErrors.firstName = 'First name is required'
-    if (!formData.lastName) newErrors.lastName = 'Last name is required'
+    // Name validation with sanitization
+    const firstName = formData.firstName.trim()
+    const lastName = formData.lastName.trim()
+
+    if (!firstName) {
+      newErrors.firstName = 'First name is required'
+    } else if (!/^[a-zA-Z\s\-']+$/.test(firstName)) {
+      newErrors.firstName = 'Name can only contain letters, spaces, hyphens, and apostrophes'
+    } else if (firstName.length < 2) {
+      newErrors.firstName = 'First name must be at least 2 characters'
+    }
+
+    if (!lastName) {
+      newErrors.lastName = 'Last name is required'
+    } else if (!/^[a-zA-Z\s\-']+$/.test(lastName)) {
+      newErrors.lastName = 'Name can only contain letters, spaces, hyphens, and apostrophes'
+    } else if (lastName.length < 2) {
+      newErrors.lastName = 'Last name must be at least 2 characters'
+    }
     if (!formData.email) {
       newErrors.email = 'Email is required'
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email'
     }
+    // Strong password validation
     if (!formData.password) {
       newErrors.password = 'Password is required'
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters'
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters'
+    } else if (!/[a-z]/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least one lowercase letter'
+    } else if (!/[A-Z]/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least one uppercase letter'
+    } else if (!/[0-9]/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least one number'
+    } else if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.password)) {
+      newErrors.password = 'Password must contain at least one special character'
+    } else if (/\s/.test(formData.password)) {
+      newErrors.password = 'Password cannot contain spaces'
     }
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match'
     }
-    if (!formData.phone) newErrors.phone = 'Phone number is required'
+
+    // Phone number validation (South African format)
+    if (!formData.phone) {
+      newErrors.phone = 'Phone number is required'
+    } else {
+      // Remove spaces and special characters for validation
+      const cleanPhone = formData.phone.replace(/[\s\-()]/g, '')
+
+      // Check if it's all digits (optionally with + at start)
+      if (!/^[\+]?\d+$/.test(cleanPhone)) {
+        newErrors.phone = 'Phone number must contain only digits'
+      } else {
+        // Check SA phone number format
+        // Valid formats: +27XXXXXXXXX (12 digits) or 0XXXXXXXXX (10 digits)
+        const isInternational = cleanPhone.startsWith('+27') && cleanPhone.length === 12
+        const isLocal = cleanPhone.startsWith('0') && cleanPhone.length === 10
+
+        if (!isInternational && !isLocal) {
+          newErrors.phone = 'Please enter a valid SA number (e.g., +27821234567 or 0821234567)'
+        }
+
+        // Additional validation: check if it's a mobile number (starts with +276/7/8 or 06/7/8)
+        if (isInternational) {
+          const mobilePrefix = cleanPhone.substring(3, 4) // Get digit after +27
+          if (!['6', '7', '8'].includes(mobilePrefix)) {
+            newErrors.phone = 'Please enter a valid SA mobile number (06x, 07x, or 08x)'
+          }
+        } else if (isLocal) {
+          const mobilePrefix = cleanPhone.substring(1, 2) // Get digit after 0
+          if (!['6', '7', '8'].includes(mobilePrefix)) {
+            newErrors.phone = 'Please enter a valid SA mobile number (06x, 07x, or 08x)'
+          }
+        }
+      }
+    }
+
     if (!formData.location) newErrors.location = 'Location is required'
 
     // Work Sector validation for job-seekers
@@ -122,6 +194,17 @@ export function RegisterForm() {
           newErrors.idNumber = 'You must be at least 16 years old to register'
         }
       }
+    }
+
+    // Legal consent validation (POPIA compliance)
+    if (!formData.acceptTerms) {
+      newErrors.acceptTerms = 'You must accept the Terms of Service to continue'
+    }
+    if (!formData.acceptPrivacy) {
+      newErrors.acceptPrivacy = 'You must accept the Privacy Policy to continue'
+    }
+    if (!formData.acceptPopia) {
+      newErrors.acceptPopia = 'You must consent to POPIA data processing to continue'
     }
 
     setErrors(newErrors)
@@ -211,15 +294,20 @@ export function RegisterForm() {
         required
       />
 
-      <Input
-        label="Password"
-        type="password"
-        name="password"
-        value={formData.password}
-        onChange={handleChange}
-        error={errors.password}
-        required
-      />
+      <div>
+        <Input
+          label="Password"
+          type="password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          error={errors.password}
+          required
+        />
+        <p className="text-xs text-gray-600 mt-1">
+          Must be 8+ characters with uppercase, lowercase, number, and special character
+        </p>
+      </div>
 
       <Input
         label="Confirm Password"
@@ -231,15 +319,21 @@ export function RegisterForm() {
         required
       />
 
-      <Input
-        label="Phone Number"
-        type="tel"
-        name="phone"
-        value={formData.phone}
-        onChange={handleChange}
-        error={errors.phone}
-        required
-      />
+      <div>
+        <Input
+          label="Phone Number"
+          type="tel"
+          name="phone"
+          value={formData.phone}
+          onChange={handleChange}
+          error={errors.phone}
+          placeholder="+27821234567 or 0821234567"
+          required
+        />
+        <p className="text-xs text-gray-600 mt-1">
+          SA mobile number (must start with 06, 07, or 08)
+        </p>
+      </div>
 
       <div>
         <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
@@ -311,6 +405,105 @@ export function RegisterForm() {
         <p className="text-xs text-gray-600">
           Required for identity verification and trust building on the platform.
           Your ID number is encrypted and stored securely.
+        </p>
+      </div>
+
+      {/* Legal Consents (POPIA Compliance) */}
+      <div className="space-y-3 pt-2 border-t border-gray-200">
+        <h3 className="text-sm font-medium text-gray-900">Legal Agreements</h3>
+
+        {/* Terms of Service */}
+        <div className="space-y-1">
+          <label className="flex items-start space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="acceptTerms"
+              checked={formData.acceptTerms}
+              onChange={handleChange}
+              className={`mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 ${
+                errors.acceptTerms ? 'border-red-500' : ''
+              }`}
+            />
+            <span className="text-sm text-gray-700">
+              I accept the{' '}
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-600 hover:text-primary-700 underline"
+              >
+                Terms of Service
+              </a>
+              {' '}*
+            </span>
+          </label>
+          {errors.acceptTerms && (
+            <p className="text-xs text-red-600 ml-7">{errors.acceptTerms}</p>
+          )}
+        </div>
+
+        {/* Privacy Policy */}
+        <div className="space-y-1">
+          <label className="flex items-start space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="acceptPrivacy"
+              checked={formData.acceptPrivacy}
+              onChange={handleChange}
+              className={`mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 ${
+                errors.acceptPrivacy ? 'border-red-500' : ''
+              }`}
+            />
+            <span className="text-sm text-gray-700">
+              I accept the{' '}
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-600 hover:text-primary-700 underline"
+              >
+                Privacy Policy
+              </a>
+              {' '}*
+            </span>
+          </label>
+          {errors.acceptPrivacy && (
+            <p className="text-xs text-red-600 ml-7">{errors.acceptPrivacy}</p>
+          )}
+        </div>
+
+        {/* POPIA Consent */}
+        <div className="space-y-1">
+          <label className="flex items-start space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="acceptPopia"
+              checked={formData.acceptPopia}
+              onChange={handleChange}
+              className={`mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 ${
+                errors.acceptPopia ? 'border-red-500' : ''
+              }`}
+            />
+            <span className="text-sm text-gray-700">
+              I consent to the processing of my personal information in accordance with the{' '}
+              <a
+                href="/popia"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-600 hover:text-primary-700 underline"
+              >
+                Protection of Personal Information Act (POPIA)
+              </a>
+              {' '}*
+            </span>
+          </label>
+          {errors.acceptPopia && (
+            <p className="text-xs text-red-600 ml-7">{errors.acceptPopia}</p>
+          )}
+        </div>
+
+        <p className="text-xs text-gray-500 italic">
+          * Required for account creation
         </p>
       </div>
 
