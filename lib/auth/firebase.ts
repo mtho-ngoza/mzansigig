@@ -31,6 +31,9 @@ export class FirebaseAuthService {
       });
 
       // Step 3: Create user document in Firestore
+      const currentDate = new Date();
+      const CONSENT_VERSION = '1.0'; // Version tracking for legal compliance
+
       const user: Partial<User> = {
         id: firebaseUser.uid,
         email: data.email,
@@ -39,7 +42,25 @@ export class FirebaseAuthService {
         phone: data.phone,
         location: data.location,
         userType: data.userType,
-        createdAt: new Date(),
+        createdAt: currentDate,
+        // Store legal consents with timestamp and version for POPIA audit trail
+        consents: {
+          terms: {
+            accepted: data.acceptTerms,
+            acceptedAt: currentDate,
+            version: CONSENT_VERSION
+          },
+          privacy: {
+            accepted: data.acceptPrivacy,
+            acceptedAt: currentDate,
+            version: CONSENT_VERSION
+          },
+          popia: {
+            accepted: data.acceptPopia,
+            acceptedAt: currentDate,
+            version: CONSENT_VERSION
+          }
+        }
       };
 
       // Only add optional fields if they have values (Firestore doesn't allow undefined)

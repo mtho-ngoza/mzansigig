@@ -88,6 +88,12 @@ export interface User {
   pendingBalance?: number // Funds held in escrow
   totalEarnings?: number // Lifetime earnings
   totalWithdrawn?: number // Total amount withdrawn
+  // Legal consents (POPIA compliance - audit trail)
+  consents?: {
+    terms: { accepted: boolean; acceptedAt: Date; version: string }
+    privacy: { accepted: boolean; acceptedAt: Date; version: string }
+    popia: { accepted: boolean; acceptedAt: Date; version: string }
+  }
   createdAt: Date
   updatedAt?: Date
 }
@@ -126,4 +132,8 @@ export interface RegisterData {
   userType: 'job-seeker' | 'employer' | 'admin'
   workSector?: 'professional' | 'informal'
   idNumber: string
+  // Legal consents (required for POPIA compliance)
+  acceptTerms: boolean
+  acceptPrivacy: boolean
+  acceptPopia: boolean
 }

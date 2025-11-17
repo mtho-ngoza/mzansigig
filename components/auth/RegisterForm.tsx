@@ -22,14 +22,23 @@ export function RegisterForm() {
     userType: 'job-seeker',
     workSector: undefined,
     idNumber: '',
+    acceptTerms: false,
+    acceptPrivacy: false,
+    acceptPopia: false,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showProfileCompletion, setShowProfileCompletion] = useState(false)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    const { name, value, type } = e.target
+    const checked = type === 'checkbox' ? (e.target as HTMLInputElement).checked : undefined
+
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }))
+
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }))
     }
@@ -122,6 +131,17 @@ export function RegisterForm() {
           newErrors.idNumber = 'You must be at least 16 years old to register'
         }
       }
+    }
+
+    // Legal consent validation (POPIA compliance)
+    if (!formData.acceptTerms) {
+      newErrors.acceptTerms = 'You must accept the Terms of Service to continue'
+    }
+    if (!formData.acceptPrivacy) {
+      newErrors.acceptPrivacy = 'You must accept the Privacy Policy to continue'
+    }
+    if (!formData.acceptPopia) {
+      newErrors.acceptPopia = 'You must consent to POPIA data processing to continue'
     }
 
     setErrors(newErrors)
@@ -311,6 +331,105 @@ export function RegisterForm() {
         <p className="text-xs text-gray-600">
           Required for identity verification and trust building on the platform.
           Your ID number is encrypted and stored securely.
+        </p>
+      </div>
+
+      {/* Legal Consents (POPIA Compliance) */}
+      <div className="space-y-3 pt-2 border-t border-gray-200">
+        <h3 className="text-sm font-medium text-gray-900">Legal Agreements</h3>
+
+        {/* Terms of Service */}
+        <div className="space-y-1">
+          <label className="flex items-start space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="acceptTerms"
+              checked={formData.acceptTerms}
+              onChange={handleChange}
+              className={`mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 ${
+                errors.acceptTerms ? 'border-red-500' : ''
+              }`}
+            />
+            <span className="text-sm text-gray-700">
+              I accept the{' '}
+              <a
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-600 hover:text-primary-700 underline"
+              >
+                Terms of Service
+              </a>
+              {' '}*
+            </span>
+          </label>
+          {errors.acceptTerms && (
+            <p className="text-xs text-red-600 ml-7">{errors.acceptTerms}</p>
+          )}
+        </div>
+
+        {/* Privacy Policy */}
+        <div className="space-y-1">
+          <label className="flex items-start space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="acceptPrivacy"
+              checked={formData.acceptPrivacy}
+              onChange={handleChange}
+              className={`mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 ${
+                errors.acceptPrivacy ? 'border-red-500' : ''
+              }`}
+            />
+            <span className="text-sm text-gray-700">
+              I accept the{' '}
+              <a
+                href="/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-600 hover:text-primary-700 underline"
+              >
+                Privacy Policy
+              </a>
+              {' '}*
+            </span>
+          </label>
+          {errors.acceptPrivacy && (
+            <p className="text-xs text-red-600 ml-7">{errors.acceptPrivacy}</p>
+          )}
+        </div>
+
+        {/* POPIA Consent */}
+        <div className="space-y-1">
+          <label className="flex items-start space-x-3 cursor-pointer">
+            <input
+              type="checkbox"
+              name="acceptPopia"
+              checked={formData.acceptPopia}
+              onChange={handleChange}
+              className={`mt-0.5 h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 ${
+                errors.acceptPopia ? 'border-red-500' : ''
+              }`}
+            />
+            <span className="text-sm text-gray-700">
+              I consent to the processing of my personal information in accordance with the{' '}
+              <a
+                href="/popia"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary-600 hover:text-primary-700 underline"
+              >
+                Protection of Personal Information Act (POPIA)
+              </a>
+              {' '}*
+            </span>
+          </label>
+          {errors.acceptPopia && (
+            <p className="text-xs text-red-600 ml-7">{errors.acceptPopia}</p>
+          )}
+        </div>
+
+        <p className="text-xs text-gray-500 italic">
+          * Required for account creation
         </p>
       </div>
 
