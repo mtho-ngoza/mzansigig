@@ -41,7 +41,7 @@ export class ConfigService {
 
       // No config exists, create default
       return await this.createDefaultConfig()
-    } catch (error) {
+    } catch {
       // Silently fall back to defaults if there's a permission or access error
       // This is expected on first load when the collection doesn't exist yet
       return {

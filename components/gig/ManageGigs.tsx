@@ -127,7 +127,7 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
       setCompletedGig(selectedGig)
       setShowReviewPrompt(true)
 
-      success('Gig marked as completed! Payment has been released to the worker.')
+      success('Lekker! Gig completed and payment released to the worker')
     } catch (err) {
       console.error('Error completing gig:', err)
       showError('Failed to mark gig as completed. Please try again.')

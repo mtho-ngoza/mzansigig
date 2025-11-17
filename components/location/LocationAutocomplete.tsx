@@ -282,7 +282,7 @@ export default function LocationAutocomplete({
                   </div>
 
                   {/* Locations in this province */}
-                  {locations.map((location, index) => {
+                  {locations.map((location) => {
                     const globalIndex = results.indexOf(location)
                     const isSelected = selectedIndex === globalIndex
                     const typeConfig = LOCATION_TYPE_CONFIG[location.type]

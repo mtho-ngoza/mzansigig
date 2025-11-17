@@ -577,7 +577,7 @@ export default function PublicGigBrowser({
     setShowNearbyOnly(newShowNearbyOnly)
 
     if (newShowNearbyOnly) {
-      success(`Now showing gigs within ${formatDistance(radiusKm)} of your location`)
+      success(`Showing gigs within ${formatDistance(radiusKm)} of you`)
     } else {
       success('Now showing all gigs')
     }
@@ -836,7 +836,7 @@ export default function PublicGigBrowser({
     }
 
     setSelectedGig(null)
-    success('Application submitted successfully! You can track your applications in your dashboard.')
+    success('Sharp! Application sent. Check your dashboard to track it')
   }
 
   const handleApplicationCancel = () => {
@@ -1366,7 +1366,7 @@ export default function PublicGigBrowser({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className={`text-center mb-12 transition-all duration-700 ${howItWorksInView ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Get started in three simple steps</p>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">Let&apos;s get started - three easy steps to your first gig</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8 md:gap-12">
             <div className={`text-center transition-all duration-700 ${howItWorksInView ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: howItWorksInView ? '0ms' : '0ms' }}>
@@ -1438,7 +1438,7 @@ export default function PublicGigBrowser({
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className={`text-center mb-12 transition-all duration-700 ${faqInView ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Frequently Asked Questions</h2>
-            <p className="text-lg text-gray-600">Everything you need to know about getting started</p>
+            <p className="text-lg text-gray-600">Everything you need to know to start earning on MzansiGig</p>
           </div>
           <div className="space-y-6">
             <div className={`bg-gray-50 p-6 rounded-lg transition-all duration-700 ${faqInView ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'}`} style={{ transitionDelay: faqInView ? '0ms' : '0ms' }}>

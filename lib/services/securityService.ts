@@ -10,11 +10,10 @@ import {
   where,
   orderBy,
   limit,
-  serverTimestamp,
-  increment
+  serverTimestamp
 } from 'firebase/firestore'
 import { User, SafetyPreferences, EmergencyContact } from '@/types/auth'
-import { SafetyReport, SafetyCheckIn, TrustScoreHistory, LocationSafetyRating } from '@/types/security'
+import { SafetyReport, SafetyCheckIn, LocationSafetyRating } from '@/types/security'
 
 export class SecurityService {
   // User Verification Management
@@ -253,7 +252,7 @@ export class SecurityService {
     }
   }
 
-  private static async notifyEmergencyContacts(userId: string, gigId: string, location?: string): Promise<void> {
+  private static async notifyEmergencyContacts(userId: string, _gigId: string, _location?: string): Promise<void> {
     try {
       const preferences = await this.getSafetyPreferences(userId)
       if (!preferences || !preferences.shareLocationWithContacts) return

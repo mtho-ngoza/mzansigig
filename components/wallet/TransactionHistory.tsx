@@ -46,7 +46,7 @@ export default function TransactionHistory({ onClose }: TransactionHistoryProps)
         const history = await PaymentService.getUserPaymentHistory(user.id, 500)
         setTransactions(history)
         setFilteredTransactions(history)
-      } catch (error) {
+      } catch {
         // Intentionally don't log here to avoid noisy console output during tests/CI.
         setError('Failed to load transaction history')
       } finally {

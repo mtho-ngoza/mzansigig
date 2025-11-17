@@ -105,7 +105,7 @@ export class GigCache {
 
       const entry: CacheEntry<Gig[]> = JSON.parse(cached);
       return Math.floor((Date.now() - entry.timestamp) / 1000);
-    } catch (error) {
+    } catch {
       return null;
     }
   }

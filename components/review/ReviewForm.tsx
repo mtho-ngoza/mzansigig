@@ -82,7 +82,7 @@ export default function ReviewForm({
 
       await ReviewService.createReview(reviewData)
 
-      success('Review submitted successfully!')
+      success('Lekker! Your review has been submitted')
 
       if (onSuccess) {
         onSuccess()

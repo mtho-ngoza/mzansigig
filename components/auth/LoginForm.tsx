@@ -74,7 +74,7 @@ export function LoginForm() {
     setShowProfileCompletion(false)
     setMessage({
       type: 'success',
-      text: 'Welcome to MzansiGig!'
+      text: 'Howzit! Welcome back to MzansiGig'
     })
   }
 

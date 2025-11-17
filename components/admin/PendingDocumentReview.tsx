@@ -225,7 +225,7 @@ export default function PendingDocumentReview() {
       {filteredDocuments.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center text-gray-500">
-            No {filter !== 'all' ? filter : ''} documents found
+            Eish, no {filter !== 'all' ? filter : ''} documents to review right now
           </CardContent>
         </Card>
       ) : (

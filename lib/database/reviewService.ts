@@ -89,7 +89,7 @@ export class ReviewService {
     const reviewId = await FirestoreService.create(this.COLLECTION, review)
 
     // Check for counter-review and reveal both if it exists
-    await this.checkAndRevealMutualReviews(reviewData.gigId, reviewId)
+    await this.checkAndRevealMutualReviews(reviewData.gigId)
 
     // Update the reviewee's rating only if review is revealed
     // (We'll update it when both reviews are revealed)
@@ -306,8 +306,7 @@ export class ReviewService {
    * This implements mutual review reveal - reviews are only visible after both submit
    */
   private static async checkAndRevealMutualReviews(
-    gigId: string,
-    newReviewId: string
+    gigId: string
   ): Promise<void> {
     // Get all reviews for this gig
     const gigReviews = await this.getGigReviews(gigId)

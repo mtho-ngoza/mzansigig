@@ -360,11 +360,11 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
       if (editGig) {
         // Update existing gig
         await GigService.updateGig(editGig.id, gigData)
-        success('Gig updated successfully!')
+        success('Sharp! Your gig has been updated')
       } else {
         // Create new gig
         await GigService.createGig(gigData)
-        success('Gig posted successfully!')
+        success("Lekker! Your gig is live and ready for Mzansi's best workers")
         setFormData({
           title: '',
           description: '',

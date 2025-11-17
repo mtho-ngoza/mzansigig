@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { User } from '@/types/auth'
-import { UserService, TalentSearchFilters } from '@/lib/database/userService'
+import { UserService } from '@/lib/database/userService'
 import JobSeekerProfileDialog from '@/components/application/JobSeekerProfileDialog'
 
 interface BrowseTalentProps {
@@ -121,7 +121,7 @@ export default function BrowseTalent({ onBack }: BrowseTalentProps) {
   }
 
   const formatRating = (rating?: number) => {
-    if (!rating) return 'No ratings yet'
+    if (!rating) return 'No ratings yet - be the first!'
     return `${rating.toFixed(1)} ★`
   }
 
@@ -308,7 +308,7 @@ export default function BrowseTalent({ onBack }: BrowseTalentProps) {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                No talent profiles found
+                Eish, no talent matches yet
               </h3>
               <p className="text-gray-600 mb-4">
                 Try adjusting your filters to see more results.

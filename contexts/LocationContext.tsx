@@ -111,7 +111,7 @@ export function LocationProvider({ children }: LocationProviderProps) {
       setLocationPermissionGranted(location.allowLocationAccess)
 
       if (location.allowLocationAccess) {
-        success('Location access granted! Gigs will now be sorted by distance.')
+        success("Sharp! We'll show you gigs nearby")
       } else {
         error('Location access denied. You can still browse all gigs.')
       }
@@ -130,7 +130,7 @@ export function LocationProvider({ children }: LocationProviderProps) {
 
       if (refreshed) {
         setUserLocation(refreshed)
-        success('Location updated')
+        success('Sharp! Location updated')
       }
     } catch (err) {
       console.error('Error refreshing location:', err)

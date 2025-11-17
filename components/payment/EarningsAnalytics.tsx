@@ -122,7 +122,7 @@ export default function EarningsAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {analytics.monthlyEarnings.map((month, index) => {
+              {analytics.monthlyEarnings.map((month) => {
                 const maxEarning = Math.max(...analytics.monthlyEarnings.map(m => m.amount))
                 const widthPercentage = maxEarning > 0 ? (month.amount / maxEarning) * 100 : 0
 
@@ -164,7 +164,7 @@ export default function EarningsAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {analytics.topCategories.slice(0, 5).map((category, index) => {
+              {analytics.topCategories.slice(0, 5).map((category) => {
                 const maxEarning = Math.max(...analytics.topCategories.map(c => c.earnings))
                 const widthPercentage = maxEarning > 0 ? (category.earnings / maxEarning) * 100 : 0
 
@@ -203,7 +203,7 @@ export default function EarningsAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              {analytics.paymentMethodUsage.map((method, index) => (
+              {analytics.paymentMethodUsage.map((method) => (
                 <div key={method.method} className="text-center p-4 bg-gray-50 rounded-lg">
                   <div className="text-2xl mb-2">
                     {method.method === 'card' ? '💳' :

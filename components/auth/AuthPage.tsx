@@ -27,7 +27,7 @@ export default function AuthPage({ onBackClick }: AuthPageProps) {
 
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Welcome to MzansiGig
+            Howzit! Welcome to MzansiGig
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Mzansi&apos;s Gig Connection: Work Starts Here - secure opportunities for all South Africans

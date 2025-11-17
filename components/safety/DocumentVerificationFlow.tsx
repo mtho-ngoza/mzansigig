@@ -79,7 +79,7 @@ export default function DocumentVerificationFlow({
       })
 
       const docTitle = getRequiredDocuments().find(doc => doc.type === documentType)?.title || 'Document'
-      success(`${docTitle} uploaded successfully! You can now submit for review.`)
+      success(`Sharp! ${docTitle} uploaded. You can now submit for review`)
     } catch (error) {
       console.error('Error updating document state:', error)
       showError('Failed to update document. Please try again.')
@@ -160,7 +160,7 @@ export default function DocumentVerificationFlow({
 
       if (allVerified && verifiedCount === draftDocuments.length) {
         // All documents successfully verified
-        success(`All documents verified successfully! Your ${verificationLevel} verification is complete. ✓`)
+        success(`Lekker! ${verificationLevel} verification complete ✓`)
         onComplete()
       } else if (rejectedCount > 0 && pendingCount === 0) {
         // Only rejected documents

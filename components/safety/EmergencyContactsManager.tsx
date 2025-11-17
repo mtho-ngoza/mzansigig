@@ -132,7 +132,7 @@ export default function EmergencyContactsManager({ onBack }: EmergencyContactsMa
           relationship: formData.relationship,
           isPrimary: formData.isPrimary
         })
-        success('Emergency contact added successfully')
+        success('Sharp! Emergency contact saved')
       }
 
       // Reset form and reload contacts

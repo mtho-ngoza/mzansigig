@@ -116,7 +116,7 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
       await ProfileService.updateProfileCompleteness(user.id)
       await refreshUser()
 
-      success('Experience updated successfully!')
+      success('Lekker! Experience updated')
       if (onBack) onBack()
     } catch (err) {
       console.error('Error updating experience:', err)

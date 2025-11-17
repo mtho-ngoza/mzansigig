@@ -12,7 +12,7 @@ interface MessageIndicatorProps {
 }
 
 export function MessageIndicator({
-  onConversationStart,
+  onConversationStart: _onConversationStart,
   className = ''
 }: MessageIndicatorProps) {
   const { user } = useAuth()
@@ -26,13 +26,6 @@ export function MessageIndicator({
   }
 
   const handleClose = () => {
-    setShowMessaging(false)
-  }
-
-  const handleConversationStart = (conversationId: string) => {
-    if (onConversationStart) {
-      onConversationStart(conversationId)
-    }
     setShowMessaging(false)
   }
 

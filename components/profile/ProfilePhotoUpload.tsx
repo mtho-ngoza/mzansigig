@@ -59,7 +59,7 @@ export default function ProfilePhotoUpload({ onBack }: ProfilePhotoUploadProps) 
       // Refresh user data to get updated profile photo
       await refreshUser()
 
-      success('Profile photo updated successfully!')
+      success('Lekker! Profile photo looking sharp')
       setSelectedFile(null)
       setPreviewUrl(null)
 

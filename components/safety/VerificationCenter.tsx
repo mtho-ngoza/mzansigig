@@ -4,11 +4,10 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
-import { useToast } from '@/contexts/ToastContext'
 import { SecurityService } from '@/lib/services/securityService'
 import { DocumentStorageService } from '@/lib/services/documentStorageService'
 import { TrustScoreBadge, VerificationBadge } from './TrustScoreBadge'
-import { User, VerificationDocument } from '@/types/auth'
+import { VerificationDocument } from '@/types/auth'
 import DocumentVerificationFlow from './DocumentVerificationFlow'
 
 interface VerificationCenterProps {
@@ -17,10 +16,8 @@ interface VerificationCenterProps {
 
 export default function VerificationCenter({ onBack }: VerificationCenterProps) {
   const { user, refreshUser } = useAuth()
-  const { success, error: showError } = useToast()
   const [trustScore, setTrustScore] = useState<number>(50)
   const [isLoading, setIsLoading] = useState(true)
-  const [isVerifying, setIsVerifying] = useState<string | null>(null)
   const [showDocumentFlow, setShowDocumentFlow] = useState<'basic' | 'enhanced' | 'premium' | null>(null)
   const [pendingDocuments, setPendingDocuments] = useState<VerificationDocument[]>([])
   const [rejectedDocuments, setRejectedDocuments] = useState<VerificationDocument[]>([])

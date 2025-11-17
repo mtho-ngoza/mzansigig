@@ -36,7 +36,7 @@ export default function JobSeekerProfileDialog({
         } else {
           setError('User profile not found')
         }
-      } catch (err) {
+      } catch {
         setError('Failed to load user profile')
       } finally {
         setLoading(false)

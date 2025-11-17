@@ -1,4 +1,3 @@
-import { VerificationDocument } from '@/types/auth'
 import { DocumentStorageService } from './documentStorageService'
 import { SecurityService } from './securityService'
 import { getAuth } from 'firebase/auth'

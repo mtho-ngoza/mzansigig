@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { PaymentService } from '@/lib/services/paymentService'
 import { WalletService } from '@/lib/services/walletService'
-import { PaymentMethod, BankAccount } from '@/types/payment'
+import { BankAccount } from '@/types/payment'
 
 interface WithdrawalRequestFormProps {
   onSuccess?: () => void
@@ -20,7 +20,6 @@ export default function WithdrawalRequestForm({ onSuccess, onCancel }: Withdrawa
   const { success: showSuccess, error: showError } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [availableBalance, setAvailableBalance] = useState(0)
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
   const [formData, setFormData] = useState({
     amount: '',
     paymentMethod: '',
@@ -42,7 +41,6 @@ export default function WithdrawalRequestForm({ onSuccess, onCancel }: Withdrawa
 
         // Load payment methods
         const methods = await PaymentService.getUserPaymentMethods(user.id)
-        setPaymentMethods(methods)
 
         // Set default payment method if exists
         const defaultMethod = methods.find(m => m.isDefault)

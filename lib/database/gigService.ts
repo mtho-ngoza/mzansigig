@@ -3,7 +3,6 @@ import { Gig, GigApplication, Review } from '@/types/gig';
 import { Coordinates, LocationSearchOptions } from '@/types/location';
 import {
   calculateDistance,
-  isWithinRadius,
   sortByDistance,
   filterByRadius,
   getCityCoordinates

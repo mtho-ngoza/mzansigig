@@ -35,7 +35,7 @@ export default function PlatformConfigDashboard() {
       setConfig(platformConfig)
       setEditedValues({})
       setHasChanges(false)
-    } catch (err) {
+    } catch {
       showError('Failed to load platform configuration')
     } finally {
       setLoading(false)
@@ -61,11 +61,11 @@ export default function PlatformConfigDashboard() {
       await ConfigService.updateConfig(editedValues, user.id)
       success('Configuration updated successfully')
       await loadConfig()
-    } catch (err) {
+    } catch (error) {
       showError(
-        err instanceof Error ? err.message : 'Failed to update configuration'
+        error instanceof Error ? error.message : 'Failed to update configuration'
       )
-      console.error(err)
+      console.error(error)
     } finally {
       setSaving(false)
     }
@@ -86,9 +86,9 @@ export default function PlatformConfigDashboard() {
       await ConfigService.resetToDefaults(user.id)
       success('Configuration reset to defaults')
       await loadConfig()
-    } catch (err) {
+    } catch (error) {
       showError('Failed to reset configuration')
-      console.error(err)
+      console.error(error)
     } finally {
       setSaving(false)
     }
@@ -99,7 +99,7 @@ export default function PlatformConfigDashboard() {
       await ConfigService.refreshCache()
       await loadConfig()
       success('Configuration refreshed')
-    } catch (err) {
+    } catch {
       showError('Failed to refresh configuration')
     }
   }

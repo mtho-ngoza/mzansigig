@@ -209,7 +209,7 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
       setCompletionRequestDialog({ isOpen: false, applicationId: '', gigTitle: '' })
 
       // Show success message
-      success('Completion requested successfully! The employer has been notified and has 7 days to respond.')
+      success('Lekker! Completion request sent. The employer has 7 days to respond')
     } catch (error) {
       console.error('Error requesting completion:', error)
       showError(error instanceof Error ? error.message : 'Failed to request completion. Please try again.')
@@ -300,7 +300,7 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
               </div>
 
               <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                No Applications Yet
+                Eish, No Applications Yet
               </h3>
 
               <p className="text-gray-600 mb-6 max-w-md mx-auto">
@@ -400,7 +400,7 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
               <Card className="text-center py-12">
                 <CardContent>
                   <p className="text-gray-600">
-                    No applications found with status: <strong>{statusFilter}</strong>
+                    Eish, no <strong>{statusFilter}</strong> applications right now
                   </p>
                   <Button variant="outline" onClick={() => setStatusFilter('all')} className="mt-4">
                     Show All Applications

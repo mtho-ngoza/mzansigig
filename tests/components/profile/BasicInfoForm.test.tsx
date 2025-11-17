@@ -140,7 +140,7 @@ describe('BasicInfoForm', () => {
         )
       })
 
-      expect(mockSuccess).toHaveBeenCalledWith('Profile updated successfully!')
+      expect(mockSuccess).toHaveBeenCalledWith('Sharp! Profile updated')
       expect(mockOnBack).toHaveBeenCalled()
     })
 

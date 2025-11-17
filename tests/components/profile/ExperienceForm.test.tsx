@@ -106,7 +106,7 @@ describe('ExperienceForm', () => {
 
       expect(ProfileService.updateProfileCompleteness).toHaveBeenCalledWith('user-123')
       expect(mockRefreshUser).toHaveBeenCalled()
-      expect(mockSuccess).toHaveBeenCalledWith('Experience updated successfully!')
+      expect(mockSuccess).toHaveBeenCalledWith('Lekker! Experience updated')
       expect(mockOnBack).toHaveBeenCalled()
     })
   })
@@ -170,7 +170,7 @@ describe('ExperienceForm', () => {
         }))
       })
 
-      expect(mockSuccess).toHaveBeenCalledWith('Experience updated successfully!')
+      expect(mockSuccess).toHaveBeenCalledWith('Lekker! Experience updated')
       expect(mockOnBack).toHaveBeenCalled()
     })
 

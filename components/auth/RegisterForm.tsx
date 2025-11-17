@@ -159,7 +159,7 @@ export function RegisterForm() {
     setShowProfileCompletion(false)
     setMessage({
       type: 'success',
-      text: 'Welcome to MzansiGig!'
+      text: 'Howzit! Welcome to MzansiGig - Work Starts Here'
     })
   }
 

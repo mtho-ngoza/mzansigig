@@ -156,8 +156,6 @@ export default function WithdrawalApprovalDashboard() {
     )
   }
 
-  const pendingCount = withdrawals.filter(w => w.status === 'pending').length
-
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}

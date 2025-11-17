@@ -189,7 +189,7 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
       if (onSuccess) {
         onSuccess()
       } else {
-        success('Application submitted successfully!')
+        success('Sharp! Your application has been submitted')
         setFormData({
           message: '',
           proposedRate: workerEarnings.toString(),

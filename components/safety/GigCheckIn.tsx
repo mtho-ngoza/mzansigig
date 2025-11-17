@@ -51,7 +51,7 @@ export default function GigCheckIn({ application, onUpdate }: GigCheckInProps) {
       const coordinates = await getEffectiveCoordinates()
 
       await GigService.checkIn(application.id, user.id, coordinates || undefined)
-      success('Checked in successfully! Stay safe.')
+      success('Sharp! Checked in. Stay safe out there')
       await loadCheckInStatus()
       onUpdate?.()
     } catch (error) {
@@ -72,7 +72,7 @@ export default function GigCheckIn({ application, onUpdate }: GigCheckInProps) {
       const coordinates = await getEffectiveCoordinates()
 
       await GigService.checkOut(application.id, user.id, coordinates || undefined)
-      success('Checked out successfully!')
+      success("Lekker! You're all checked out. Safe travels")
       await loadCheckInStatus()
       onUpdate?.()
     } catch (error) {

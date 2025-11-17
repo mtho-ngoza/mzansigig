@@ -1,4 +1,4 @@
-import { Coordinates, LocationData, DistanceInfo, LocationSearchOptions, SA_CITIES } from '@/types/location'
+import { Coordinates, DistanceInfo, SA_CITIES } from '@/types/location'
 import { SA_LOCATIONS_DATABASE } from '@/lib/data/saLocations'
 
 /**

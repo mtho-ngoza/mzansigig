@@ -242,7 +242,7 @@ describe('ManageApplications', () => {
       render(<ManageApplications />)
 
       await waitFor(() => {
-        expect(screen.getByText('No Applications Yet')).toBeInTheDocument()
+        expect(screen.getByText('Eish, No Applications Yet')).toBeInTheDocument()
       })
     })
   })
@@ -310,7 +310,7 @@ describe('ManageApplications', () => {
 
       // Job seekers won't have employer gigs, so empty state shows after loading completes
       await waitFor(() => {
-        expect(screen.getByText('No Applications Yet')).toBeInTheDocument()
+        expect(screen.getByText('Eish, No Applications Yet')).toBeInTheDocument()
       }, { timeout: 3000 })
     })
   })

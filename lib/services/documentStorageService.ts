@@ -3,9 +3,7 @@ import {
   ref,
   uploadBytes,
   getDownloadURL,
-  deleteObject,
-  getMetadata,
-  updateMetadata
+  deleteObject
 } from 'firebase/storage'
 import {
   doc,

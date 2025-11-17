@@ -118,7 +118,7 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
       await ProfileService.updateProfileCompleteness(user.id)
       await refreshUser()
 
-      success('Profile updated successfully!')
+      success('Sharp! Profile updated')
       if (onBack) onBack()
     } catch (err) {
       console.error('Error updating profile:', err)

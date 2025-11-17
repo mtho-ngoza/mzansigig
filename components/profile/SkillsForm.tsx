@@ -121,7 +121,7 @@ export default function SkillsForm({ onBack }: SkillsFormProps) {
       await ProfileService.updateProfileCompleteness(user.id)
       await refreshUser()
 
-      success('Skills updated successfully!')
+      success('Lekker! Skills updated')
       if (onBack) onBack()
     } catch (err) {
       console.error('Error updating skills:', err)

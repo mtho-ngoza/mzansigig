@@ -153,7 +153,7 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
       await ProfileService.updateProfileCompleteness(user.id)
       await refreshUser()
 
-      success(`Portfolio item ${editingItem ? 'updated' : 'added'} successfully!`)
+      success(`Sharp! Portfolio item ${editingItem ? 'updated' : 'added'}`)
       resetForm()
     } catch (err) {
       console.error('Error saving portfolio item:', err)
@@ -187,7 +187,7 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
       await ProfileService.deletePortfolioItem(user.id, item.id)
       await ProfileService.updateProfileCompleteness(user.id)
       await refreshUser()
-      success('Portfolio item deleted successfully!')
+      success('Portfolio item removed')
     } catch (err) {
       console.error('Error deleting portfolio item:', err)
       showError('Failed to delete portfolio item. Please try again.')

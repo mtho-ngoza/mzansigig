@@ -1,4 +1,4 @@
-import { Coordinates, UserLocation, LocationData, SA_CITIES } from '@/types/location'
+import { Coordinates, UserLocation, SA_CITIES } from '@/types/location'
 import { getCurrentLocation, getCityCoordinates, getNearestCity } from '@/lib/utils/locationUtils'
 
 export class LocationService {

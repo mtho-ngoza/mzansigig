@@ -5,7 +5,7 @@
  * These utilities help reset test data during local development.
  */
 
-import { collection, query, where, getDocs, deleteDoc, doc, writeBatch, Query, DocumentData } from 'firebase/firestore'
+import { collection, query, where, getDocs, writeBatch, Query, DocumentData } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { WalletService } from './walletService'
 

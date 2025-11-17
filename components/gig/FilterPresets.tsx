@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { GigFilterOptions, DEFAULT_FILTERS } from '@/types/filters'
+import { GigFilterOptions } from '@/types/filters'
 
 interface FilterPresetsProps {
   onApplyPreset: (filters: Partial<GigFilterOptions>) => void

@@ -31,7 +31,6 @@ export default function DocumentUpload({
   maxSize,
   onUploadComplete,
   onDocumentRemove,
-  isUploading = false,
   existingDocument,
   canEdit = true
 }: DocumentUploadProps) {

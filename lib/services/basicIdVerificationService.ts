@@ -96,8 +96,6 @@ export class BasicIdVerificationService {
       return { isValid: false, errors }
     }
 
-    const digits = idNumber.split('').map(Number)
-
     // Extract date components (YYMMDD)
     const year = parseInt(idNumber.substring(0, 2))
     const month = parseInt(idNumber.substring(2, 4))
@@ -333,7 +331,6 @@ export class BasicIdVerificationService {
         // Basic name matching (case insensitive)
         if (result.extractedData.fullName && user.firstName && user.lastName) {
           const extractedName = result.extractedData.fullName.toLowerCase()
-          const userFullName = `${user.firstName} ${user.lastName}`.toLowerCase()
           matches.name = extractedName.includes(user.firstName.toLowerCase()) &&
                         extractedName.includes(user.lastName.toLowerCase())
         }

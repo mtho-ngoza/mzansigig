@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (needsProfileCompletion) {
         return {
           success: true,
-          message: 'Welcome! Please complete your profile to continue.',
+          message: "Howzit! Welcome to MzansiGig. Let's set up your profile",
           needsProfileCompletion: true
         }
       }

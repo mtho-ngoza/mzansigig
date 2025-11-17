@@ -204,32 +204,38 @@ Empower all of Mzansi (South Africa) - from informal sector workers to professio
 
 ---
 
-## 🚀 Next Development Priorities
+## 🚀 Development Roadmap
 
-### Pre-Launch (Weeks 1-4)
-1. **Payment Gateway Integration** - Connect real payment processors (PayFast/Yoco/PayGate)
-2. **Firebase Production Setup** - Deploy to production environment with billing alerts
-3. **Google Cloud OCR** - Production API keys with domain restrictions
-4. **Legal Documents** - POPIA-compliant Terms of Service and Privacy Policy
-5. **Beta Testing** - 20-30 users in one township
+### 🎯 Priority 1: Launch Essentials (Weeks 1-4)
+**Critical - Required before public launch**
 
-### Post-Launch Enhancements
+- [ ] **Payment Gateway Integration** - Connect PayFast/Yoco for real transactions (highest priority - no platform without payments)
+- [ ] **Legal Documents** - POPIA-compliant Terms of Service and Privacy Policy (legal requirement)
+- [ ] **Firebase Production Setup** - Deploy production environment with billing alerts and security
+- [ ] **Google Cloud OCR Production Keys** - Activate ID verification in production with domain restrictions
+- [ ] **Beta Testing** - Validate with 20-30 users in one township before full launch
 
-#### Month 1-2: UX Improvements
-- **Skills Development Hub** - Integrate learning resources for job seekers
+### 🚀 Priority 2: High User Value (Month 1-2)
+**Should implement soon after launch - Direct user impact**
 
-#### Month 3-6: Advanced Features
-- **Enhanced Analytics** - Admin dashboard for platform metrics and insights
-- **Emergency SMS Integration** - Safety notifications via Twilio or African SMS gateway
-- **Enhanced Verification** - Background checks and address verification (+25 trust score)
-- **Automated Withdrawal System** - 3-tier hybrid model for faster payouts
-- **Multi-language Support** - isiZulu, Afrikaans, and other SA languages
+- [ ] **Multi-language Support** - isiZulu, Afrikaans, and other SA languages (critical for inclusion in 11-language nation)
+- [ ] **Enhanced Verification** - Background checks and address verification (UI ready! +25 trust score, builds trust fast)
+- [ ] **Emergency SMS Integration** - Safety notifications via Twilio/African SMS gateway (safety critical in SA context)
+- [ ] **Automated Withdrawal System** - 3-tier hybrid model for faster worker payouts (direct value to workers)
 
-#### Month 6-12: Scale & Impact
-- **Premium Verification** - Employment history and reference checks (+40 trust score)
-- **AI-powered Safety Monitoring** - Automated fraud detection and safety alerts
-- **Regional Expansion** - Scale to other SA provinces
-- **Advanced Analytics** - Predictive insights and recommendations
+### 📈 Priority 3: Growth & Engagement (Month 3-6)
+**Builds long-term value and stickiness**
+
+- [ ] **Skills Development Hub** - Integrate learning resources and micro-learning (long-term worker empowerment)
+- [ ] **Enhanced Analytics Dashboard** - Platform metrics and insights for admins (optimize operations)
+- [ ] **Premium Verification** - Employment history and reference checks (UI ready! +40 trust score)
+
+### 🌟 Priority 4: Scale & Advanced Features (Month 6-12)
+**Platform maturity and expansion**
+
+- [ ] **AI-powered Safety Monitoring** - Automated fraud detection and safety alerts (advanced automation)
+- [ ] **Advanced Analytics** - Predictive insights and recommendations (data-driven optimization)
+- [ ] **Regional Expansion** - Scale to other SA provinces (growth phase)
 
 ---
 
@@ -377,26 +383,7 @@ npm run test:ci
 - [x] Performance optimization for 2G/3G networks
 - [x] Admin configurable platform constants with Firebase backend
 - [x] Comprehensive test coverage (1241 tests, 86%+)
-
-### 📋 Pre-Launch Requirements
-- [ ] Payment gateway integration (PayFast/Yoco)
-- [ ] Firebase production deployment
-- [ ] Google Cloud OCR production keys
-- [ ] Legal documents (Terms, Privacy Policy - POPIA compliant)
-- [ ] Beta testing (20-30 users in one township)
-
-### 🔮 Future Enhancements
-
-**Infrastructure Ready** (can be implemented quickly):
-- Enhanced verification with background checks (UI ready, marked "Coming Q2 2025")
-- Premium verification (UI ready, marked "Coming Later")
-
-**Planned Features**:
-- Emergency SMS notifications (Twilio integration)
-- Multi-language support (isiZulu, Afrikaans)
-- AI-powered safety monitoring
-- Skills development hub with micro-learning
-- Regional expansion across South Africa
+- [x] South African slang integration (Lekker, Sharp, Eish, Howzit) for authentic local tone
 
 ---
 

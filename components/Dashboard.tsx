@@ -369,7 +369,7 @@ export default function Dashboard({
     <div className="min-h-screen bg-gray-50">
       {/* Dashboard Header */}
       <PageHeader
-        title={`Welcome back, ${user?.firstName}!`}
+        title={`Howzit, ${user?.firstName}! Welcome back`}
         description="Manage your gigs, applications, and communications"
         breadcrumbs={[{
           label: 'Home',
@@ -409,7 +409,7 @@ export default function Dashboard({
             {/* Welcome Card */}
             <Card className="sm:col-span-2 lg:col-span-2">
               <CardHeader>
-                <CardTitle>Welcome to GigSA</CardTitle>
+                <CardTitle>Howzit! Ready to work?</CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600 mb-4">
@@ -608,7 +608,7 @@ export default function Dashboard({
               <CardContent>
                 <div className="prose max-w-none">
                   <p className="text-gray-600">
-                    Welcome to GigSA! Your Firebase integration is working perfectly.
+                    Welcome to MzansiGig!
                     Here&apos;s what you can do next:
                   </p>
                   <ul className="mt-4 space-y-2 text-gray-600">

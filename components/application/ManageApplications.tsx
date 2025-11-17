@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { GigService } from '@/lib/database/gigService'
 import { useAuth } from '@/contexts/AuthContext'
-import { GigApplication, Gig } from '@/types/gig'
+import { GigApplication } from '@/types/gig'
 import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
 import { useToast } from '@/contexts/ToastContext'
 import PaymentDialog from '@/components/payment/PaymentDialog'
@@ -25,7 +25,6 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
   const { success, error: showError } = useToast()
   const { user } = useAuth()
   const [applications, setApplications] = useState<ApplicationWithGig[]>([])
-  const [gigs, setGigs] = useState<Gig[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [processingApplications, setProcessingApplications] = useState<Set<string>>(new Set())
@@ -60,7 +59,6 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
 
         // Get all gigs posted by this employer
         const employerGigs = await GigService.getGigsByEmployer(user.id)
-        setGigs(employerGigs)
 
         // Get all applications for these gigs
         const allApplications: ApplicationWithGig[] = []
@@ -85,7 +83,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
         })
 
         setApplications(allApplications)
-      } catch (error) {
+      } catch {
         setError('Failed to load applications')
       } finally {
         setLoading(false)
@@ -112,7 +110,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
 
       // Show success message
       const actionText = status === 'accepted' ? 'accepted' : 'rejected'
-      success(`Application ${actionText} successfully!`)
+      success(`Sharp! Application ${actionText}`)
 
       // If accepted, immediately prompt for payment
       if (status === 'accepted') {
@@ -125,7 +123,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
         }
       }
 
-    } catch (error) {
+    } catch {
       showError('Failed to update application status. Please try again.')
     } finally {
       setProcessingApplications(prev => {
@@ -205,7 +203,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
       )
 
       setApproveCompletionDialog({ isOpen: false, applicationId: '', gigTitle: '' })
-      success('Completion approved! Payment has been released to the worker.')
+      success('Lekker! Payment released to the worker')
     } catch (error) {
       console.error('Error approving completion:', error)
       showError(error instanceof Error ? error.message : 'Failed to approve completion. Please try again.')
@@ -251,7 +249,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
 
       setDisputeCompletionDialog({ isOpen: false, applicationId: '', gigTitle: '' })
       setDisputeReason('')
-      success('Completion disputed. Please work with the worker to resolve the issues.')
+      success('Dispute lodged. Please work with the worker to resolve the issues')
     } catch (error) {
       console.error('Error disputing completion:', error)
       showError(error instanceof Error ? error.message : 'Failed to dispute completion. Please try again.')
@@ -391,7 +389,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
               </div>
 
               <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                No Applications Yet
+                Eish, No Applications Yet
               </h3>
 
               <p className="text-gray-600 mb-6 max-w-md mx-auto">
@@ -480,7 +478,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
               <Card className="text-center py-12">
                 <CardContent>
                   <p className="text-gray-600">
-                    {statusFilter === 'all' ? 'No applications received yet.' : `No applications found with status: ${statusFilter}`}
+                    {statusFilter === 'all' ? 'Eish, no applications yet. Your gig is live - workers will find it soon!' : `No ${statusFilter} applications right now`}
                   </p>
                   {statusFilter !== 'all' && (
                     <Button variant="outline" onClick={() => setStatusFilter('all')} className="mt-4">
@@ -809,7 +807,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
             description={`Payment for "${showPaymentDialog.application.gigTitle}"`}
             onSuccess={async (payment) => {
               setShowPaymentDialog({ isOpen: false })
-              success('Payment processed successfully!')
+              success('Lekker! Payment processed')
 
               // Update the application payment status and change status to funded
               if (showPaymentDialog.application) {
@@ -835,7 +833,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                         : app
                     )
                   )
-                } catch (error) {
+                } catch {
                   // Payment status update failed - payment was successful but status wasn't updated
                   // User can still proceed with the funded application
                 }
