@@ -32,7 +32,7 @@ export default function TermsOfService() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow-sm p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Terms of Service</h1>
-          <p className="text-sm text-gray-600 mb-8">Last Updated: January 2025</p>
+          <p className="text-sm text-gray-600 mb-8">Last Updated: November 2025</p>
 
           <div className="prose prose-gray max-w-none">
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8">
@@ -191,7 +191,7 @@ export default function TermsOfService() {
                 <strong>Acknowledgment:</strong> By using MzansiGig, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.
               </p>
               <p className="text-sm text-gray-600">
-                Version 1.0 | Effective January 2025
+                Version 1.0 | Effective November 2025
               </p>
             </div>
           </div>

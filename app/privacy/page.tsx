@@ -32,7 +32,7 @@ export default function PrivacyPolicy() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-white rounded-lg shadow-sm p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Privacy Policy</h1>
-          <p className="text-sm text-gray-600 mb-8">Last Updated: January 2025</p>
+          <p className="text-sm text-gray-600 mb-8">Last Updated: November 2025</p>
 
           <div className="prose prose-gray max-w-none">
             <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4 mb-8">
@@ -241,7 +241,7 @@ export default function PrivacyPolicy() {
                 <strong>Information Officer:</strong> Privacy Officer, MzansiGig (Pty) Ltd<br />
                 <strong>Email:</strong> <a href="mailto:privacy@mzansigig.co.za" className="text-primary-600 hover:underline">privacy@mzansigig.co.za</a><br />
                 <strong>Physical Address:</strong> MzansiGig (Pty) Ltd, Johannesburg, South Africa<br />
-                <strong>Postal Address:</strong> P.O. Box 12345, Johannesburg, 2000, South Africa<br />
+                {/*<strong>Postal Address:</strong> P.O. Box 12345, Johannesburg, 2000, South Africa<br />*/}
                 <strong>Information Regulator:</strong> If you are not satisfied with our response, you may lodge a complaint with the Information Regulator at <a href="https://inforegulator.org.za" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">inforegulator.org.za</a>
               </p>
             </section>
@@ -251,7 +251,7 @@ export default function PrivacyPolicy() {
                 <strong>Acknowledgment:</strong> By using MzansiGig, you acknowledge that you have read and understood this Privacy Policy.
               </p>
               <p className="text-sm text-gray-600">
-                Version 1.0 | Effective January 2025 | POPIA Compliant
+                Version 1.0 | Effective November 2025 | POPIA Compliant
               </p>
             </div>
           </div>

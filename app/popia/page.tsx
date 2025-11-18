@@ -254,7 +254,7 @@ export default function POPIACompliance() {
             <section className="mb-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-4">Updates to This Page</h2>
               <p className="text-gray-700">
-                We may update this POPIA compliance information from time to time. Check this page regularly for updates. Last updated: January 2025.
+                We may update this POPIA compliance information from time to time. Check this page regularly for updates. Last updated: November 2025.
               </p>
             </section>
 
