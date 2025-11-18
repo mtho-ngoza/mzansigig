@@ -47,7 +47,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return { success: true, message: 'Login successful!' }
     } catch (error: any) {
       setIsLoading(false)
-      return { success: false, message: error.message || 'An error occurred during login' }
+      // Ensure we always return a meaningful error message
+      const errorMessage = error?.message || error?.toString() || 'An error occurred during login. Please try again.'
+      return { success: false, message: errorMessage }
     }
   }
 

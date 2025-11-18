@@ -18,11 +18,27 @@ export function LoginForm() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showProfileCompletion, setShowProfileCompletion] = useState(false)
 
+  // TODO: Error messages from failed login attempts are not displaying properly
+  // The setMessage call happens but state doesn't update - possibly related to
+  // React re-renders from AuthContext isLoading changes or StrictMode double-renders
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
+    const previousValue = formData[name as keyof LoginCredentials]
+
     setFormData(prev => ({ ...prev, [name]: value }))
-    if (errors[name as keyof LoginCredentials]) {
-      setErrors(prev => ({ ...prev, [name]: '' }))
+
+    // Only clear messages if the value actually changed (user typed)
+    if (value !== previousValue) {
+      // Clear field-level errors
+      if (errors[name as keyof LoginCredentials]) {
+        setErrors(prev => ({ ...prev, [name]: '' }))
+      }
+
+      // Clear general error message when user starts typing
+      if (message) {
+        setMessage(null)
+      }
     }
   }
 
@@ -50,7 +66,9 @@ export function LoginForm() {
     e.preventDefault()
     setMessage(null)
 
-    if (!validateForm()) return
+    if (!validateForm()) {
+      return
+    }
 
     // Sanitize credentials before submission
     const sanitizedCredentials: LoginCredentials = {
@@ -59,10 +77,14 @@ export function LoginForm() {
     }
 
     const result = await login(sanitizedCredentials)
-    setMessage({
-      type: result.success ? 'success' : 'error',
-      text: result.message
-    })
+
+    // Use setTimeout to ensure state update happens after any re-renders from AuthContext
+    setTimeout(() => {
+      setMessage({
+        type: result.success ? 'success' : 'error',
+        text: result.message
+      })
+    }, 0)
   }
 
   const handleGoogleSignIn = async () => {
