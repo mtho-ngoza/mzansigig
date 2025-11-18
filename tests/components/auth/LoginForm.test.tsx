@@ -88,7 +88,7 @@ describe('LoginForm', () => {
         expect(mockLogin).toHaveBeenCalledWith({
           email: 'user@example.com',
           password: 'password123'
-        })
+        }, true) // rememberMe defaults to true
       })
     })
   })
@@ -132,7 +132,7 @@ describe('LoginForm', () => {
         expect(mockLogin).toHaveBeenCalledWith({
           email: 'user@example.com',
           password: 'Password123!'
-        })
+        }, true) // rememberMe defaults to true
       })
 
       await waitFor(() => {

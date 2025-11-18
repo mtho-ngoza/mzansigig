@@ -45,6 +45,7 @@ export const mockAuthContextValue: AuthContextType = {
   updateUser: jest.fn(),
   refreshUser: jest.fn(),
   sendPasswordReset: jest.fn(),
+  resetIdleTimer: jest.fn(),
 }
 
 // Mock location context

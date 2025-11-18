@@ -21,6 +21,7 @@ export function LoginForm({ onForgotPassword }: LoginFormProps = {}) {
   const [errors, setErrors] = useState<Partial<LoginCredentials>>({})
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [showProfileCompletion, setShowProfileCompletion] = useState(false)
+  const [rememberMe, setRememberMe] = useState(true)
 
   // TODO: Error messages from failed login attempts are not displaying properly
   // The setMessage call happens but state doesn't update - possibly related to
@@ -80,7 +81,7 @@ export function LoginForm({ onForgotPassword }: LoginFormProps = {}) {
       password: formData.password
     }
 
-    const result = await login(sanitizedCredentials)
+    const result = await login(sanitizedCredentials, rememberMe)
 
     // Use setTimeout to ensure state update happens after any re-renders from AuthContext
     setTimeout(() => {
@@ -154,8 +155,18 @@ export function LoginForm({ onForgotPassword }: LoginFormProps = {}) {
         autoComplete="current-password"
       />
 
-      {onForgotPassword && (
-        <div className="text-right">
+      <div className="flex items-center justify-between">
+        <label className="flex items-center space-x-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            className="w-4 h-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+          />
+          <span className="text-sm text-gray-700">Remember me</span>
+        </label>
+
+        {onForgotPassword && (
           <button
             type="button"
             onClick={onForgotPassword}
@@ -163,8 +174,9 @@ export function LoginForm({ onForgotPassword }: LoginFormProps = {}) {
           >
             Forgot password?
           </button>
-        </div>
-      )}
+        )}
+      </div>
+
 
       {message && (
         <div className={`p-3 rounded-md text-sm ${

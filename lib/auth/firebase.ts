@@ -7,7 +7,10 @@ import {
   User as FirebaseUser,
   GoogleAuthProvider,
   signInWithPopup,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  setPersistence,
+  browserSessionPersistence,
+  browserLocalPersistence
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, query, collection, where, getDocs } from 'firebase/firestore';
 import { FirebaseError } from 'firebase/app';
@@ -127,8 +130,12 @@ export class FirebaseAuthService {
     }
   }
 
-  static async signIn(credentials: LoginCredentials): Promise<User> {
+  static async signIn(credentials: LoginCredentials, rememberMe: boolean = true): Promise<User> {
     try {
+      // Set persistence based on rememberMe option
+      // LOCAL = persist across browser sessions, SESSION = only current session
+      await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+
       // Step 1: Sign in with Firebase Auth
       const userCredential = await signInWithEmailAndPassword(
         auth,
