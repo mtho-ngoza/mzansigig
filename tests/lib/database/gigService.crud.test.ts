@@ -5,6 +5,17 @@ import { Gig, GigApplication } from '@/types/gig'
 // Mock FirestoreService
 jest.mock('@/lib/database/firestore')
 jest.mock('@/lib/utils/locationUtils')
+jest.mock('@/lib/utils/gigValidation', () => ({
+  sanitizeGigText: jest.fn((text: string) => text.trim()),
+  normalizeSkills: jest.fn((skills: string[]) => skills.map(s => s.toLowerCase())),
+  GIG_TEXT_LIMITS: {
+    TITLE_MAX: 100,
+    DESCRIPTION_MAX: 2000,
+    OTHER_CATEGORY_MAX: 100,
+    TITLE_MIN: 10,
+    DESCRIPTION_MIN: 30
+  }
+}))
 
 describe('GigService - CRUD Operations', () => {
   const mockGigId = 'gig-123'
@@ -53,8 +64,9 @@ describe('GigService - CRUD Operations', () => {
           expect(FirestoreService.create).toHaveBeenCalledWith(
             'gigs',
             expect.objectContaining({
-              title: mockGigData.title,
-              description: mockGigData.description,
+              title: mockGigData.title.trim(), // Sanitized
+              description: mockGigData.description.trim(), // Sanitized
+              skillsRequired: ['javascript', 'react', 'typescript'], // Normalized to lowercase
               category: mockGigData.category,
               budget: mockGigData.budget,
               employerId: mockGigData.employerId,

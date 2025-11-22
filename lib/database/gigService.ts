@@ -9,6 +9,7 @@ import {
 } from '@/lib/utils/locationUtils';
 import type { DocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { ConfigService } from './configService';
+import { sanitizeGigText, normalizeSkills, GIG_TEXT_LIMITS } from '@/lib/utils/gigValidation';
 
 // Application limits to prevent spam (configurable via admin)
 // Fallback to 20 if config not available
@@ -17,8 +18,12 @@ const MAX_ACTIVE_APPLICATIONS_PER_WORKER = 20;
 export class GigService {
   // Gig CRUD operations
   static async createGig(gigData: Omit<Gig, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-    const gig = {
+    // Sanitize text inputs to prevent XSS
+    const sanitizedData = {
       ...gigData,
+      title: sanitizeGigText(gigData.title, GIG_TEXT_LIMITS.TITLE_MAX),
+      description: sanitizeGigText(gigData.description, GIG_TEXT_LIMITS.DESCRIPTION_MAX),
+      skillsRequired: normalizeSkills(gigData.skillsRequired),
       createdAt: new Date(),
       updatedAt: new Date(),
       applicants: [],
@@ -26,14 +31,14 @@ export class GigService {
     };
 
     // Add coordinates if location is provided
-    if (gigData.location && !gigData.coordinates) {
+    if (gigData.location && !sanitizedData.coordinates) {
       const coordinates = getCityCoordinates(gigData.location);
       if (coordinates) {
-        gig.coordinates = coordinates;
+        sanitizedData.coordinates = coordinates;
       }
     }
 
-    return await FirestoreService.create('gigs', gig);
+    return await FirestoreService.create('gigs', sanitizedData);
   }
 
   static async getGigById(id: string): Promise<Gig | null> {
@@ -41,8 +46,21 @@ export class GigService {
   }
 
   static async updateGig(id: string, updates: Partial<Gig>): Promise<void> {
+    // Sanitize text inputs if they're being updated
+    const sanitizedUpdates: Partial<Gig> = { ...updates };
+
+    if (updates.title !== undefined) {
+      sanitizedUpdates.title = sanitizeGigText(updates.title, GIG_TEXT_LIMITS.TITLE_MAX);
+    }
+    if (updates.description !== undefined) {
+      sanitizedUpdates.description = sanitizeGigText(updates.description, GIG_TEXT_LIMITS.DESCRIPTION_MAX);
+    }
+    if (updates.skillsRequired !== undefined) {
+      sanitizedUpdates.skillsRequired = normalizeSkills(updates.skillsRequired);
+    }
+
     const updateData = {
-      ...updates,
+      ...sanitizedUpdates,
       updatedAt: new Date()
     };
 
