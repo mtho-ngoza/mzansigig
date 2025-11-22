@@ -6,16 +6,16 @@ import { useAuth } from '@/contexts/AuthContext'
 import PlatformConfigDashboard from '@/components/admin/PlatformConfigDashboard'
 
 export default function PlatformConfigPage() {
-  const { user, loading } = useAuth()
+  const { user, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
-    if (!loading && (!user || user.userType !== 'admin')) {
+    if (!isLoading && (!user || user.userType !== 'admin')) {
       router.push('/')
     }
-  }, [user, loading, router])
+  }, [user, isLoading, router])
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-gray-600">Loading...</div>
