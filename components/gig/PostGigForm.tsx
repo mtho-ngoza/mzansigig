@@ -395,6 +395,24 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
         ...(formData.maxApplicants.trim() && { maxApplicants: parseInt(formData.maxApplicants) })
       }
 
+      // Save category feedback if "Other" was selected
+      if (formData.category === 'Other' && formData.otherCategoryDescription.trim()) {
+        try {
+          await fetch('/api/category-feedback', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              suggestion: formData.otherCategoryDescription.trim(),
+              userId: user.id,
+              timestamp: new Date().toISOString()
+            })
+          })
+        } catch (error) {
+          // Don't fail gig posting if feedback fails
+          console.error('Failed to save category feedback:', error)
+        }
+      }
+
       if (editGig) {
         // Update existing gig
         await GigService.updateGig(editGig.id, gigData)
