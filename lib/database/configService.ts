@@ -6,6 +6,18 @@ import {
 } from '@/types/platformConfig'
 
 /**
+ * Sanitize user input to prevent XSS in audit logs
+ */
+function sanitizeString(input: string): string {
+  if (!input) return ''
+  return input
+    .trim()
+    .replace(/<[^>]*>/g, '') // Remove HTML tags
+    .replace(/[<>'"]/g, '') // Remove potentially dangerous characters
+    .slice(0, 100) // Limit length
+}
+
+/**
  * ConfigService - Manages platform configuration stored in Firestore
  * Provides in-memory caching for performance with auto-refresh
  */
@@ -66,11 +78,19 @@ export class ConfigService {
   /**
    * Update platform configuration (admin only)
    * Validates values against constraints before saving
+   * Logs changes to audit trail
    */
   static async updateConfig(
     updates: Partial<Omit<PlatformConfig, 'id' | 'updatedAt' | 'updatedBy'>>,
     adminUserId: string
   ): Promise<void> {
+    // Sanitize admin user ID to prevent XSS
+    const sanitizedAdminId = sanitizeString(adminUserId)
+
+    if (!sanitizedAdminId) {
+      throw new Error('Invalid admin user ID')
+    }
+
     // Validate all updates against constraints
     for (const [key, value] of Object.entries(updates)) {
       if (key in CONFIG_CONSTRAINTS) {
@@ -86,13 +106,23 @@ export class ConfigService {
       }
     }
 
+    const now = new Date()
     const updateData = {
       ...updates,
-      updatedAt: new Date(),
-      updatedBy: adminUserId,
+      updatedAt: now,
+      updatedBy: sanitizedAdminId,
     }
 
+    // Update configuration
     await FirestoreService.update(this.COLLECTION, this.CONFIG_DOC_ID, updateData)
+
+    // Create audit log entry
+    try {
+      await this.logConfigChange(sanitizedAdminId, updates, now)
+    } catch (error) {
+      // Don't fail the update if audit logging fails
+      console.error('Failed to create audit log:', error)
+    }
 
     // Invalidate cache
     this.cache = null
@@ -146,6 +176,40 @@ export class ConfigService {
    */
   static async resetToDefaults(adminUserId: string): Promise<void> {
     await this.updateConfig(DEFAULT_PLATFORM_CONFIG, adminUserId)
+  }
+
+  /**
+   * Log configuration changes to audit trail
+   * Stores who changed what and when
+   */
+  private static async logConfigChange(
+    adminUserId: string,
+    changes: Partial<Omit<PlatformConfig, 'id' | 'updatedAt' | 'updatedBy'>>,
+    timestamp: Date
+  ): Promise<void> {
+    const auditEntry = {
+      adminUserId,
+      changes,
+      timestamp,
+      action: 'update_config',
+    }
+
+    await FirestoreService.create('configAuditLog', auditEntry)
+  }
+
+  /**
+   * Get configuration change history (admin only)
+   * Returns audit log entries
+   */
+  static async getAuditLog(limit: number = 50): Promise<any[]> {
+    try {
+      // This would need a query implementation in FirestoreService
+      // For now, return empty array as placeholder
+      return []
+    } catch (error) {
+      console.error('Failed to fetch audit log:', error)
+      return []
+    }
   }
 
   /**

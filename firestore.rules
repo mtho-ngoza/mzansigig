@@ -764,6 +764,20 @@ service cloud.firestore {
     }
 
     // ========================================
+    // Config Audit Log (Admin Only)
+    // ========================================
+    match /configAuditLog/{logId} {
+      // Only admins can read audit logs
+      allow read: if isAdmin();
+
+      // Only admins can create audit log entries (via ConfigService)
+      allow create: if isAdmin();
+
+      // No updates or deletes - audit logs are immutable
+      allow update, delete: if false;
+    }
+
+    // ========================================
     // Default Deny All Other Collections
     // Security by default: deny all access to undefined collections
     // ========================================
