@@ -9,6 +9,13 @@ import { ProfileService } from '@/lib/database/profileService'
 import { PortfolioItem } from '@/types/auth'
 import { isInformalWorker, getProfileSectionConfig } from '@/lib/utils/userProfile'
 import { useToast } from '@/contexts/ToastContext'
+import {
+  VALIDATION_LIMITS,
+  QUANTITY_LIMITS,
+  sanitizeText,
+  enforceLength,
+  canAddItem,
+} from '@/lib/utils/profileValidation'
 
 interface PortfolioManagerProps {
   onBack?: () => void
@@ -83,7 +90,20 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
   }
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    // Enforce length limits for title and description
+    if (field === 'title') {
+      setFormData(prev => ({
+        ...prev,
+        title: enforceLength(value, VALIDATION_LIMITS.PORTFOLIO_TITLE_MAX_LENGTH)
+      }))
+    } else if (field === 'description') {
+      setFormData(prev => ({
+        ...prev,
+        description: enforceLength(value, VALIDATION_LIMITS.PORTFOLIO_DESCRIPTION_MAX_LENGTH)
+      }))
+    } else {
+      setFormData(prev => ({ ...prev, [field]: value }))
+    }
   }
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,9 +128,22 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.title.trim() || !formData.description.trim() || !formData.category) {
+    // Sanitize inputs
+    const sanitizedTitle = sanitizeText(formData.title)
+    const sanitizedDescription = sanitizeText(formData.description)
+
+    if (!sanitizedTitle || !sanitizedDescription || !formData.category) {
       warning('Please fill in all required fields.')
       return
+    }
+
+    // Check if we can add more portfolio items (only when adding new, not editing)
+    if (!editingItem) {
+      const canAdd = canAddItem(currentPortfolio.length, QUANTITY_LIMITS.MAX_PORTFOLIO_ITEMS)
+      if (!canAdd.canAdd) {
+        showError(canAdd.message || `Maximum ${QUANTITY_LIMITS.MAX_PORTFOLIO_ITEMS} portfolio items allowed`)
+        return
+      }
     }
 
     setIsSubmitting(true)
@@ -126,18 +159,18 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
       }
 
       const portfolioData: Omit<PortfolioItem, 'id'> = {
-        title: formData.title.trim(),
-        description: formData.description.trim(),
+        title: sanitizedTitle,
+        description: sanitizedDescription,
         category: formData.category,
         technologies: formData.technologies.trim()
-          ? formData.technologies.split(',').map(tech => tech.trim()).filter(tech => tech)
+          ? formData.technologies.split(',').map(tech => sanitizeText(tech)).filter(tech => tech)
           : [],
         completedAt: formData.completedAt ? new Date(formData.completedAt) : new Date()
       }
 
       // Only add optional fields if they have values
       if (formData.projectUrl && formData.projectUrl.trim()) {
-        portfolioData.projectUrl = formData.projectUrl.trim()
+        portfolioData.projectUrl = sanitizeText(formData.projectUrl)
       }
 
       if (imageUrl) {

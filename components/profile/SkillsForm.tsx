@@ -8,6 +8,12 @@ import { useAuth } from '@/contexts/AuthContext'
 import { ProfileService } from '@/lib/database/profileService'
 import { getProfileSectionConfig, isInformalWorker } from '@/lib/utils/userProfile'
 import { useToast } from '@/contexts/ToastContext'
+import {
+  VALIDATION_LIMITS,
+  QUANTITY_LIMITS,
+  sanitizeText,
+  canAddItem,
+} from '@/lib/utils/profileValidation'
 
 interface SkillsFormProps {
   onBack?: () => void
@@ -64,14 +70,31 @@ export default function SkillsForm({ onBack }: SkillsFormProps) {
   const config = getProfileSectionConfig(user, 'skills')
 
   const addSkill = (skill: string) => {
-    const trimmedSkill = skill.trim()
-    if (trimmedSkill && !formData.skills.includes(trimmedSkill)) {
+    const sanitized = sanitizeText(skill)
+
+    // Check if we can add more skills
+    const canAdd = canAddItem(formData.skills.length, QUANTITY_LIMITS.MAX_SKILLS)
+    if (!canAdd.canAdd) {
+      showError(canAdd.message || `Maximum ${QUANTITY_LIMITS.MAX_SKILLS} skills allowed`)
+      return
+    }
+
+    // Check skill length
+    if (sanitized.length > VALIDATION_LIMITS.SKILL_MAX_LENGTH) {
+      showError(`Skill name must be less than ${VALIDATION_LIMITS.SKILL_MAX_LENGTH} characters`)
+      return
+    }
+
+    // Add skill if valid and not duplicate
+    if (sanitized && !formData.skills.includes(sanitized)) {
       setFormData(prev => ({
         ...prev,
-        skills: [...prev.skills, trimmedSkill]
+        skills: [...prev.skills, sanitized]
       }))
+      setNewSkill('')
+    } else if (formData.skills.includes(sanitized)) {
+      showError('This skill is already added')
     }
-    setNewSkill('')
   }
 
   const removeSkill = (skillToRemove: string) => {
@@ -91,14 +114,31 @@ export default function SkillsForm({ onBack }: SkillsFormProps) {
   }
 
   const addCertification = () => {
-    const trimmedCert = newCertification.trim()
-    if (trimmedCert && !formData.certifications.includes(trimmedCert)) {
+    const sanitized = sanitizeText(newCertification)
+
+    // Check if we can add more certifications
+    const canAdd = canAddItem(formData.certifications.length, QUANTITY_LIMITS.MAX_CERTIFICATIONS)
+    if (!canAdd.canAdd) {
+      showError(canAdd.message || `Maximum ${QUANTITY_LIMITS.MAX_CERTIFICATIONS} certifications allowed`)
+      return
+    }
+
+    // Check certification length
+    if (sanitized.length > VALIDATION_LIMITS.CERTIFICATION_MAX_LENGTH) {
+      showError(`Certification name must be less than ${VALIDATION_LIMITS.CERTIFICATION_MAX_LENGTH} characters`)
+      return
+    }
+
+    // Add certification if valid and not duplicate
+    if (sanitized && !formData.certifications.includes(sanitized)) {
       setFormData(prev => ({
         ...prev,
-        certifications: [...prev.certifications, trimmedCert]
+        certifications: [...prev.certifications, sanitized]
       }))
+      setNewCertification('')
+    } else if (formData.certifications.includes(sanitized)) {
+      showError('This certification is already added')
     }
-    setNewCertification('')
   }
 
   const removeCertification = (certToRemove: string) => {

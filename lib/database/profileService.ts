@@ -3,6 +3,7 @@ import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage
 import { v4 as uuidv4 } from 'uuid'
 import { db, storage } from '@/lib/firebase'
 import { User, PortfolioItem } from '@/types/auth'
+import { sanitizeText, validatePhoneNumber, validateUrl } from '@/lib/utils/profileValidation'
 
 export class ProfileService {
   /**
@@ -183,18 +184,83 @@ export class ProfileService {
     }
   }
 
+  /**
+   * Sanitize text fields to prevent XSS attacks
+   * Server-side validation as defense-in-depth
+   */
+  private static sanitizeProfileUpdates(updates: Partial<User>): Record<string, unknown> {
+    const cleanUpdates: Record<string, unknown> = {}
+
+    // Text fields that need sanitization
+    const textFields = ['firstName', 'lastName', 'bio', 'experience', 'education',
+                        'availability', 'experienceYears', 'equipmentOwnership']
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === null) {
+        return // Skip undefined/null values
+      }
+
+      // Sanitize text fields
+      if (textFields.includes(key) && typeof value === 'string') {
+        cleanUpdates[key] = sanitizeText(value)
+      }
+      // Sanitize socialLinks object
+      else if (key === 'socialLinks' && typeof value === 'object' && value !== null) {
+        const socialLinks = value as Record<string, string>
+        const sanitizedLinks: Record<string, string> = {}
+
+        Object.entries(socialLinks).forEach(([platform, url]) => {
+          const sanitized = sanitizeText(url)
+          const validation = validateUrl(sanitized)
+          if (validation.isValid && sanitized) {
+            sanitizedLinks[platform] = sanitized
+          }
+        })
+
+        if (Object.keys(sanitizedLinks).length > 0) {
+          cleanUpdates[key] = sanitizedLinks
+        }
+      }
+      // Validate phone number
+      else if (key === 'phone' && typeof value === 'string') {
+        const validation = validatePhoneNumber(value)
+        if (validation.isValid) {
+          cleanUpdates[key] = value.trim()
+        } else {
+          throw new Error(validation.message || 'Invalid phone number')
+        }
+      }
+      // Validate location (sanitize the string)
+      else if (key === 'location' && typeof value === 'string') {
+        cleanUpdates[key] = sanitizeText(value)
+      }
+      // Validate workSector enum
+      else if (key === 'workSector' && typeof value === 'string') {
+        const validSectors = ['professional', 'informal']
+        if (validSectors.includes(value)) {
+          cleanUpdates[key] = value
+        } else {
+          throw new Error('Invalid work sector')
+        }
+      }
+      // Pass through other fields (arrays, numbers, booleans, etc.)
+      else {
+        cleanUpdates[key] = value
+      }
+    })
+
+    return cleanUpdates
+  }
+
   static async updateProfile(userId: string, updates: Partial<User>): Promise<void> {
     try {
-      // Filter out undefined values to prevent Firestore errors
-      const cleanUpdates: Record<string, unknown> = { updatedAt: new Date() }
+      // Sanitize and validate all updates (defense-in-depth)
+      const sanitizedUpdates = this.sanitizeProfileUpdates(updates)
 
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          cleanUpdates[key] = value
-        }
-      })
+      // Add timestamp
+      sanitizedUpdates.updatedAt = new Date()
 
-      await updateDoc(doc(db, 'users', userId), cleanUpdates)
+      await updateDoc(doc(db, 'users', userId), sanitizedUpdates)
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to update profile')
     }

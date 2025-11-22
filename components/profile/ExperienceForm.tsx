@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { ProfileService } from '@/lib/database/profileService'
 import { useToast } from '@/contexts/ToastContext'
 import { isInformalWorker } from '@/lib/utils/userProfile'
+import { RATE_LIMITS, validateHourlyRate } from '@/lib/utils/profileValidation'
 
 interface ExperienceFormProps {
   onBack?: () => void
@@ -77,6 +78,16 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate hourly rate if provided
+    if (formData.hourlyRate && formData.hourlyRate.trim()) {
+      const rateValidation = validateHourlyRate(formData.hourlyRate)
+      if (!rateValidation.isValid) {
+        showError(rateValidation.message || 'Invalid hourly rate')
+        return
+      }
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -200,7 +211,8 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
                     onChange={(e) => handleInputChange('hourlyRate', e.target.value)}
                     placeholder="500"
                     className="pl-8"
-                    min="50"
+                    min={RATE_LIMITS.MIN_HOURLY_RATE}
+                    max={RATE_LIMITS.MAX_HOURLY_RATE}
                     step="50"
                   />
                 </div>

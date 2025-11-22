@@ -8,6 +8,13 @@ import { useAuth } from '@/contexts/AuthContext'
 import { ProfileService } from '@/lib/database/profileService'
 import { useToast } from '@/contexts/ToastContext'
 import LocationAutocomplete from '@/components/location/LocationAutocomplete'
+import {
+  VALIDATION_LIMITS,
+  sanitizeText,
+  validatePhoneNumber,
+  validateUrl,
+  enforceLength,
+} from '@/lib/utils/profileValidation'
 
 interface BasicInfoFormProps {
   onBack?: () => void
@@ -19,6 +26,7 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showWorkSectorWarning, setShowWorkSectorWarning] = useState(false)
   const [pendingWorkSector, setPendingWorkSector] = useState<string>('')
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -37,6 +45,15 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
   if (!user) return null
 
   const handleInputChange = (field: string, value: string) => {
+    // Clear validation error for this field
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev }
+        delete newErrors[field]
+        return newErrors
+      })
+    }
+
     if (field.startsWith('socialLinks.')) {
       const socialField = field.split('.')[1]
       setFormData(prev => ({
@@ -45,6 +62,18 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
           ...prev.socialLinks,
           [socialField]: value
         }
+      }))
+    } else if (field === 'bio') {
+      // Enforce bio length limit
+      setFormData(prev => ({
+        ...prev,
+        bio: enforceLength(value, VALIDATION_LIMITS.BIO_MAX_LENGTH)
+      }))
+    } else if (field === 'firstName' || field === 'lastName') {
+      // Real-time sanitization for name fields (prevent XSS display)
+      setFormData(prev => ({
+        ...prev,
+        [field]: sanitizeText(value)
       }))
     } else {
       setFormData(prev => ({ ...prev, [field]: value }))
@@ -75,20 +104,55 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validate inputs before submission
+    const errors: Record<string, string> = {}
+
+    // Validate phone number
+    const phoneValidation = validatePhoneNumber(formData.phone)
+    if (!phoneValidation.isValid) {
+      errors.phone = phoneValidation.message || 'Invalid phone number'
+    }
+
+    // Validate social links (URLs)
+    const linkedinValidation = validateUrl(formData.socialLinks.linkedin)
+    if (!linkedinValidation.isValid) {
+      errors.linkedin = linkedinValidation.message || 'Invalid LinkedIn URL'
+    }
+
+    const websiteValidation = validateUrl(formData.socialLinks.website)
+    if (!websiteValidation.isValid) {
+      errors.website = websiteValidation.message || 'Invalid website URL'
+    }
+
+    const githubValidation = validateUrl(formData.socialLinks.github)
+    if (!githubValidation.isValid) {
+      errors.github = githubValidation.message || 'Invalid GitHub URL'
+    }
+
+    // If there are validation errors, show them and don't submit
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors)
+      showError('Please fix validation errors before saving')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
-      // Filter out empty social links
-      const socialLinks = Object.fromEntries(
-        Object.entries(formData.socialLinks).filter(([, value]) => value.trim() !== '')
+      // Sanitize and filter out empty social links
+      const sanitizedSocialLinks = Object.fromEntries(
+        Object.entries(formData.socialLinks)
+          .map(([key, value]) => [key, sanitizeText(value)])
+          .filter(([, value]) => value.trim() !== '')
       )
 
       const updateData: Record<string, unknown> = {
-        firstName: formData.firstName.trim(),
-        lastName: formData.lastName.trim(),
+        firstName: sanitizeText(formData.firstName),
+        lastName: sanitizeText(formData.lastName),
         phone: formData.phone.trim(),
         location: formData.location,
-        bio: formData.bio.trim()
+        bio: sanitizeText(formData.bio)
       }
 
       // Add workSector only for job-seekers
@@ -110,8 +174,8 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
       }
 
       // Only add socialLinks if there are any
-      if (Object.keys(socialLinks).length > 0) {
-        updateData.socialLinks = socialLinks
+      if (Object.keys(sanitizedSocialLinks).length > 0) {
+        updateData.socialLinks = sanitizedSocialLinks
       }
 
       await ProfileService.updateProfile(user.id, updateData)
@@ -213,7 +277,11 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
                     onChange={(e) => handleInputChange('phone', e.target.value)}
                     placeholder="+27 82 123 4567"
                     required
+                    className={validationErrors.phone ? 'border-red-500' : ''}
                   />
+                  {validationErrors.phone && (
+                    <p className="mt-1 text-sm text-red-600">{validationErrors.phone}</p>
+                  )}
                 </div>
                 <div>
                   <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-2">
@@ -264,9 +332,11 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
                   onChange={(e) => handleInputChange('bio', e.target.value)}
                   placeholder={`Tell potential ${user.userType === 'job-seeker' ? 'employers' : 'freelancers'} about yourself, your experience, and what makes you unique...`}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                  maxLength={VALIDATION_LIMITS.BIO_MAX_LENGTH}
                 />
-                <p className="mt-1 text-sm text-gray-500">
-                  {formData.bio.length}/500 characters
+                <p className={`mt-1 text-sm ${formData.bio.length >= VALIDATION_LIMITS.BIO_MAX_LENGTH ? 'text-red-600' : 'text-gray-500'}`}>
+                  {formData.bio.length}/{VALIDATION_LIMITS.BIO_MAX_LENGTH} characters
+                  {formData.bio.length >= VALIDATION_LIMITS.BIO_MAX_LENGTH && ' (maximum reached)'}
                 </p>
               </div>
 
@@ -285,7 +355,11 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
                       value={formData.socialLinks.linkedin}
                       onChange={(e) => handleInputChange('socialLinks.linkedin', e.target.value)}
                       placeholder="https://linkedin.com/in/yourprofile"
+                      className={validationErrors.linkedin ? 'border-red-500' : ''}
                     />
+                    {validationErrors.linkedin && (
+                      <p className="mt-1 text-sm text-red-600">{validationErrors.linkedin}</p>
+                    )}
                   </div>
 
                   <div>
@@ -298,7 +372,11 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
                       value={formData.socialLinks.website}
                       onChange={(e) => handleInputChange('socialLinks.website', e.target.value)}
                       placeholder="https://yourwebsite.com"
+                      className={validationErrors.website ? 'border-red-500' : ''}
                     />
+                    {validationErrors.website && (
+                      <p className="mt-1 text-sm text-red-600">{validationErrors.website}</p>
+                    )}
                   </div>
 
                   {user.userType === 'job-seeker' && (
@@ -312,7 +390,11 @@ export default function BasicInfoForm({ onBack }: BasicInfoFormProps) {
                         value={formData.socialLinks.github}
                         onChange={(e) => handleInputChange('socialLinks.github', e.target.value)}
                         placeholder="https://github.com/yourusername"
+                        className={validationErrors.github ? 'border-red-500' : ''}
                       />
+                      {validationErrors.github && (
+                        <p className="mt-1 text-sm text-red-600">{validationErrors.github}</p>
+                      )}
                     </div>
                   )}
                 </div>
