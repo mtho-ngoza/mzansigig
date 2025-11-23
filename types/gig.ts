@@ -30,6 +30,11 @@ export interface GigApplication {
   applicantName: string
   message?: string // Optional brief message from applicant
   proposedRate: number
+  employerId?: string // ID of the gig employer (for efficient queries)
+  // Structured application fields (for physical work)
+  experience?: string // Years of experience (e.g., "1-3", "5-10")
+  availability?: string // When they can start (e.g., "immediately", "within-week")
+  equipment?: string // Equipment ownership (e.g., "fully-equipped", "no-equipment")
   status: 'pending' | 'accepted' | 'rejected' | 'funded' | 'completed' | 'withdrawn'
   paymentStatus?: 'unpaid' | 'paid' | 'in_escrow' | 'released' | 'disputed'
   paymentId?: string // Reference to the payment record
