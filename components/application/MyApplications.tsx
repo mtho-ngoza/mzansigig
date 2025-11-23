@@ -9,6 +9,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { GigApplication } from '@/types/gig'
 import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
+import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
 
 interface MyApplicationsProps {
   onBack?: () => void
@@ -42,6 +43,7 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
     gigTitle: ''
   })
   const [requestingCompletion, setRequestingCompletion] = useState(false)
+  const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const loadApplications = async () => {
@@ -230,6 +232,18 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
     const diffMs = date.getTime() - now.getTime()
     const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
     return Math.max(0, diffDays)
+  }
+
+  const toggleMessageExpansion = (applicationId: string) => {
+    setExpandedMessages(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(applicationId)) {
+        newSet.delete(applicationId)
+      } else {
+        newSet.add(applicationId)
+      }
+      return newSet
+    })
   }
 
   // Filter applications based on selected status
@@ -457,9 +471,17 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                     <div className="mb-4">
                       <span className="text-sm text-gray-500 block mb-2">Application Message:</span>
                       <div className="bg-gray-50 p-3 rounded-lg">
-                        <p className="text-sm text-gray-700 line-clamp-3">
-                          {application.message}
+                        <p className={`text-sm text-gray-700 ${!expandedMessages.has(application.id) ? 'line-clamp-3' : ''}`}>
+                          {sanitizeForDisplay(application.message)}
                         </p>
+                        {application.message.length > 150 && (
+                          <button
+                            onClick={() => toggleMessageExpansion(application.id)}
+                            className="text-xs text-primary-600 hover:text-primary-700 mt-2 font-medium"
+                          >
+                            {expandedMessages.has(application.id) ? 'Show less' : 'Read more'}
+                          </button>
+                        )}
                       </div>
                     </div>
                   )}
@@ -596,7 +618,7 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                               {application.completionDisputeReason && (
                                 <div className="mt-3 bg-red-100 rounded p-3 border border-red-300">
                                   <p className="text-sm font-semibold text-red-900 mb-1">Dispute Reason:</p>
-                                  <p className="text-sm text-red-800">{application.completionDisputeReason}</p>
+                                  <p className="text-sm text-red-800">{sanitizeForDisplay(application.completionDisputeReason)}</p>
                                 </div>
                               )}
                               <p className="mt-3 text-xs text-red-700">
