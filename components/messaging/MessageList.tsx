@@ -3,6 +3,7 @@
 import React from 'react'
 import { Message } from '@/types/messaging'
 import { format, isToday, isYesterday } from 'date-fns'
+import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
 
 interface MessageListProps {
   messages: Message[]
@@ -173,7 +174,7 @@ function MessageBubble({ message, isOwn, isSystem, showTimestamp }: MessageBubbl
           {/* Message content */}
           {message.content && (
             <p className="text-sm whitespace-pre-wrap break-words">
-              {message.content}
+              {sanitizeForDisplay(message.content)}
             </p>
           )}
         </div>

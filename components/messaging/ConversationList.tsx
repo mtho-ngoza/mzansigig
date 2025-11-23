@@ -4,6 +4,8 @@ import React, { useState } from 'react'
 import { ConversationPreview } from '@/types/messaging'
 import { formatDistanceToNow } from 'date-fns'
 import { useMessaging } from '@/contexts/MessagingContext'
+import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
+import { sanitizeUsername } from '@/lib/utils/messageValidation'
 
 interface ConversationListProps {
   conversations: ConversationPreview[]
@@ -113,7 +115,8 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
         return 'Application status changed'
       default:
         const prefix = isFromOther ? '' : 'You: '
-        return `${prefix}${content.length > 40 ? content.substring(0, 40) + '...' : content}`
+        const sanitizedContent = sanitizeForDisplay(content)
+        return `${prefix}${sanitizedContent.length > 40 ? sanitizedContent.substring(0, 40) + '...' : sanitizedContent}`
     }
   }
 
@@ -161,13 +164,13 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
           {conversation.otherParticipant.profilePhoto ? (
             <img
               src={conversation.otherParticipant.profilePhoto}
-              alt={conversation.otherParticipant.userName}
+              alt={sanitizeUsername(conversation.otherParticipant.userName)}
               className="w-10 h-10 rounded-full object-cover"
             />
           ) : (
             <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
               <span className="text-primary-600 font-medium text-sm">
-                {conversation.otherParticipant.userName.charAt(0).toUpperCase()}
+                {sanitizeUsername(conversation.otherParticipant.userName).charAt(0).toUpperCase()}
               </span>
             </div>
           )}
@@ -177,7 +180,7 @@ function ConversationItem({ conversation, isActive, onClick }: ConversationItemP
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-medium text-gray-900 truncate">
-              {conversation.otherParticipant.userName}
+              {sanitizeUsername(conversation.otherParticipant.userName)}
             </h3>
             <div className="flex items-center space-x-1">
               {conversation.unreadCount > 0 && (
