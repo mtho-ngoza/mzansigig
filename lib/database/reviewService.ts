@@ -2,6 +2,7 @@ import { Review, Gig } from '@/types/gig'
 import { FirestoreService } from './firestore'
 import { GigService } from './gigService'
 import { ConfigService } from './configService'
+import { sanitizeReviewComment, validateRating } from '@/lib/utils/reviewValidation'
 
 /**
  * ReviewService - Handles all review and rating operations
@@ -17,10 +18,15 @@ export class ReviewService {
   static async createReview(
     reviewData: Omit<Review, 'id' | 'createdAt' | 'isRevealed' | 'reviewDeadline' | 'counterReviewId'>
   ): Promise<string> {
-    // Validate rating is between 1 and 5
-    if (reviewData.rating < 1 || reviewData.rating > 5) {
-      throw new Error('Rating must be between 1 and 5')
+    // Validate and sanitize input
+    const ratingValidation = validateRating(reviewData.rating)
+    if (!ratingValidation.isValid) {
+      throw new Error(ratingValidation.message || 'Invalid rating')
     }
+
+    // Sanitize comment
+    const sanitizedComment = sanitizeReviewComment(reviewData.comment, 1000)
+    reviewData = { ...reviewData, comment: sanitizedComment }
 
     // Verify gig exists and is completed
     const gig = await GigService.getGigById(reviewData.gigId)
@@ -155,10 +161,12 @@ export class ReviewService {
 
   /**
    * Update a review
+   * Includes authorization check to ensure reviewer owns the review
    */
   static async updateReview(
     reviewId: string,
-    updates: Partial<Omit<Review, 'id' | 'createdAt'>>
+    userId: string,
+    updates: Partial<Omit<Review, 'id' | 'createdAt' | 'gigId' | 'reviewerId' | 'revieweeId' | 'type'>>
   ): Promise<void> {
     // Validate rating if being updated
     if (updates.rating !== undefined && (updates.rating < 1 || updates.rating > 5)) {
@@ -170,21 +178,37 @@ export class ReviewService {
       throw new Error('Review not found')
     }
 
+    // Authorization check: ensure the user owns this review
+    if (review.reviewerId !== userId) {
+      throw new Error('Unauthorized: You can only update your own reviews')
+    }
+
+    // Sanitize comment if being updated
+    if (updates.comment !== undefined) {
+      updates.comment = sanitizeReviewComment(updates.comment, 1000)
+    }
+
     await FirestoreService.update(this.COLLECTION, reviewId, updates)
 
-    // Update user rating if rating changed
-    if (updates.rating !== undefined) {
+    // Update user rating if rating or comment changed
+    if (updates.rating !== undefined || updates.comment !== undefined) {
       await this.updateUserRating(review.revieweeId)
     }
   }
 
   /**
    * Delete a review
+   * Includes authorization check to ensure reviewer owns the review
    */
-  static async deleteReview(reviewId: string): Promise<void> {
+  static async deleteReview(reviewId: string, userId: string): Promise<void> {
     const review = await this.getReviewById(reviewId)
     if (!review) {
       throw new Error('Review not found')
+    }
+
+    // Authorization check: ensure the user owns this review
+    if (review.reviewerId !== userId) {
+      throw new Error('Unauthorized: You can only delete your own reviews')
     }
 
     await FirestoreService.delete(this.COLLECTION, reviewId)
@@ -227,12 +251,16 @@ export class ReviewService {
 
   /**
    * Get average rating for a user
+   * Only includes revealed reviews (mutual review reveal requirement)
    */
   static async getUserRating(userId: string): Promise<{
     rating: number | null
     reviewCount: number
   }> {
-    const reviews = await this.getUserReviews(userId)
+    const allReviews = await this.getUserReviews(userId)
+
+    // Only count revealed reviews for public rating
+    const reviews = allReviews.filter((review) => review.isRevealed)
 
     if (reviews.length === 0) {
       return { rating: null, reviewCount: 0 }
@@ -268,13 +296,17 @@ export class ReviewService {
 
   /**
    * Get review statistics for a user
+   * Only includes revealed reviews (mutual review reveal requirement)
    */
   static async getUserReviewStats(userId: string): Promise<{
     averageRating: number | null
     totalReviews: number
     ratingDistribution: { [key: number]: number }
   }> {
-    const reviews = await this.getUserReviews(userId)
+    const allReviews = await this.getUserReviews(userId)
+
+    // Only count revealed reviews for public stats
+    const reviews = allReviews.filter((review) => review.isRevealed)
 
     if (reviews.length === 0) {
       return {
