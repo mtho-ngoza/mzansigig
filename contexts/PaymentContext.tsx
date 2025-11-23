@@ -19,6 +19,7 @@ interface PaymentContextType extends PaymentState {
   // Payment Methods
   addPaymentMethod: (paymentMethodData: Omit<PaymentMethod, 'id' | 'createdAt' | 'updatedAt'>) => Promise<PaymentMethod>
   setDefaultPaymentMethod: (paymentMethodId: string) => Promise<void>
+  deletePaymentMethod: (paymentMethodId: string) => Promise<void>
   refreshPaymentMethods: () => Promise<void>
 
   // Payments
@@ -200,6 +201,18 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
 
     try {
       await PaymentService.setDefaultPaymentMethod(user.id, paymentMethodId)
+      await refreshPaymentMethods()
+    } catch (error: any) {
+      dispatch({ type: 'SET_ERROR', payload: error.message })
+      throw error
+    }
+  }
+
+  const deletePaymentMethod = async (paymentMethodId: string) => {
+    if (!user) throw new Error('User not authenticated')
+
+    try {
+      await PaymentService.deletePaymentMethod(user.id, paymentMethodId)
       await refreshPaymentMethods()
     } catch (error: any) {
       dispatch({ type: 'SET_ERROR', payload: error.message })
@@ -431,6 +444,7 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
     ...state,
     addPaymentMethod,
     setDefaultPaymentMethod,
+    deletePaymentMethod,
     refreshPaymentMethods,
     createPaymentIntent,
     processPayment,

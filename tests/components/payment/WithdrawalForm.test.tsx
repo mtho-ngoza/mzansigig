@@ -48,6 +48,7 @@ const mockPaymentContextValue = {
   error: null,
   addPaymentMethod: jest.fn(),
   setDefaultPaymentMethod: jest.fn(),
+  deletePaymentMethod: jest.fn(),
   refreshPaymentMethods: jest.fn(),
   createPaymentIntent: jest.fn(),
   processPayment: jest.fn(),
@@ -225,7 +226,8 @@ describe('WithdrawalForm', () => {
       renderWithdrawalForm()
 
       expect(screen.getByText(/Minimum: R50.00/)).toBeInTheDocument()
-      expect(screen.getByText(/Maximum: R1000.00/)).toBeInTheDocument()
+      expect(screen.getByText(/Max per transaction: R20000.00/)).toBeInTheDocument()
+      expect(screen.getByText(/Daily limit: R50000.00/)).toBeInTheDocument()
     })
   })
 

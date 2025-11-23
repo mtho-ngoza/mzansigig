@@ -24,6 +24,8 @@ export interface PaymentMethod {
 
   isDefault: boolean
   isVerified: boolean
+  isDeleted?: boolean // Soft delete flag
+  deletedAt?: Date // When the payment method was deleted
   createdAt: Date
   updatedAt?: Date
 }
@@ -199,6 +201,7 @@ export interface PaymentIntent {
   clientSecret?: string
   metadata?: Record<string, any>
   createdAt: Date
+  expiresAt?: Date // Payment intent expiration time (30 minutes from creation)
 }
 
 // Escrow specific types

@@ -1,11 +1,12 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardContent } from '@/components/ui/Card'
 import { usePayment } from '@/contexts/PaymentContext'
 import { useToast } from '@/contexts/ToastContext'
 import { PaymentMethod } from '@/types/payment'
+import { isCardExpiringSoon, isCardExpired } from '@/lib/utils/paymentValidation'
 
 interface PaymentMethodListProps {
   onAddNew?: () => void
@@ -20,8 +21,9 @@ export default function PaymentMethodList({
   selectable = false,
   selectedMethodId
 }: PaymentMethodListProps) {
-  const { paymentMethods, setDefaultPaymentMethod, isLoading } = usePayment()
+  const { paymentMethods, setDefaultPaymentMethod, deletePaymentMethod, isLoading } = usePayment()
   const { success: showSuccess, error: showError } = useToast()
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const getPaymentMethodIcon = (method: PaymentMethod) => {
     switch (method.type) {
@@ -78,7 +80,42 @@ export default function PaymentMethodList({
     }
   }
 
+  const handleDelete = async (methodId: string, methodTitle: string) => {
+    if (!confirm(`Are you sure you want to delete ${methodTitle}? This action cannot be undone.`)) {
+      return
+    }
+
+    try {
+      setDeletingId(methodId)
+      await deletePaymentMethod(methodId)
+      showSuccess('Payment method deleted successfully')
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete payment method'
+      showError(errorMessage)
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   const getVerificationStatus = (method: PaymentMethod) => {
+    // Check for card expiry warnings
+    if (method.type === 'card' && method.expiryMonth && method.expiryYear) {
+      if (isCardExpired(method.expiryMonth, method.expiryYear)) {
+        return (
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            ⚠️ Expired
+          </span>
+        )
+      }
+      if (isCardExpiringSoon(method.expiryMonth, method.expiryYear)) {
+        return (
+          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+            ⚠️ Expiring Soon
+          </span>
+        )
+      }
+    }
+
     if (method.isVerified) {
       return (
         <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -181,11 +218,20 @@ export default function PaymentMethodList({
                           variant="outline"
                           size="sm"
                           onClick={() => handleSetDefault(method.id)}
-                          disabled={isLoading}
+                          disabled={isLoading || deletingId === method.id}
                         >
                           Set Default
                         </Button>
                       )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(method.id, getPaymentMethodTitle(method))}
+                        disabled={isLoading || deletingId === method.id}
+                        className="text-red-600 hover:bg-red-50 border-red-300"
+                      >
+                        {deletingId === method.id ? 'Deleting...' : 'Delete'}
+                      </Button>
                     </div>
                   )}
                 </div>

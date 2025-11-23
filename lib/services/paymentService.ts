@@ -104,31 +104,73 @@ export class PaymentService {
       )
 
       const querySnapshot = await getDocs(q)
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        updatedAt: doc.data().updatedAt?.toDate() || new Date()
-      } as PaymentMethod))
+      return querySnapshot.docs
+        .map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          createdAt: doc.data().createdAt?.toDate() || new Date(),
+          updatedAt: doc.data().updatedAt?.toDate() || new Date()
+        } as PaymentMethod))
+        .filter(method => !method.isDeleted) // Filter out soft-deleted methods
     } catch (error) {
       console.debug('Error fetching payment methods:', error)
       return []
     }
   }
 
+  static async deletePaymentMethod(userId: string, paymentMethodId: string): Promise<void> {
+    try {
+      // Check if this is the default method
+      const method = await getDoc(doc(db, COLLECTIONS.PAYMENT_METHODS, paymentMethodId))
+      if (!method.exists()) {
+        throw new Error('Payment method not found')
+      }
+
+      const methodData = method.data()
+      if (methodData.userId !== userId) {
+        throw new Error('Unauthorized: You can only delete your own payment methods')
+      }
+
+      // Delete the payment method
+      await updateDoc(doc(db, COLLECTIONS.PAYMENT_METHODS, paymentMethodId), {
+        isDeleted: true,
+        deletedAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      })
+
+      // If this was the default method, set another as default
+      if (methodData.isDefault) {
+        const userMethods = await this.getUserPaymentMethods(userId)
+        const activeMethod = userMethods.find(m => m.id !== paymentMethodId && !m.isDeleted)
+        if (activeMethod) {
+          await this.setDefaultPaymentMethod(userId, activeMethod.id)
+        }
+      }
+    } catch (error) {
+      console.debug('Error deleting payment method:', error)
+      throw new Error(error instanceof Error ? error.message : 'Failed to delete payment method')
+    }
+  }
+
   static async setDefaultPaymentMethod(userId: string, paymentMethodId: string): Promise<void> {
     try {
+      // Use a query to find payment methods atomically
+      // This prevents race conditions where concurrent setDefault calls could both succeed
+      const q = query(
+        collection(db, COLLECTIONS.PAYMENT_METHODS),
+        where('userId', '==', userId)
+      )
+
+      const querySnapshot = await getDocs(q)
       const batch = writeBatch(db)
 
-      // Remove default from all other payment methods
-      const userMethods = await this.getUserPaymentMethods(userId)
-      userMethods.forEach(method => {
-        if (method.isDefault) {
-          batch.update(doc(db, COLLECTIONS.PAYMENT_METHODS, method.id), {
-            isDefault: false,
-            updatedAt: Timestamp.now()
-          })
-        }
+      // Remove default from all payment methods (including the one we're about to set)
+      // This ensures only ONE method will be default after the batch completes
+      querySnapshot.forEach((docSnap) => {
+        batch.update(docSnap.ref, {
+          isDefault: false,
+          updatedAt: Timestamp.now()
+        })
       })
 
       // Set new default
@@ -140,9 +182,12 @@ export class PaymentService {
       await batch.commit()
     } catch (error) {
       console.debug('Error setting default payment method:', error)
-      throw new Error('Failed to set default payment method')
+      throw new Error('Failed to set default payment method. Please try again.')
     }
   }
+
+  // Payment intent expiry duration: 30 minutes
+  private static readonly PAYMENT_INTENT_EXPIRY_MS = 30 * 60 * 1000
 
   // Payment Processing
   static async createPaymentIntent(
@@ -154,6 +199,9 @@ export class PaymentService {
     type: 'milestone' | 'hourly' | 'fixed' | 'bonus' = 'fixed'
   ): Promise<PaymentIntent> {
     try {
+      const now = Timestamp.now()
+      const expiresAt = Timestamp.fromMillis(now.toMillis() + this.PAYMENT_INTENT_EXPIRY_MS)
+
       const intentData = {
         gigId,
         employerId,
@@ -169,7 +217,8 @@ export class PaymentService {
           workerId,
           type
         },
-        createdAt: Timestamp.now()
+        createdAt: now,
+        expiresAt // Payment intent expires after 30 minutes
       }
 
       const docRef = await addDoc(collection(db, COLLECTIONS.PAYMENT_INTENTS), intentData)
@@ -177,7 +226,8 @@ export class PaymentService {
       return {
         id: docRef.id,
         ...intentData,
-        createdAt: new Date()
+        createdAt: new Date(),
+        expiresAt: expiresAt.toDate()
       }
     } catch (error) {
       console.debug('Error creating payment intent:', error)
@@ -201,8 +251,23 @@ export class PaymentService {
       const intentData = intentDoc.data()
       console.debug('Payment intent data:', {
         ...intentData,
-        createdAt: intentData.createdAt?.toDate()
+        createdAt: intentData.createdAt?.toDate(),
+        expiresAt: intentData.expiresAt?.toDate()
       })
+
+      // Check if payment intent has expired
+      if (intentData.expiresAt) {
+        const now = new Date()
+        const expiresAt = intentData.expiresAt.toDate()
+        if (now > expiresAt) {
+          console.error('Payment intent has expired:', {
+            intentId: paymentIntentId,
+            expiresAt,
+            now
+          })
+          throw new Error('Payment intent has expired. Please create a new payment.')
+        }
+      }
 
       console.debug('Fetching payment method data...')
       const paymentMethodDoc = await getDoc(doc(db, COLLECTIONS.PAYMENT_METHODS, intentData.paymentMethodId))
@@ -616,11 +681,14 @@ export class PaymentService {
     paymentMethodId: string,
     bankDetails?: BankAccount
   ): Promise<WithdrawalRequest> {
+    let walletDebited = false
     try {
-      // Use atomic transaction to check balance and debit in one operation
+      // STEP 1: Atomically check balance and debit wallet
       // This prevents race conditions where multiple concurrent withdrawals could exceed balance
       await WalletService.debitWalletAtomic(userId, amount)
+      walletDebited = true
 
+      // STEP 2: Create withdrawal data structure
       const withdrawalData: {
         userId: string;
         amount: number;
@@ -643,9 +711,10 @@ export class PaymentService {
         withdrawalData.bankDetails = bankDetails
       }
 
+      // STEP 3: Create withdrawal request document
       const docRef = await addDoc(collection(db, COLLECTIONS.WITHDRAWALS), withdrawalData)
 
-      // Add to payment history
+      // STEP 4: Add to payment history
       await this.addPaymentHistory(userId, 'payments', -amount, 'pending', undefined, undefined, `Withdrawal request of R${amount}`)
 
       return {
@@ -654,11 +723,23 @@ export class PaymentService {
         requestedAt: new Date()
       }
     } catch (error) {
+      // CRITICAL: If wallet was debited but withdrawal creation failed, refund the amount
+      if (walletDebited) {
+        try {
+          console.error('Withdrawal creation failed after wallet debit, refunding amount:', amount)
+          await WalletService.creditWallet(userId, amount)
+        } catch (refundError) {
+          console.error('CRITICAL: Failed to refund wallet after withdrawal failure:', refundError)
+          // Log this critical error for manual intervention
+          throw new Error(`Withdrawal failed and automatic refund failed. Please contact support. Original error: ${error instanceof Error ? error.message : 'Unknown'}`)
+        }
+      }
+
       // Re-throw with original message if it's a known error (like insufficient balance)
       if (error instanceof Error && error.message.includes('Insufficient')) {
         throw error
       }
-      throw new Error('Failed to request withdrawal')
+      throw new Error('Failed to request withdrawal. Please try again or contact support if the problem persists.')
     }
   }
 

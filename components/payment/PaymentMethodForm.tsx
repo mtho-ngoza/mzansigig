@@ -7,6 +7,13 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { usePayment } from '@/contexts/PaymentContext'
 import { useToast } from '@/contexts/ToastContext'
 import { PaymentMethod, PaymentProvider } from '@/types/payment'
+import {
+  validateAccountHolder,
+  validateBankName,
+  validateAccountNumber,
+  validateBranchCode,
+  validateCardNumber
+} from '@/lib/utils/paymentValidation'
 
 interface PaymentMethodFormProps {
   onSuccess?: (paymentMethod: PaymentMethod) => void
@@ -48,42 +55,59 @@ export default function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethod
     const newErrors: Record<string, string> = {}
 
     if (formData.type === 'card') {
-      if (!formData.cardNumber.replace(/\s/g, '')) {
-        newErrors.cardNumber = 'Card number is required'
-      } else if (!/^\d{13,19}$/.test(formData.cardNumber.replace(/\s/g, ''))) {
-        newErrors.cardNumber = 'Invalid card number'
+      const cardValidation = validateCardNumber(formData.cardNumber)
+      if (!cardValidation.isValid) {
+        newErrors.cardNumber = cardValidation.message || 'Invalid card number'
       }
 
       if (!formData.expiryMonth || !formData.expiryYear) {
         newErrors.expiry = 'Expiry date is required'
+      } else {
+        const month = parseInt(formData.expiryMonth)
+        const year = parseInt(formData.expiryYear)
+        if (month < 1 || month > 12) {
+          newErrors.expiry = 'Invalid expiry month (must be 01-12)'
+        } else {
+          const now = new Date()
+          const fullYear = year < 100 ? 2000 + year : year
+          const expiryDate = new Date(fullYear, month)
+          if (expiryDate < now) {
+            newErrors.expiry = 'Card has expired'
+          }
+        }
       }
 
       if (!formData.cvv || !/^\d{3,4}$/.test(formData.cvv)) {
-        newErrors.cvv = 'Invalid CVV'
+        newErrors.cvv = 'CVV must be 3-4 digits'
       }
 
-      if (!formData.cardholderName.trim()) {
-        newErrors.cardholderName = 'Cardholder name is required'
+      const cardholderValidation = validateAccountHolder(formData.cardholderName)
+      if (!cardholderValidation.isValid) {
+        newErrors.cardholderName = cardholderValidation.message || 'Invalid cardholder name'
       }
     } else if (formData.type === 'bank' || formData.type === 'eft') {
-      if (!formData.bankName.trim()) {
-        newErrors.bankName = 'Bank name is required'
+      const bankNameValidation = validateBankName(formData.bankName)
+      if (!bankNameValidation.isValid) {
+        newErrors.bankName = bankNameValidation.message || 'Invalid bank name'
       }
 
-      if (!formData.accountNumber || !/^\d{9,11}$/.test(formData.accountNumber)) {
-        newErrors.accountNumber = 'Invalid account number (9-11 digits)'
+      const accountNumberValidation = validateAccountNumber(formData.accountNumber)
+      if (!accountNumberValidation.isValid) {
+        newErrors.accountNumber = accountNumberValidation.message || 'Invalid account number'
       }
 
-      if (!formData.branchCode || !/^\d{6}$/.test(formData.branchCode)) {
-        newErrors.branchCode = 'Invalid branch code (6 digits)'
+      const branchCodeValidation = validateBranchCode(formData.branchCode)
+      if (!branchCodeValidation.isValid) {
+        newErrors.branchCode = branchCodeValidation.message || 'Invalid branch code'
       }
 
-      if (!formData.accountHolder.trim()) {
-        newErrors.accountHolder = 'Account holder name is required'
+      const accountHolderValidation = validateAccountHolder(formData.accountHolder)
+      if (!accountHolderValidation.isValid) {
+        newErrors.accountHolder = accountHolderValidation.message || 'Invalid account holder name'
       }
     } else if (formData.type === 'mobile_money') {
       if (!formData.mobileNumber || !/^(\+27|0)[0-9]{9}$/.test(formData.mobileNumber)) {
-        newErrors.mobileNumber = 'Invalid South African mobile number'
+        newErrors.mobileNumber = 'Invalid South African mobile number (must start with +27 or 0 and have 9 digits)'
       }
     }
 
@@ -133,13 +157,22 @@ export default function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethod
 
       if (formData.type === 'card') {
         const cardNumber = formData.cardNumber.replace(/\s/g, '')
+        // Only store last 4 digits - never store full card number
         paymentMethodData.cardLast4 = cardNumber.slice(-4)
         paymentMethodData.cardBrand = getCardBrand(cardNumber)
         paymentMethodData.cardType = 'debit' // Default to debit, could be detected
         paymentMethodData.expiryMonth = parseInt(formData.expiryMonth)
         paymentMethodData.expiryYear = parseInt(formData.expiryYear)
+        // Validate and sanitize cardholder name
+        const cardholderValidation = validateAccountHolder(formData.cardholderName)
+        paymentMethodData.accountHolder = cardholderValidation.sanitized
       } else if (formData.type === 'bank' || formData.type === 'eft') {
-        paymentMethodData.bankName = formData.bankName
+        // Validate and sanitize bank details
+        const bankNameValidation = validateBankName(formData.bankName)
+        const accountHolderValidation = validateAccountHolder(formData.accountHolder)
+
+        paymentMethodData.bankName = bankNameValidation.sanitized
+        paymentMethodData.accountHolder = accountHolderValidation.sanitized
         paymentMethodData.accountType = formData.accountType
         paymentMethodData.accountLast4 = formData.accountNumber.slice(-4)
       } else if (formData.type === 'mobile_money') {
@@ -151,7 +184,7 @@ export default function PaymentMethodForm({ onSuccess, onCancel }: PaymentMethod
       showSuccess('Payment method added successfully')
       onSuccess?.(newPaymentMethod)
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to add payment method'
+      const errorMessage = error instanceof Error ? error.message : 'Failed to add payment method. Please check your details and try again.'
       showError(errorMessage)
     }
   }

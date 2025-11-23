@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { usePayment } from '@/contexts/PaymentContext'
 import { GigService } from '@/lib/database/gigService'
 import { GigApplication } from '@/types/gig'
+import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
 import PaymentMethodList from './PaymentMethodList'
 import PaymentMethodForm from './PaymentMethodForm'
 import PaymentHistory from './PaymentHistory'
@@ -60,12 +61,12 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
         for (const app of unpaidApplications) {
           try {
             const gig = await GigService.getGigById(app.gigId)
-            // Get worker details
-            const workerName = app.applicantName || 'Worker'
+            // Get worker details and sanitize for display
+            const workerName = sanitizeForDisplay(app.applicantName) || 'Worker'
 
             obligations.push({
               application: app,
-              gigTitle: gig?.title || 'Unknown Gig',
+              gigTitle: sanitizeForDisplay(gig?.title) || 'Unknown Gig',
               workerName,
               amount: app.proposedRate || gig?.budget || 0
             })

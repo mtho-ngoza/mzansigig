@@ -7,6 +7,14 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { usePayment } from '@/contexts/PaymentContext'
 import { useToast } from '@/contexts/ToastContext'
 import { BankAccount } from '@/types/payment'
+import {
+  validateAccountHolder,
+  validateBankName,
+  validateAccountNumber,
+  validateBranchCode,
+  validateWithdrawalAmount,
+  WITHDRAWAL_LIMITS
+} from '@/lib/utils/paymentValidation'
 
 interface WithdrawalFormProps {
   onSuccess?: () => void
@@ -31,7 +39,7 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const availableBalance = analytics?.availableBalance || 0
-  const minWithdrawal = 50
+  const minWithdrawal = WITHDRAWAL_LIMITS.MIN
 
   const bankOptions = [
     'ABSA Bank', 'Standard Bank', 'FirstNational Bank (FNB)', 'Nedbank',
@@ -44,12 +52,9 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
     const newErrors: Record<string, string> = {}
 
     const withdrawalAmount = parseFloat(amount)
-    if (!amount || isNaN(withdrawalAmount)) {
-      newErrors.amount = 'Please enter a valid amount'
-    } else if (withdrawalAmount < minWithdrawal) {
-      newErrors.amount = `Minimum withdrawal amount is ${formatCurrency(minWithdrawal)}`
-    } else if (withdrawalAmount > availableBalance) {
-      newErrors.amount = 'Amount exceeds available balance'
+    const validation = validateWithdrawalAmount(withdrawalAmount, availableBalance, 0)
+    if (!validation.isValid) {
+      newErrors.amount = validation.message || 'Invalid withdrawal amount'
     }
 
     if (useExistingMethod) {
@@ -57,17 +62,24 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
         newErrors.method = 'Please select a payment method'
       }
     } else {
-      if (!bankDetails.bankName) {
-        newErrors.bankName = 'Bank name is required'
+      const bankNameValidation = validateBankName(bankDetails.bankName)
+      if (!bankNameValidation.isValid) {
+        newErrors.bankName = bankNameValidation.message || 'Invalid bank name'
       }
-      if (!bankDetails.accountHolder.trim()) {
-        newErrors.accountHolder = 'Account holder name is required'
+
+      const accountHolderValidation = validateAccountHolder(bankDetails.accountHolder)
+      if (!accountHolderValidation.isValid) {
+        newErrors.accountHolder = accountHolderValidation.message || 'Invalid account holder name'
       }
-      if (!bankDetails.accountNumber || !/^\d{9,11}$/.test(bankDetails.accountNumber)) {
-        newErrors.accountNumber = 'Valid account number required (9-11 digits)'
+
+      const accountNumberValidation = validateAccountNumber(bankDetails.accountNumber)
+      if (!accountNumberValidation.isValid) {
+        newErrors.accountNumber = accountNumberValidation.message || 'Invalid account number'
       }
-      if (!bankDetails.branchCode || !/^\d{6}$/.test(bankDetails.branchCode)) {
-        newErrors.branchCode = 'Valid branch code required (6 digits)'
+
+      const branchCodeValidation = validateBranchCode(bankDetails.branchCode)
+      if (!branchCodeValidation.isValid) {
+        newErrors.branchCode = branchCodeValidation.message || 'Invalid branch code'
       }
     }
 
@@ -85,14 +97,26 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
     try {
       const withdrawalAmount = parseFloat(amount)
       const methodId = useExistingMethod ? selectedMethodId : 'new'
-      const bankData = !useExistingMethod ? bankDetails : undefined
+
+      // Sanitize bank details if adding new account
+      let bankData = undefined
+      if (!useExistingMethod) {
+        const bankNameValidation = validateBankName(bankDetails.bankName)
+        const accountHolderValidation = validateAccountHolder(bankDetails.accountHolder)
+
+        bankData = {
+          ...bankDetails,
+          bankName: bankNameValidation.sanitized,
+          accountHolder: accountHolderValidation.sanitized
+        }
+      }
 
       await requestWithdrawal(withdrawalAmount, methodId, bankData)
 
       showSuccess(`Withdrawal request for ${formatCurrency(withdrawalAmount)} submitted successfully`)
       onSuccess?.()
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to submit withdrawal request'
+      const errorMessage = error instanceof Error ? error.message : 'Failed to submit withdrawal request. Please check your details and try again.'
       showError(errorMessage)
     }
   }
@@ -150,8 +174,11 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
             />
             <div className="mt-1 flex justify-between text-xs text-gray-500">
               <span>Minimum: {formatCurrency(minWithdrawal)}</span>
-              <span>Maximum: {formatCurrency(availableBalance)}</span>
+              <span>Max per transaction: {formatCurrency(WITHDRAWAL_LIMITS.MAX_SINGLE)}</span>
             </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Daily limit: {formatCurrency(WITHDRAWAL_LIMITS.MAX_DAILY)}
+            </p>
           </div>
 
           {/* Payment Method Selection */}
