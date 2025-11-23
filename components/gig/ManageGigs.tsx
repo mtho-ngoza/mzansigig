@@ -434,21 +434,28 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
       )}
 
       {/* Review Prompt Modal */}
-      {showReviewPrompt && completedGig && completedGig.acceptedApplication && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-          <div className="my-8">
-            <ReviewPrompt
-              gigId={completedGig.id}
-              gigTitle={completedGig.title}
-              revieweeId={completedGig.assignedTo || completedGig.acceptedApplication.applicantId}
-              revieweeName={completedGig.acceptedApplication.applicantName}
-              reviewType="employer-to-worker"
-              onClose={handleCloseReviewPrompt}
-              onReviewSubmitted={handleReviewSubmitted}
-            />
+      {showReviewPrompt && completedGig && completedGig.acceptedApplication && (() => {
+        // Calculate review deadline (30 days from gig completion)
+        const reviewDeadline = new Date(completedGig.updatedAt)
+        reviewDeadline.setDate(reviewDeadline.getDate() + 30)
+
+        return (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+            <div className="my-8">
+              <ReviewPrompt
+                gigId={completedGig.id}
+                gigTitle={completedGig.title}
+                revieweeId={completedGig.assignedTo || completedGig.acceptedApplication.applicantId}
+                revieweeName={completedGig.acceptedApplication.applicantName}
+                reviewType="employer-to-worker"
+                reviewDeadline={reviewDeadline}
+                onClose={handleCloseReviewPrompt}
+                onReviewSubmitted={handleReviewSubmitted}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </div>
   )
 }

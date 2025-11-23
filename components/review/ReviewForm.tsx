@@ -7,6 +7,11 @@ import { ReviewService } from '@/lib/database/reviewService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { Review } from '@/types/gig'
+import {
+  validateReviewSubmission,
+  sanitizeReviewComment,
+  REVIEW_TEXT_LIMITS
+} from '@/lib/utils/reviewValidation'
 
 interface ReviewFormProps {
   gigId: string
@@ -14,6 +19,7 @@ interface ReviewFormProps {
   revieweeId: string
   revieweeName: string
   reviewType: 'employer-to-worker' | 'worker-to-employer'
+  reviewDeadline: Date
   onSuccess?: () => void
   onCancel?: () => void
 }
@@ -24,6 +30,7 @@ export default function ReviewForm({
   revieweeId,
   revieweeName,
   reviewType,
+  reviewDeadline,
   onSuccess,
   onCancel,
 }: ReviewFormProps) {
@@ -36,22 +43,32 @@ export default function ReviewForm({
   const [errors, setErrors] = useState<{ rating?: string; comment?: string }>({})
 
   const validateForm = (): boolean => {
+    const validation = validateReviewSubmission(rating, comment, reviewDeadline)
+
     const newErrors: { rating?: string; comment?: string } = {}
 
-    if (rating === 0) {
-      newErrors.rating = 'Please select a rating'
+    if (validation.errors.rating) {
+      newErrors.rating = validation.errors.rating
     }
 
-    if (!comment.trim()) {
-      newErrors.comment = 'Please provide a review comment'
-    } else if (comment.trim().length < 20) {
-      newErrors.comment = 'Review must be at least 20 characters'
-    } else if (comment.trim().length > 1000) {
-      newErrors.comment = 'Review must not exceed 1000 characters'
+    if (validation.errors.comment) {
+      newErrors.comment = validation.errors.comment
+    }
+
+    if (validation.errors.deadline) {
+      newErrors.comment = validation.errors.deadline
+    }
+
+    if (validation.errors.spam) {
+      newErrors.comment = validation.errors.spam
+    }
+
+    if (validation.errors.profanity) {
+      newErrors.comment = validation.errors.profanity
     }
 
     setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+    return validation.isValid
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -69,15 +86,16 @@ export default function ReviewForm({
     setIsSubmitting(true)
 
     try {
-      const reviewData: Omit<Review, 'id' | 'createdAt'> = {
+      // Sanitize comment before submission
+      const sanitizedComment = sanitizeReviewComment(comment, REVIEW_TEXT_LIMITS.COMMENT_MAX)
+
+      const reviewData: Omit<Review, 'id' | 'createdAt' | 'isRevealed' | 'reviewDeadline' | 'counterReviewId'> = {
         gigId,
         reviewerId: user.id,
         revieweeId,
         rating,
-        comment: comment.trim(),
-        type: reviewType,
-        isRevealed: true,
-        reviewDeadline: new Date('2025-12-31'),
+        comment: sanitizedComment,
+        type: reviewType
       }
 
       await ReviewService.createReview(reviewData)
@@ -207,7 +225,7 @@ export default function ReviewForm({
                 <p className="mt-1 text-sm text-red-600">{errors.comment}</p>
               )}
               <p className="mt-1 text-sm text-gray-500">
-                {comment.length}/1000 characters (minimum 20)
+                {comment.length}/{REVIEW_TEXT_LIMITS.COMMENT_MAX} characters (minimum {REVIEW_TEXT_LIMITS.COMMENT_MIN})
               </p>
             </div>
 

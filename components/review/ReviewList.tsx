@@ -6,6 +6,7 @@ import { ReviewService } from '@/lib/database/reviewService'
 import { Review } from '@/types/gig'
 import { formatDistanceToNow } from 'date-fns'
 import { useToast } from '@/contexts/ToastContext'
+import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
 
 interface ReviewListProps {
   userId: string
@@ -152,7 +153,7 @@ export default function ReviewList({
 
               {/* Review Comment */}
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                {review.comment}
+                {sanitizeForDisplay(review.comment)}
               </p>
 
               {/* Review Footer - Optional metadata */}

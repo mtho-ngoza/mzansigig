@@ -11,6 +11,7 @@ interface ReviewPromptProps {
   revieweeId: string
   revieweeName: string
   reviewType: 'employer-to-worker' | 'worker-to-employer'
+  reviewDeadline: Date
   onClose?: () => void
   onReviewSubmitted?: () => void
 }
@@ -21,6 +22,7 @@ export default function ReviewPrompt({
   revieweeId,
   revieweeName,
   reviewType,
+  reviewDeadline,
   onClose,
   onReviewSubmitted,
 }: ReviewPromptProps) {
@@ -47,6 +49,7 @@ export default function ReviewPrompt({
         revieweeId={revieweeId}
         revieweeName={revieweeName}
         reviewType={reviewType}
+        reviewDeadline={reviewDeadline}
         onSuccess={handleReviewSuccess}
         onCancel={() => setShowForm(false)}
       />
