@@ -381,7 +381,7 @@ describe('ReviewService', () => {
           jest.mocked(FirestoreService.getWhere).mockResolvedValue([mockReview])
 
           // When
-          await ReviewService.updateReview(mockReviewId, updates)
+          await ReviewService.updateReview(mockReviewId, mockReviewerId, updates)
 
           // Then
           expect(FirestoreService.update).toHaveBeenCalledWith(
@@ -407,7 +407,7 @@ describe('ReviewService', () => {
           const updates = { rating: 6 }
 
           // When & Then
-          await expect(ReviewService.updateReview(mockReviewId, updates)).rejects.toThrow(
+          await expect(ReviewService.updateReview(mockReviewId, mockReviewerId, updates)).rejects.toThrow(
             'Rating must be between 1 and 5'
           )
         })
@@ -422,7 +422,7 @@ describe('ReviewService', () => {
           jest.mocked(FirestoreService.getById).mockResolvedValue(null)
 
           // When & Then
-          await expect(ReviewService.updateReview(mockReviewId, updates)).rejects.toThrow(
+          await expect(ReviewService.updateReview(mockReviewId, mockReviewerId, updates)).rejects.toThrow(
             'Review not found'
           )
         })
@@ -441,7 +441,7 @@ describe('ReviewService', () => {
           jest.mocked(FirestoreService.update).mockResolvedValue()
 
           // When
-          await ReviewService.deleteReview(mockReviewId)
+          await ReviewService.deleteReview(mockReviewId, mockReviewerId)
 
           // Then
           expect(FirestoreService.delete).toHaveBeenCalledWith('reviews', mockReviewId)
@@ -464,7 +464,7 @@ describe('ReviewService', () => {
           jest.mocked(FirestoreService.getById).mockResolvedValue(null)
 
           // When & Then
-          await expect(ReviewService.deleteReview(mockReviewId)).rejects.toThrow(
+          await expect(ReviewService.deleteReview(mockReviewId, mockReviewerId)).rejects.toThrow(
             'Review not found'
           )
         })
