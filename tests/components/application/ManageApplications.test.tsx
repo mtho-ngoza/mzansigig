@@ -18,6 +18,25 @@ jest.mock('@/contexts/ToastContext', () => ({
     error: jest.fn()
   })
 }))
+jest.mock('@/lib/utils/textSanitization', () => ({
+  sanitizeForDisplay: jest.fn((text: string) => text) // Pass through for tests
+}))
+jest.mock('@/lib/utils/disputeValidation', () => ({
+  DISPUTE_TEXT_LIMITS: {
+    REASON_MAX: 1000,
+    REASON_MIN: 10
+  },
+  validateDisputeReason: jest.fn((reason: string) => {
+    const trimmed = reason.trim()
+    if (!trimmed || trimmed.length < 10) {
+      return { isValid: false, message: 'Dispute reason must be at least 10 characters' }
+    }
+    if (trimmed.length > 1000) {
+      return { isValid: false, message: 'Dispute reason cannot exceed 1000 characters' }
+    }
+    return { isValid: true }
+  })
+}))
 jest.mock('@/components/messaging/QuickMessageButton', () => ({
   QuickMessageButton: () => <div>Quick Message</div>
 }))
