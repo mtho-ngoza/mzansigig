@@ -19,14 +19,24 @@ export const MESSAGE_LIMITS = {
 export function sanitizeMessageContent(input: string, maxLength: number = MESSAGE_LIMITS.CONTENT_MAX): string {
   if (!input) return ''
 
-  return input
-    .trim()
-    .replace(/<[^>]*>/g, '') // Remove HTML tags
-    .replace(/<script[^>]*>.*?<\/script>/gi, '') // Remove script tags
-    .replace(/javascript:/gi, '') // Remove javascript: protocol
-    .replace(/on\w+\s*=/gi, '') // Remove event handlers (onclick, onerror, etc.)
-    .replace(/data:/gi, '') // Remove data: URLs
-    .slice(0, maxLength)
+  let sanitized = input.trim()
+
+  // Remove script tags and their content (with multiline support)
+  sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+
+  // Remove all HTML tags
+  sanitized = sanitized.replace(/<[^>]*>/g, '')
+
+  // Remove javascript: protocol
+  sanitized = sanitized.replace(/javascript:/gi, '')
+
+  // Remove event handlers (onclick, onerror, etc.)
+  sanitized = sanitized.replace(/on\w+\s*=/gi, '')
+
+  // Remove data: URLs
+  sanitized = sanitized.replace(/data:/gi, '')
+
+  return sanitized.slice(0, maxLength)
 }
 
 /**
@@ -36,20 +46,20 @@ export function validateMessageContent(content: string): {
   isValid: boolean
   message?: string
 } {
+  // Check for whitespace-only content before trimming
+  if (/^\s*$/.test(content)) {
+    return {
+      isValid: false,
+      message: 'Message cannot contain only whitespace'
+    }
+  }
+
   const trimmed = content.trim()
 
   if (!trimmed) {
     return {
       isValid: false,
       message: 'Message cannot be empty'
-    }
-  }
-
-  // Check for whitespace-only content
-  if (/^\s*$/.test(content)) {
-    return {
-      isValid: false,
-      message: 'Message cannot contain only whitespace'
     }
   }
 
@@ -114,6 +124,14 @@ export function validateFileExtension(filename: string): {
     // Other
     'zip'
   ]
+
+  // Check if filename has a dot
+  if (!filename.includes('.')) {
+    return {
+      isValid: false,
+      message: 'File must have an extension'
+    }
+  }
 
   const extension = filename.split('.').pop()?.toLowerCase()
 

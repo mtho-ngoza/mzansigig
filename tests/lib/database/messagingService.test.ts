@@ -1,9 +1,24 @@
 import { MessagingService } from '@/lib/database/messagingService'
 import { FirestoreService } from '@/lib/database/firestore'
 import { Conversation, Message, ConversationParticipant } from '@/types/messaging'
+import { messageRateLimiter } from '@/lib/utils/messageValidation'
 
 // Mock FirestoreService
 jest.mock('@/lib/database/firestore')
+
+// Mock messageValidation to avoid rate limiting in tests
+jest.mock('@/lib/utils/messageValidation', () => {
+  const actual = jest.requireActual('@/lib/utils/messageValidation')
+  return {
+    ...actual,
+    messageRateLimiter: {
+      canSendMessage: jest.fn().mockReturnValue({ allowed: true }),
+      recordMessage: jest.fn(),
+      clearUser: jest.fn(),
+      getRemainingMessages: jest.fn().mockReturnValue(10),
+    },
+  }
+})
 
 describe('MessagingService', () => {
   const mockUserId1 = 'user-1'
@@ -429,8 +444,17 @@ describe('MessagingService', () => {
             content: 'Hello, how are you?',
             type: 'text' as const,
           }
+          const mockUser = {
+            name: 'User One',
+            userType: 'job-seeker',
+          }
+
+          // Mock conversation lookup (first call)
+          jest.mocked(FirestoreService.getById)
+            .mockResolvedValueOnce(mockConversation) // For conversation check
+            .mockResolvedValueOnce(mockUser) // For user lookup
+
           jest.mocked(FirestoreService.create).mockResolvedValue(mockMessageId)
-          jest.mocked(FirestoreService.getById).mockResolvedValue(mockConversation)
           jest.mocked(FirestoreService.update).mockResolvedValue()
 
           // When
@@ -449,9 +473,9 @@ describe('MessagingService', () => {
             expect.objectContaining({
               conversationId: mockConversationId,
               senderId: mockUserId1,
-              senderName: 'User One',
+              senderName: 'User One', // Sanitized from user database
               senderType: 'job-seeker',
-              content: 'Hello, how are you?',
+              content: 'Hello, how are you?', // Sanitized content
               type: 'text',
               isRead: false,
               createdAt: expect.any(Date),
@@ -472,6 +496,79 @@ describe('MessagingService', () => {
       })
     })
 
+    describe('given blocked conversation', () => {
+      describe('when sending message', () => {
+        it('then throws error', async () => {
+          // Given
+          const blockedConversation = { ...mockConversation, status: 'blocked' as const }
+          const messageInput = {
+            content: 'Hello',
+            type: 'text' as const,
+          }
+          jest.mocked(FirestoreService.getById).mockResolvedValue(blockedConversation)
+
+          // When & Then
+          await expect(
+            MessagingService.sendMessage(
+              mockConversationId,
+              mockUserId1,
+              'User One',
+              'job-seeker',
+              messageInput
+            )
+          ).rejects.toThrow('Cannot send messages to blocked conversations')
+        })
+      })
+    })
+
+    describe('given user not a participant', () => {
+      describe('when sending message', () => {
+        it('then throws error', async () => {
+          // Given
+          const messageInput = {
+            content: 'Hello',
+            type: 'text' as const,
+          }
+          jest.mocked(FirestoreService.getById).mockResolvedValue(mockConversation)
+
+          // When & Then - user-3 is not a participant
+          await expect(
+            MessagingService.sendMessage(
+              mockConversationId,
+              'user-3',
+              'User Three',
+              'job-seeker',
+              messageInput
+            )
+          ).rejects.toThrow('User is not a participant in this conversation')
+        })
+      })
+    })
+
+    describe('given invalid message content', () => {
+      describe('when sending message', () => {
+        it('then throws validation error for empty content', async () => {
+          // Given
+          const messageInput = {
+            content: '',
+            type: 'text' as const,
+          }
+          jest.mocked(FirestoreService.getById).mockResolvedValue(mockConversation)
+
+          // When & Then
+          await expect(
+            MessagingService.sendMessage(
+              mockConversationId,
+              mockUserId1,
+              'User One',
+              'job-seeker',
+              messageInput
+            )
+          ).rejects.toThrow('Invalid message')
+        })
+      })
+    })
+
     describe('given message with file data', () => {
       describe('when sending message', () => {
         it('then includes file metadata in message', async () => {
@@ -485,8 +582,16 @@ describe('MessagingService', () => {
               fileUrl: 'https://example.com/document.pdf',
             },
           }
+          const mockUser = {
+            name: 'User One',
+            userType: 'job-seeker',
+          }
+
+          jest.mocked(FirestoreService.getById)
+            .mockResolvedValueOnce(mockConversation) // For conversation check
+            .mockResolvedValueOnce(mockUser) // For user lookup
+
           jest.mocked(FirestoreService.create).mockResolvedValue(mockMessageId)
-          jest.mocked(FirestoreService.getById).mockResolvedValue(mockConversation)
           jest.mocked(FirestoreService.update).mockResolvedValue()
 
           // When
