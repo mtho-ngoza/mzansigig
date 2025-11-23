@@ -10,6 +10,8 @@ import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
 import { useToast } from '@/contexts/ToastContext'
 import PaymentDialog from '@/components/payment/PaymentDialog'
 import JobSeekerProfileDialog from '@/components/application/JobSeekerProfileDialog'
+import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
+import { DISPUTE_TEXT_LIMITS, validateDisputeReason } from '@/lib/utils/disputeValidation'
 
 interface ManageApplicationsProps {
   onBack?: () => void
@@ -220,8 +222,9 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
   const handleDisputeCompletionConfirm = async () => {
     if (!user) return
 
-    if (!disputeReason || disputeReason.trim().length < 10) {
-      showError('Please provide a detailed reason for the dispute (minimum 10 characters).')
+    const validation = validateDisputeReason(disputeReason)
+    if (!validation.isValid) {
+      showError(validation.message || 'Invalid dispute reason')
       return
     }
 
@@ -230,7 +233,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
       await GigService.disputeCompletion(
         disputeCompletionDialog.applicationId,
         user.id,
-        disputeReason
+        disputeReason.trim()
       )
 
       // Update local state to reflect the dispute
@@ -535,7 +538,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                       <span className="text-sm text-gray-500 block mb-2">Application Message:</span>
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <p className="text-sm text-gray-700">
-                          {application.message}
+                          {sanitizeForDisplay(application.message)}
                         </p>
                       </div>
                     </div>
@@ -913,17 +916,18 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                 </div>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Reason for Dispute (minimum 10 characters)
+                    Reason for Dispute
                   </label>
                   <textarea
                     value={disputeReason}
                     onChange={(e) => setDisputeReason(e.target.value)}
+                    maxLength={DISPUTE_TEXT_LIMITS.REASON_MAX}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 min-h-[100px]"
                     placeholder="Please explain what issues need to be resolved..."
                     disabled={processingCompletion}
                   />
                   <p className="text-xs text-gray-500 mt-1">
-                    {disputeReason.length} / 10 characters minimum
+                    {disputeReason.length}/{DISPUTE_TEXT_LIMITS.REASON_MAX} characters ({DISPUTE_TEXT_LIMITS.REASON_MIN} minimum)
                   </p>
                 </div>
                 <div className="flex justify-end space-x-3">
