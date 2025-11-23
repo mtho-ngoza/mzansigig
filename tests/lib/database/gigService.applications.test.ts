@@ -8,9 +8,16 @@ import { FirestoreService } from '@/lib/database/firestore';
 import { ConfigService } from '@/lib/database/configService';
 import { Gig, GigApplication } from '@/types/gig';
 
-// Mock FirestoreService
+// Mock FirestoreService and validation utilities
 jest.mock('@/lib/database/firestore');
 jest.mock('@/lib/database/configService');
+jest.mock('@/lib/utils/applicationValidation', () => ({
+  sanitizeApplicationMessage: jest.fn((input: string) => input), // Pass through by default
+  APPLICATION_TEXT_LIMITS: {
+    MESSAGE_MAX: 1000,
+    MESSAGE_MIN: 10
+  }
+}));
 
 describe('GigService - Application Management', () => {
   const mockGigId = 'test-gig-123';
@@ -208,18 +215,20 @@ describe('GigService - Application Management', () => {
   });
 
   describe('createApplication', () => {
-    it('should create application without updating gig applicants array', async () => {
+    it('should create application with sanitized message and employerId', async () => {
       const applicationData = {
         gigId: mockGigId,
         applicantId: mockApplicantId,
         applicantName: 'John Doe',
+        employerId: mockEmployerId,
         message: 'I am interested in this opportunity',
         proposedRate: 5000
       };
 
       const mockGig = {
         id: mockGigId,
-        status: 'open' as const
+        status: 'open' as const,
+        employerId: mockEmployerId
       };
       (FirestoreService.getById as jest.Mock).mockResolvedValue(mockGig);
       (FirestoreService.getWhere as jest.Mock).mockResolvedValue([]); // No existing applications
@@ -232,7 +241,12 @@ describe('GigService - Application Management', () => {
       expect(FirestoreService.create).toHaveBeenCalledWith(
         'applications',
         expect.objectContaining({
-          ...applicationData,
+          gigId: mockGigId,
+          applicantId: mockApplicantId,
+          applicantName: 'John Doe',
+          employerId: mockEmployerId,
+          message: 'I am interested in this opportunity', // Sanitized (passes through in mock)
+          proposedRate: 5000,
           status: 'pending'
         })
       );
@@ -241,6 +255,46 @@ describe('GigService - Application Management', () => {
       expect(FirestoreService.getById).toHaveBeenCalledWith('gigs', mockGigId);
       // Should NOT update gig (since no maxApplicants limit)
       expect(FirestoreService.update).not.toHaveBeenCalled();
+    });
+
+    it('should sanitize message to prevent XSS attacks', async () => {
+      // Import and configure the sanitization mock
+      const { sanitizeApplicationMessage } = require('@/lib/utils/applicationValidation');
+
+      // Configure mock to strip HTML tags for this test
+      (sanitizeApplicationMessage as jest.Mock).mockReturnValueOnce('I am interested');
+
+      const applicationData = {
+        gigId: mockGigId,
+        applicantId: mockApplicantId,
+        applicantName: 'John Doe',
+        employerId: mockEmployerId,
+        message: '<script>alert("XSS")</script>I am interested',
+        proposedRate: 5000
+      };
+
+      const mockGig = {
+        id: mockGigId,
+        status: 'open' as const,
+        employerId: mockEmployerId
+      };
+      (FirestoreService.getById as jest.Mock).mockResolvedValue(mockGig);
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue([]);
+      (FirestoreService.getWhereCompound as jest.Mock).mockResolvedValue([]);
+      (FirestoreService.create as jest.Mock).mockResolvedValue(mockApplicationId);
+
+      await GigService.createApplication(applicationData);
+
+      expect(sanitizeApplicationMessage).toHaveBeenCalledWith(
+        '<script>alert("XSS")</script>I am interested',
+        1000
+      );
+      expect(FirestoreService.create).toHaveBeenCalledWith(
+        'applications',
+        expect.objectContaining({
+          message: 'I am interested' // HTML tags stripped by sanitization
+        })
+      );
     });
   });
 
@@ -558,6 +612,7 @@ describe('GigService - Application Management', () => {
       gigId: mockGigId,
       applicantId: mockApplicantId,
       applicantName: 'John Doe',
+      employerId: mockEmployerId,
       message: 'I am interested',
       proposedRate: 1000
     };
@@ -830,6 +885,7 @@ describe('GigService - Application Management', () => {
       gigId: mockGigId,
       applicantId: mockApplicantId,
       applicantName: 'John Doe',
+      employerId: mockEmployerId,
       message: 'I am interested',
       proposedRate: 1000
     };

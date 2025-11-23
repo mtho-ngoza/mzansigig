@@ -11,6 +11,7 @@ import { useToast } from '@/contexts/ToastContext'
 import { usePayment } from '@/contexts/PaymentContext'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
 import { VerificationNudge } from '@/components/safety/VerificationNudge'
+import { validateProposedRate, APPLICATION_TEXT_LIMITS } from '@/lib/utils/applicationValidation'
 
 interface ApplicationFormProps {
   gig: Gig
@@ -32,6 +33,7 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
   const { calculateGigFees } = usePayment()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<ApplicationFormData>>({})
+  const [warnings, setWarnings] = useState<Partial<Record<keyof ApplicationFormData, string>>>({})
   const [workerEarnings, setWorkerEarnings] = useState<number>(gig.budget)
   const [formData, setFormData] = useState<ApplicationFormData>({
     message: '',
@@ -106,24 +108,36 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
 
   const validateForm = (): boolean => {
     const newErrors: Partial<ApplicationFormData> = {}
+    const newWarnings: Partial<Record<keyof ApplicationFormData, string>> = {}
 
-    // Message is optional, but if provided must be at least 10 characters
-    if (formData.message.trim() && formData.message.trim().length < 10) {
-      newErrors.message = 'Message must be at least 10 characters if provided'
+    // Message validation with max length
+    if (formData.message.trim()) {
+      if (formData.message.trim().length < APPLICATION_TEXT_LIMITS.MESSAGE_MIN) {
+        newErrors.message = `Message must be at least ${APPLICATION_TEXT_LIMITS.MESSAGE_MIN} characters if provided`
+      } else if (formData.message.length > APPLICATION_TEXT_LIMITS.MESSAGE_MAX) {
+        newErrors.message = `Message cannot exceed ${APPLICATION_TEXT_LIMITS.MESSAGE_MAX} characters`
+      }
     }
 
+    // Proposed rate validation with max limit and warnings
     if (!formData.proposedRate.trim()) {
       newErrors.proposedRate = 'Proposed rate is required'
     } else {
       const rate = parseFloat(formData.proposedRate)
       if (isNaN(rate) || rate <= 0) {
         newErrors.proposedRate = 'Proposed rate must be a valid positive number'
-      } else if (rate < 100) {
-        newErrors.proposedRate = 'Proposed rate must be at least R100'
+      } else {
+        const rateValidation = validateProposedRate(rate, gig.budget)
+        if (!rateValidation.isValid) {
+          newErrors.proposedRate = rateValidation.message
+        } else if (rateValidation.warning) {
+          newWarnings.proposedRate = rateValidation.warning
+        }
       }
     }
 
     setErrors(newErrors)
+    setWarnings(newWarnings)
     return Object.keys(newErrors).length === 0
   }
 
@@ -149,39 +163,18 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
         setIsSubmitting(false)
         return
       }
-      // Combine all responses into message for storage
-      let combinedMessage = formData.message.trim()
-
-      if (isPhysicalWork) {
-        const additionalInfo = []
-        if (formData.experience) {
-          const expText = formData.experience.replace('-', ' to ').replace('plus', '+')
-          additionalInfo.push(`Experience: ${expText}`)
-        }
-        if (formData.availability) {
-          const availText = formData.availability.replace('-', ' ').replace('within-', 'within ')
-          additionalInfo.push(`Availability: ${availText}`)
-        }
-        if (formData.equipment) {
-          const equipText = formData.equipment.replace('-', ' ').replace('fully-equipped', 'fully equipped').replace('partially-equipped', 'partially equipped').replace('no-equipment', 'no equipment needed - can be provided')
-          additionalInfo.push(`Tools/Equipment: ${equipText}`)
-        }
-
-        if (additionalInfo.length > 0) {
-          if (combinedMessage) {
-            combinedMessage += '\n\n' + additionalInfo.join('\n')
-          } else {
-            combinedMessage = additionalInfo.join('\n')
-          }
-        }
-      }
-
+      // Build application data with structured fields
       const applicationData = {
         gigId: gig.id,
         applicantId: user.id,
         applicantName: `${user.firstName} ${user.lastName}`,
-        message: combinedMessage || undefined, // Only include if not empty
-        proposedRate: parseFloat(formData.proposedRate)
+        employerId: gig.employerId,
+        message: formData.message.trim() || undefined,
+        proposedRate: parseFloat(formData.proposedRate),
+        // Include structured fields for physical work (enables filtering/sorting)
+        ...(isPhysicalWork && formData.experience && { experience: formData.experience }),
+        ...(isPhysicalWork && formData.availability && { availability: formData.availability }),
+        ...(isPhysicalWork && formData.equipment && { equipment: formData.equipment })
       }
 
       await GigService.createApplication(applicationData)
@@ -280,6 +273,7 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
                 placeholder={fieldConfig.mainFieldPlaceholder}
                 value={formData.message}
                 onChange={(e) => handleInputChange('message', e.target.value)}
+                maxLength={APPLICATION_TEXT_LIMITS.MESSAGE_MAX}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent ${
                   errors.message ? 'border-red-500' : ''
                 }`}
@@ -288,7 +282,7 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
                 <p className="mt-1 text-sm text-red-600">{errors.message}</p>
               )}
               <p className="mt-1 text-sm text-gray-500">
-                Your profile shows your skills, experience, and reviews. Add a brief message only if needed.
+                {formData.message.length}/{APPLICATION_TEXT_LIMITS.MESSAGE_MAX} characters · Your profile shows your skills, experience, and reviews. Add a brief message only if needed.
               </p>
             </div>
 
@@ -394,6 +388,9 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
               </div>
               {errors.proposedRate && (
                 <p className="mt-1 text-sm text-red-600">{errors.proposedRate}</p>
+              )}
+              {warnings.proposedRate && !errors.proposedRate && (
+                <p className="mt-1 text-sm text-yellow-600">{warnings.proposedRate}</p>
               )}
               <p className="mt-1 text-sm text-gray-500">
                 Based on the client&apos;s budget of R{gig.budget.toLocaleString()}, you&apos;ll earn R{workerEarnings.toLocaleString()} after platform fees. You can propose a different rate.

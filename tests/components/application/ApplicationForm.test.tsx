@@ -149,12 +149,13 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
       // Should NOT show error
       expect(mockError).not.toHaveBeenCalledWith('You have already applied to this gig')
 
-      // Should create application with message field
+      // Should create application with message field and employerId
       await waitFor(() => {
         expect(GigService.createApplication).toHaveBeenCalledWith({
           gigId: 'gig-123',
           applicantId: 'user-123',
           applicantName: 'John Doe',
+          employerId: 'employer-123',
           message: 'I am very interested in this opportunity',
           proposedRate: 4500
         })
@@ -321,11 +322,11 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
         expect(GigService.createApplication).toHaveBeenCalled()
       })
 
-      // Check that the overridden values were submitted
+      // Check that the overridden values were submitted as structured fields
       const createCall = (GigService.createApplication as jest.Mock).mock.calls[0][0]
-      expect(createCall.message).toContain('Experience: 10 to +')
-      expect(createCall.message).toContain('Availability: immediately')
-      expect(createCall.message).toContain('Tools/Equipment: fully equipped')
+      expect(createCall.experience).toBe('10-plus')
+      expect(createCall.availability).toBe('immediately')
+      expect(createCall.equipment).toBe('fully-equipped')
     })
 
     it('should not show pre-fill banner for users without profile data', async () => {

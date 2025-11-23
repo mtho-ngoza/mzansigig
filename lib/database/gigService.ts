@@ -10,6 +10,7 @@ import {
 import type { DocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { ConfigService } from './configService';
 import { sanitizeGigText, normalizeSkills, GIG_TEXT_LIMITS } from '@/lib/utils/gigValidation';
+import { sanitizeApplicationMessage, APPLICATION_TEXT_LIMITS } from '@/lib/utils/applicationValidation';
 
 // Application limits to prevent spam (configurable via admin)
 // Fallback to 20 if config not available
@@ -387,13 +388,17 @@ export class GigService {
       throw new Error('You have already applied to this gig');
     }
 
-    const application = {
+    // Sanitize message to prevent XSS
+    const sanitizedData = {
       ...applicationData,
+      message: applicationData.message
+        ? sanitizeApplicationMessage(applicationData.message, APPLICATION_TEXT_LIMITS.MESSAGE_MAX)
+        : undefined,
       createdAt: new Date(),
       status: 'pending' as const
     };
 
-    const applicationId = await FirestoreService.create('applications', application);
+    const applicationId = await FirestoreService.create('applications', sanitizedData);
 
     // Auto-close gig if max applicants reached
     if (gig.maxApplicants) {
