@@ -9,6 +9,8 @@ import { useToast } from '@/contexts/ToastContext'
 import { PaymentMethod, Payment } from '@/types/payment'
 import PaymentMethodList from './PaymentMethodList'
 import PaymentMethodForm from './PaymentMethodForm'
+import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
+import { validatePaymentAmount, PAYMENT_LIMITS } from '@/lib/utils/paymentValidation'
 
 interface PaymentDialogProps {
   gigId: string
@@ -44,7 +46,7 @@ export default function PaymentDialog({
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
   const [customAmount, setCustomAmount] = useState(amount.toString())
   const [paymentType, setPaymentType] = useState<'fixed' | 'milestone' | 'bonus'>('fixed')
-  const [step, setStep] = useState<'amount' | 'method' | 'add-method' | 'confirm' | 'processing'>('amount')
+  const [step, setStep] = useState<'amount' | 'method' | 'add-method' | 'confirm' | 'large-amount-confirm' | 'processing'>('amount')
   const [fees, setFees] = useState<{
     platformFee: number
     processingFee: number
@@ -52,6 +54,7 @@ export default function PaymentDialog({
     totalFees: number
     netAmount: number
   } | null>(null)
+  const [largeAmountConfirmed, setLargeAmountConfirmed] = useState(false)
 
   useEffect(() => {
     if (paymentMethods.length > 0) {
@@ -89,8 +92,14 @@ export default function PaymentDialog({
 
   const handleNext = () => {
     if (step === 'amount') {
-      if (finalAmount < 100) {
-        showError('Minimum payment amount is R100')
+      const validation = validatePaymentAmount(finalAmount)
+      if (!validation.isValid) {
+        showError(validation.message || 'Invalid payment amount')
+        return
+      }
+      // Check if large amount confirmation is required
+      if (validation.requiresConfirmation && !largeAmountConfirmed) {
+        setStep('large-amount-confirm')
         return
       }
       setStep('method')
@@ -100,6 +109,9 @@ export default function PaymentDialog({
         return
       }
       setStep('confirm')
+    } else if (step === 'large-amount-confirm') {
+      setLargeAmountConfirmed(true)
+      setStep('method')
     }
   }
 
@@ -140,7 +152,7 @@ export default function PaymentDialog({
                 Payment Amount
               </h3>
               <p className="text-sm text-gray-600 mb-4">
-                {description || `Payment for gig work to ${workerName}`}
+                {sanitizeForDisplay(description) || `Payment for gig work to ${sanitizeForDisplay(workerName)}`}
               </p>
             </div>
 
@@ -285,6 +297,46 @@ export default function PaymentDialog({
           </div>
         )
 
+      case 'large-amount-confirm':
+        return (
+          <div className="space-y-6">
+            <div className="bg-orange-50 border-2 border-orange-500 rounded-lg p-6">
+              <div className="flex items-start">
+                <div className="text-4xl mr-4">⚠️</div>
+                <div>
+                  <h3 className="text-lg font-semibold text-orange-900 mb-2">
+                    Large Payment Amount
+                  </h3>
+                  <p className="text-orange-800 mb-4">
+                    You are about to make a payment of <span className="font-bold">{formatCurrency(finalAmount)}</span>.
+                    This exceeds our large payment threshold of {formatCurrency(PAYMENT_LIMITS.LARGE_AMOUNT_THRESHOLD)}.
+                  </p>
+                  <div className="bg-white rounded p-4 mb-4">
+                    <h4 className="font-medium text-gray-900 mb-2">Please verify:</h4>
+                    <ul className="space-y-2 text-sm text-gray-700">
+                      <li className="flex items-start">
+                        <span className="mr-2">✓</span>
+                        <span>The payment amount is correct</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">✓</span>
+                        <span>The recipient is correct ({sanitizeForDisplay(workerName)})</span>
+                      </li>
+                      <li className="flex items-start">
+                        <span className="mr-2">✓</span>
+                        <span>You have agreed on this amount with the worker</span>
+                      </li>
+                    </ul>
+                  </div>
+                  <p className="text-sm text-orange-700">
+                    Once processed, this payment will be held in secure escrow until the work is completed.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+
       case 'confirm':
         return (
           <div className="space-y-6">
@@ -303,7 +355,7 @@ export default function PaymentDialog({
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">To:</span>
-                  <span className="font-medium">{workerName}</span>
+                  <span className="font-medium">{sanitizeForDisplay(workerName)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Amount:</span>
@@ -439,9 +491,24 @@ export default function PaymentDialog({
                     Next
                   </Button>
                 </>
-              ) : step === 'method' ? (
+              ) : step === 'large-amount-confirm' ? (
                 <>
                   <Button variant="outline" onClick={() => setStep('amount')} className="flex-1">
+                    Back
+                  </Button>
+                  <Button
+                    onClick={handleNext}
+                    className="flex-1 bg-orange-600 hover:bg-orange-700"
+                  >
+                    Confirm & Continue
+                  </Button>
+                </>
+              ) : step === 'method' ? (
+                <>
+                  <Button variant="outline" onClick={() => {
+                    setLargeAmountConfirmed(false)
+                    setStep('amount')
+                  }} className="flex-1">
                     Back
                   </Button>
                   <Button
