@@ -415,7 +415,7 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
 
       if (editGig) {
         // Update existing gig
-        await GigService.updateGig(editGig.id, gigData)
+        await GigService.updateGig(editGig.id, gigData, user?.id)
         success('Sharp! Your gig has been updated')
       } else {
         // Create new gig

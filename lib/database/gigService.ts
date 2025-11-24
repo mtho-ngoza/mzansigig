@@ -46,7 +46,20 @@ export class GigService {
     return await FirestoreService.getById<Gig>('gigs', id);
   }
 
-  static async updateGig(id: string, updates: Partial<Gig>): Promise<void> {
+  static async updateGig(id: string, updates: Partial<Gig>, userId?: string): Promise<void> {
+    // If userId is provided, verify authorization (only gig owner can update)
+    if (userId) {
+      const existingGig = await this.getGigById(id);
+      if (!existingGig) {
+        throw new Error('Gig not found');
+      }
+
+      // Authorization check: Only the employer who created the gig can update it
+      if (existingGig.employerId !== userId) {
+        throw new Error('Unauthorized: Only the gig owner can update this gig');
+      }
+    }
+
     // Sanitize text inputs if they're being updated
     const sanitizedUpdates: Partial<Gig> = { ...updates };
 
@@ -68,7 +81,20 @@ export class GigService {
     await FirestoreService.update('gigs', id, updateData);
   }
 
-  static async deleteGig(id: string): Promise<void> {
+  static async deleteGig(id: string, userId?: string): Promise<void> {
+    // If userId is provided, verify authorization (only gig owner can delete)
+    if (userId) {
+      const existingGig = await this.getGigById(id);
+      if (!existingGig) {
+        throw new Error('Gig not found');
+      }
+
+      // Authorization check: Only the employer who created the gig can delete it
+      if (existingGig.employerId !== userId) {
+        throw new Error('Unauthorized: Only the gig owner can delete this gig');
+      }
+    }
+
     await FirestoreService.delete('gigs', id);
   }
 
