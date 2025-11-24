@@ -16,7 +16,7 @@ describe('Encryption - Security Validation', () => {
 
   describe('Production Environment - ENCRYPTION_SECRET validation', () => {
     beforeEach(() => {
-      process.env.NODE_ENV = 'production'
+      (process.env as any).NODE_ENV = 'production'
     })
 
     describe('given ENCRYPTION_SECRET is missing', () => {
@@ -77,7 +77,7 @@ describe('Encryption - Security Validation', () => {
 
   describe('Development Environment - Fallback behavior', () => {
     beforeEach(() => {
-      process.env.NODE_ENV = 'development'
+      (process.env as any).NODE_ENV = 'development'
     })
 
     describe('given ENCRYPTION_SECRET is missing', () => {
@@ -116,7 +116,7 @@ describe('Encryption - Security Validation', () => {
 
   describe('Test Environment - Fallback behavior', () => {
     beforeEach(() => {
-      process.env.NODE_ENV = 'test'
+      (process.env as any).NODE_ENV = 'test'
     })
 
     describe('given ENCRYPTION_SECRET is missing', () => {
@@ -139,7 +139,7 @@ describe('Encryption - Security Validation', () => {
 
   describe('Unknown Environment - Security default', () => {
     beforeEach(() => {
-      process.env.NODE_ENV = 'staging' // Not production, development, or test
+      (process.env as any).NODE_ENV = 'staging' // Not production, development, or test
     })
 
     describe('given ENCRYPTION_SECRET is missing', () => {
@@ -179,7 +179,7 @@ describe('Encryption - Security Validation', () => {
       describe('when validating setup', () => {
         it('then throws and logs error', () => {
           // Given
-          process.env.NODE_ENV = 'production'
+          (process.env as any).NODE_ENV = 'production'
           delete process.env.ENCRYPTION_SECRET
           delete process.env.NEXT_PUBLIC_ENCRYPTION_SECRET
 
@@ -201,7 +201,7 @@ describe('Encryption - Security Validation', () => {
       describe('when validating setup', () => {
         it('then succeeds and logs success', () => {
           // Given
-          process.env.NODE_ENV = 'development'
+          (process.env as any).NODE_ENV = 'development'
           delete process.env.ENCRYPTION_SECRET
           delete process.env.NEXT_PUBLIC_ENCRYPTION_SECRET
 
@@ -220,7 +220,7 @@ describe('Encryption - Security Validation', () => {
       describe('when validating setup', () => {
         it('then performs encryption round-trip test', () => {
           // Given
-          process.env.NODE_ENV = 'production'
+          (process.env as any).NODE_ENV = 'production'
           process.env.ENCRYPTION_SECRET = 'valid-production-secret-with-32-characters-minimum!'
 
           const consoleSpy = jest.spyOn(console, 'log').mockImplementation()
@@ -237,7 +237,7 @@ describe('Encryption - Security Validation', () => {
 
   describe('NEXT_PUBLIC_ENCRYPTION_SECRET fallback', () => {
     beforeEach(() => {
-      process.env.NODE_ENV = 'production'
+      (process.env as any).NODE_ENV = 'production'
     })
 
     describe('given ENCRYPTION_SECRET is missing but NEXT_PUBLIC_ENCRYPTION_SECRET is set', () => {
