@@ -224,6 +224,10 @@ service cloud.firestore {
       allow create: if isAuthenticated() &&
                       hasRequiredFields(['conversationId', 'senderId', 'content']) &&
                       request.resource.data.senderId == request.auth.uid &&
+                      // Validate message content length (1-5000 characters)
+                      request.resource.data.content is string &&
+                      request.resource.data.content.size() >= 1 &&
+                      request.resource.data.content.size() <= 5000 &&
                       exists(/databases/$(database)/documents/conversations/$(request.resource.data.conversationId));
 
       // Senders can update their own messages (mark as edited, etc.)
@@ -231,10 +235,15 @@ service cloud.firestore {
       allow update: if isAuthenticated() &&
                       exists(/databases/$(database)/documents/conversations/$(resource.data.conversationId)) &&
                       (
-                        // Sender updating their own message
+                        // Sender updating their own message (with content length validation if content changed)
                         (request.auth.uid == resource.data.senderId &&
                          request.resource.data.senderId == resource.data.senderId &&
-                         request.resource.data.conversationId == resource.data.conversationId) ||
+                         request.resource.data.conversationId == resource.data.conversationId &&
+                         // If content is being updated, validate its length
+                         (request.resource.data.content == resource.data.content ||
+                          (request.resource.data.content is string &&
+                           request.resource.data.content.size() >= 1 &&
+                           request.resource.data.content.size() <= 5000))) ||
                         // Recipient marking message as read (conversation participant, not the sender)
                         (request.auth.uid in get(/databases/$(database)/documents/conversations/$(resource.data.conversationId)).data.participantIds &&
                          request.auth.uid != resource.data.senderId &&
