@@ -1,6 +1,9 @@
 /**
  * Encryption utilities for sensitive data (POPIA compliance)
  * Uses AES-256-GCM encryption for ID numbers and other PII
+ *
+ * IMPORTANT: Call validateEncryptionSetup() during app initialization to ensure
+ * proper encryption configuration before handling sensitive data.
  */
 
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from 'crypto'
@@ -25,18 +28,34 @@ function deriveKey(secret: string, salt: Buffer): Buffer {
  * In production, this should be stored in a secure secret manager
  */
 function getEncryptionSecret(): string {
+  // CRITICAL: In production, ENCRYPTION_SECRET must be explicitly set
+  // Check production environment first to prevent fallback bypass
+  const isProduction = process.env.NODE_ENV === 'production'
   const secret = process.env.ENCRYPTION_SECRET || process.env.NEXT_PUBLIC_ENCRYPTION_SECRET
 
   if (!secret) {
-    // Development fallback - DO NOT use in production
+    // NEVER allow missing secret in production
+    if (isProduction) {
+      throw new Error('CRITICAL: ENCRYPTION_SECRET environment variable is required in production. This is mandatory for POPIA compliance.')
+    }
+
+    // Development/test fallback only
     if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
       return 'dev-secret-key-change-in-production-32-characters-minimum'
     }
-    throw new Error('ENCRYPTION_SECRET environment variable is required for production')
+
+    // If NODE_ENV is not set or is something unexpected, treat as production
+    throw new Error('ENCRYPTION_SECRET environment variable is required. NODE_ENV must be explicitly set to development or test to use fallback.')
   }
 
+  // Validate secret length
   if (secret.length < 32) {
-    throw new Error('ENCRYPTION_SECRET must be at least 32 characters long')
+    throw new Error('ENCRYPTION_SECRET must be at least 32 characters long for security')
+  }
+
+  // In production, reject the development fallback secret
+  if (isProduction && secret === 'dev-secret-key-change-in-production-32-characters-minimum') {
+    throw new Error('CRITICAL: Development fallback secret detected in production. Set a proper ENCRYPTION_SECRET.')
   }
 
   return secret
@@ -75,6 +94,14 @@ export function encryptData(plaintext: string): string {
 
     return result
   } catch (error) {
+    // Rethrow configuration errors with original message
+    if (error instanceof Error && (
+      error.message.includes('ENCRYPTION_SECRET') ||
+      error.message.includes('CRITICAL')
+    )) {
+      throw error
+    }
+    // For other errors, log and throw generic message
     console.error('Encryption failed:', error)
     throw new Error('Failed to encrypt data')
   }
@@ -113,6 +140,14 @@ export function decryptData(ciphertext: string): string {
 
     return decrypted.toString('utf8')
   } catch (error) {
+    // Rethrow configuration errors with original message
+    if (error instanceof Error && (
+      error.message.includes('ENCRYPTION_SECRET') ||
+      error.message.includes('CRITICAL')
+    )) {
+      throw error
+    }
+    // For other errors, log and throw generic message
     console.error('Decryption failed:', error)
     throw new Error('Failed to decrypt data')
   }
@@ -141,4 +176,31 @@ export function maskIdNumber(idNumber: string): string {
     return '***********'
   }
   return `${idNumber.substring(0, 6)}****${idNumber.substring(10)}`
+}
+
+/**
+ * Validate encryption setup on application startup
+ * Call this during app initialization to fail fast if encryption is misconfigured
+ *
+ * @throws Error if encryption is not properly configured
+ */
+export function validateEncryptionSetup(): void {
+  try {
+    // This will throw if ENCRYPTION_SECRET is invalid or missing in production
+    getEncryptionSecret()
+
+    // Test encryption/decryption works
+    const testData = 'test-encryption-setup'
+    const encrypted = encryptData(testData)
+    const decrypted = decryptData(encrypted)
+
+    if (decrypted !== testData) {
+      throw new Error('Encryption validation failed: decrypted data does not match original')
+    }
+
+    console.log('✓ Encryption setup validated successfully')
+  } catch (error) {
+    console.error('✗ Encryption setup validation failed:', error)
+    throw error
+  }
 }
