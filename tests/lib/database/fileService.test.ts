@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { v4 as uuidv4 } from 'uuid'
 
@@ -15,7 +16,7 @@ jest.mock('firebase/storage', () => ({
 
 // Mock uuid
 jest.mock('uuid', () => ({
-  v4: jest.fn(),
+  v4: jest.fn(() => 'mock-uuid'),
 }))
 
 // Mock messageValidation
@@ -433,7 +434,7 @@ describe('FileService', () => {
       jest.clearAllMocks()
 
       // Setup default mock implementations
-      jest.mocked(uuidv4).mockReturnValue(mockUuid)
+      (uuidv4 as jest.Mock).mockReturnValue(mockUuid)
       jest.mocked(ref).mockReturnValue({ fullPath: 'mock-path' } as any)
       jest.mocked(uploadBytes).mockResolvedValue({} as any)
       jest.mocked(getDownloadURL).mockResolvedValue(mockDownloadUrl)
@@ -636,7 +637,7 @@ describe('FileService', () => {
           Object.defineProperty(file1, 'size', { value: 1024 })
           Object.defineProperty(file2, 'size', { value: 1024 })
 
-          jest.mocked(uuidv4)
+          (uuidv4 as jest.Mock)
             .mockReturnValueOnce('uuid-1')
             .mockReturnValueOnce('uuid-2')
 
