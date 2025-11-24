@@ -39,35 +39,38 @@ export class WalletService {
 
   /**
    * Credit worker's wallet when escrow is released
+   * Uses transaction to prevent race conditions
    */
   static async creditWallet(userId: string, amount: number): Promise<void> {
     const userRef = doc(db, 'users', userId)
 
-    // First check if user exists and has wallet fields
-    const userDoc = await getDoc(userRef)
-    if (!userDoc.exists()) {
-      throw new Error('User not found')
-    }
-
     try {
-      const userData = userDoc.data()
+      await runTransaction(db, async (transaction) => {
+        const userDoc = await transaction.get(userRef)
 
-      // Initialize wallet if fields don't exist
-      if (userData.walletBalance === undefined) {
-        await updateDoc(userRef, {
-          walletBalance: amount,
-          pendingBalance: 0,
-          totalEarnings: amount,
-          totalWithdrawn: 0,
-          updatedAt: Timestamp.now()
-        })
-      } else {
-        await updateDoc(userRef, {
-          walletBalance: increment(amount),
-          totalEarnings: increment(amount),
-          updatedAt: Timestamp.now()
-        })
-      }
+        if (!userDoc.exists()) {
+          throw new Error('User not found')
+        }
+
+        const userData = userDoc.data()
+
+        // Initialize wallet if fields don't exist
+        if (userData.walletBalance === undefined) {
+          transaction.update(userRef, {
+            walletBalance: amount,
+            pendingBalance: 0,
+            totalEarnings: amount,
+            totalWithdrawn: 0,
+            updatedAt: Timestamp.now()
+          })
+        } else {
+          transaction.update(userRef, {
+            walletBalance: increment(amount),
+            totalEarnings: increment(amount),
+            updatedAt: Timestamp.now()
+          })
+        }
+      })
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to credit wallet')
     }
@@ -75,63 +78,46 @@ export class WalletService {
 
   /**
    * Debit worker's wallet when withdrawal is processed
+   * @deprecated Use debitWalletAtomic instead to prevent race conditions
    */
   static async debitWallet(userId: string, amount: number): Promise<void> {
-    const userRef = doc(db, 'users', userId)
-    const userDoc = await getDoc(userRef)
-
-    if (!userDoc.exists()) {
-      throw new Error('User not found')
-    }
-
-    const userData = userDoc.data() as User
-    const currentBalance = userData.walletBalance || 0
-
-    if (currentBalance < amount) {
-      throw new Error('Insufficient balance')
-    }
-
-    try {
-      await updateDoc(userRef, {
-        walletBalance: increment(-amount),
-        totalWithdrawn: increment(amount),
-        updatedAt: Timestamp.now()
-      })
-    } catch (error) {
-      throw new Error(error instanceof Error ? error.message : 'Failed to debit wallet')
-    }
+    // Redirect to atomic version to prevent race conditions
+    return this.debitWalletAtomic(userId, amount)
   }
 
   /**
    * Update pending balance when payment goes into escrow
+   * Uses transaction to prevent race conditions
    */
   static async updatePendingBalance(userId: string, amount: number): Promise<void> {
     const userRef = doc(db, 'users', userId)
 
-    // First check if user exists and has wallet fields
-    const userDoc = await getDoc(userRef)
-    if (!userDoc.exists()) {
-      throw new Error('User not found')
-    }
-
     try {
-      const userData = userDoc.data()
+      await runTransaction(db, async (transaction) => {
+        const userDoc = await transaction.get(userRef)
 
-      // Initialize wallet if fields don't exist
-      if (userData.pendingBalance === undefined) {
-        await updateDoc(userRef, {
-          walletBalance: 0,
-          pendingBalance: amount,
-          totalEarnings: 0,
-          totalWithdrawn: 0,
-          updatedAt: Timestamp.now()
-        })
-      } else {
-        await updateDoc(userRef, {
-          pendingBalance: increment(amount),
-          updatedAt: Timestamp.now()
-        })
-      }
+        if (!userDoc.exists()) {
+          throw new Error('User not found')
+        }
+
+        const userData = userDoc.data()
+
+        // Initialize wallet if fields don't exist
+        if (userData.pendingBalance === undefined) {
+          transaction.update(userRef, {
+            walletBalance: 0,
+            pendingBalance: amount,
+            totalEarnings: 0,
+            totalWithdrawn: 0,
+            updatedAt: Timestamp.now()
+          })
+        } else {
+          transaction.update(userRef, {
+            pendingBalance: increment(amount),
+            updatedAt: Timestamp.now()
+          })
+        }
+      })
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to update pending balance')
     }
@@ -139,36 +125,45 @@ export class WalletService {
 
   /**
    * Transfer from pending to wallet when escrow is released
+   * Uses transaction to prevent race conditions and ensure atomicity
    */
   static async movePendingToWallet(userId: string, amount: number): Promise<void> {
     const userRef = doc(db, 'users', userId)
 
-    // First check if user exists and has wallet fields
-    const userDoc = await getDoc(userRef)
-    if (!userDoc.exists()) {
-      throw new Error('User not found')
-    }
-
     try {
-      const userData = userDoc.data()
+      await runTransaction(db, async (transaction) => {
+        const userDoc = await transaction.get(userRef)
 
-      // Initialize wallet if fields don't exist
-      if (userData.walletBalance === undefined || userData.pendingBalance === undefined) {
-        await updateDoc(userRef, {
-          walletBalance: amount,
-          pendingBalance: 0,
-          totalEarnings: amount,
-          totalWithdrawn: 0,
-          updatedAt: Timestamp.now()
-        })
-      } else {
-        await updateDoc(userRef, {
-          pendingBalance: increment(-amount),
-          walletBalance: increment(amount),
-          totalEarnings: increment(amount),
-          updatedAt: Timestamp.now()
-        })
-      }
+        if (!userDoc.exists()) {
+          throw new Error('User not found')
+        }
+
+        const userData = userDoc.data()
+        const currentPending = userData.pendingBalance || 0
+
+        // Validate sufficient pending balance
+        if (currentPending < amount) {
+          throw new Error(`Insufficient pending balance. Tried to release ${amount} but only ${currentPending} available`)
+        }
+
+        // Initialize wallet if fields don't exist
+        if (userData.walletBalance === undefined || userData.pendingBalance === undefined) {
+          transaction.update(userRef, {
+            walletBalance: amount,
+            pendingBalance: 0,
+            totalEarnings: amount,
+            totalWithdrawn: 0,
+            updatedAt: Timestamp.now()
+          })
+        } else {
+          transaction.update(userRef, {
+            pendingBalance: increment(-amount),
+            walletBalance: increment(amount),
+            totalEarnings: increment(amount),
+            updatedAt: Timestamp.now()
+          })
+        }
+      })
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to move pending to wallet')
     }
