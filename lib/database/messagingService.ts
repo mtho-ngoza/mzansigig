@@ -157,9 +157,19 @@ export class MessagingService {
     }
   }
 
-  static async getConversationById(conversationId: string): Promise<Conversation | null> {
+  static async getConversationById(conversationId: string, authenticatedUserId?: string): Promise<Conversation | null> {
     try {
-      return await FirestoreService.getById<Conversation>('conversations', conversationId);
+      const conversation = await FirestoreService.getById<Conversation>('conversations', conversationId);
+
+      // If authenticatedUserId is provided, verify the user is a participant
+      if (authenticatedUserId && conversation) {
+        const isParticipant = conversation.participantIds.includes(authenticatedUserId);
+        if (!isParticipant) {
+          throw new Error('Unauthorized: You are not a participant in this conversation');
+        }
+      }
+
+      return conversation;
     } catch (error: unknown) {
       // If conversation doesn't exist or user doesn't have permission, return null instead of throwing
       // This is expected behavior when there's no active conversation

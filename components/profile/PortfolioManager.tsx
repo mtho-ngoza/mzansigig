@@ -178,9 +178,9 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
       }
 
       if (editingItem) {
-        await ProfileService.updatePortfolioItem(user.id, editingItem.id, portfolioData)
+        await ProfileService.updatePortfolioItem(user.id, editingItem.id, portfolioData, user.id)
       } else {
-        await ProfileService.addPortfolioItem(user.id, portfolioData)
+        await ProfileService.addPortfolioItem(user.id, portfolioData, user.id)
       }
 
       await ProfileService.updateProfileCompleteness(user.id)
@@ -217,7 +217,7 @@ export default function PortfolioManager({ onBack }: PortfolioManagerProps) {
     }
 
     try {
-      await ProfileService.deletePortfolioItem(user.id, item.id)
+      await ProfileService.deletePortfolioItem(user.id, item.id, user.id)
       await ProfileService.updateProfileCompleteness(user.id)
       await refreshUser()
       success('Portfolio item removed')

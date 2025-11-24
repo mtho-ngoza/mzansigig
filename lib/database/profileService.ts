@@ -96,8 +96,13 @@ export class ProfileService {
     }
   }
 
-  static async addPortfolioItem(userId: string, portfolioData: Omit<PortfolioItem, 'id'>): Promise<void> {
+  static async addPortfolioItem(userId: string, portfolioData: Omit<PortfolioItem, 'id'>, authenticatedUserId?: string): Promise<void> {
     try {
+      // If authenticatedUserId is provided, verify authorization (only user can modify their own portfolio)
+      if (authenticatedUserId && authenticatedUserId !== userId) {
+        throw new Error('Unauthorized: You can only modify your own portfolio')
+      }
+
       const userRef = doc(db, 'users', userId)
       const userDoc = await getDoc(userRef)
 
@@ -124,8 +129,13 @@ export class ProfileService {
     }
   }
 
-  static async updatePortfolioItem(userId: string, portfolioId: string, updates: Partial<PortfolioItem>): Promise<void> {
+  static async updatePortfolioItem(userId: string, portfolioId: string, updates: Partial<PortfolioItem>, authenticatedUserId?: string): Promise<void> {
     try {
+      // If authenticatedUserId is provided, verify authorization (only user can modify their own portfolio)
+      if (authenticatedUserId && authenticatedUserId !== userId) {
+        throw new Error('Unauthorized: You can only modify your own portfolio')
+      }
+
       const userRef = doc(db, 'users', userId)
       const userDoc = await getDoc(userRef)
 
@@ -149,8 +159,13 @@ export class ProfileService {
     }
   }
 
-  static async deletePortfolioItem(userId: string, portfolioId: string): Promise<void> {
+  static async deletePortfolioItem(userId: string, portfolioId: string, authenticatedUserId?: string): Promise<void> {
     try {
+      // If authenticatedUserId is provided, verify authorization (only user can modify their own portfolio)
+      if (authenticatedUserId && authenticatedUserId !== userId) {
+        throw new Error('Unauthorized: You can only modify your own portfolio')
+      }
+
       const userRef = doc(db, 'users', userId)
       const userDoc = await getDoc(userRef)
 

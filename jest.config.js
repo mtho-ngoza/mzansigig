@@ -38,15 +38,12 @@ const customJestConfig = {
     '**/tests/**/*.[jt]s?(x)',
     '**/?(*.)+(spec|test).[jt]s?(x)',
   ],
-  // TODO: Increase coverage thresholds to 80% as more tests are added
-  // Current thresholds are set based on existing test coverage
-  // Target: branches: 80, functions: 80, lines: 80, statements: 80
   coverageThreshold: {
     global: {
-      branches: 30,
-      functions: 35,
-      lines: 35,
-      statements: 35,
+      branches: 79,
+      functions: 80,
+      lines: 80,
+      statements: 80,
     },
   },
   testPathIgnorePatterns: [

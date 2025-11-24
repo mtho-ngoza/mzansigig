@@ -161,7 +161,7 @@ export function MessagingProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
-      const conversation = await MessagingService.getConversationById(conversationId)
+      const conversation = await MessagingService.getConversationById(conversationId, user?.id)
       setActiveConversationState(conversation)
 
       // Mark messages as read when opening conversation

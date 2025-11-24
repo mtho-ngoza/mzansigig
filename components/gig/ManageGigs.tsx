@@ -108,7 +108,7 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
       // Update gig status to completed
       await GigService.updateGig(selectedGig.id, {
         status: 'completed'
-      })
+      }, user?.id)
 
       // Update application status to completed
       if (selectedGig.acceptedApplication?.id) {
@@ -157,7 +157,7 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
     try {
       await GigService.updateGig(gigId, {
         status: 'cancelled'
-      })
+      }, user?.id)
 
       await fetchGigs()
       success('Gig has been cancelled.')

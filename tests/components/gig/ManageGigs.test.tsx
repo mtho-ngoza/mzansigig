@@ -335,7 +335,7 @@ describe('ManageGigs', () => {
       await waitFor(() => {
         expect(GigService.updateGig).toHaveBeenCalledWith('gig-2', {
           status: 'completed'
-        })
+        }, 'employer-123')
         expect(GigService.updateApplicationStatus).toHaveBeenCalledWith('app-1', 'completed')
         expect(PaymentService.releaseEscrow).toHaveBeenCalledWith('payment-123')
         // Toast notification is called instead of alert
@@ -408,7 +408,7 @@ describe('ManageGigs', () => {
       await waitFor(() => {
         expect(GigService.updateGig).toHaveBeenCalledWith('gig-1', {
           status: 'cancelled'
-        })
+        }, 'employer-123')
         // Toast notification is called instead of alert
       })
 
