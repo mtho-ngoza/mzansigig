@@ -48,7 +48,7 @@ describe('Legal Pages - Footer Presence', () => {
     it('should have contact email', () => {
       render(<TermsOfService />)
 
-      expect(screen.getByText(/legal@mzansigig.co.za/)).toBeInTheDocument()
+      expect(screen.getByText(/legal@mzansigigs.co.za/)).toBeInTheDocument()
     })
 
     it('should have version information', () => {
@@ -98,7 +98,7 @@ describe('Legal Pages - Footer Presence', () => {
     it('should have contact email', () => {
       render(<PrivacyPolicy />)
 
-      expect(screen.getAllByText(/privacy@mzansigig.co.za/).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/privacy@mzansigigs.co.za/).length).toBeGreaterThan(0)
     })
 
     it('should have POPIA compliant label', () => {
@@ -168,7 +168,7 @@ describe('Legal Pages - Footer Presence', () => {
     it('should have privacy contact email', () => {
       render(<POPIACompliance />)
 
-      expect(screen.getAllByText(/privacy@mzansigig.co.za/).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/privacy@mzansigigs.co.za/).length).toBeGreaterThan(0)
     })
 
     it('should have data categories grid', () => {
@@ -213,15 +213,15 @@ describe('Legal Pages - Footer Presence', () => {
 
     it('should have contact email on all legal pages', () => {
       const { unmount: unmountTerms } = render(<TermsOfService />)
-      expect(screen.getAllByText(/mzansigig.co.za/).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/mzansigigs.co.za/).length).toBeGreaterThan(0)
       unmountTerms()
 
       const { unmount: unmountPrivacy } = render(<PrivacyPolicy />)
-      expect(screen.getAllByText(/mzansigig.co.za/).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/mzansigigs.co.za/).length).toBeGreaterThan(0)
       unmountPrivacy()
 
       render(<POPIACompliance />)
-      expect(screen.getAllByText(/mzansigig.co.za/).length).toBeGreaterThan(0)
+      expect(screen.getAllByText(/mzansigigs.co.za/).length).toBeGreaterThan(0)
     })
   })
 

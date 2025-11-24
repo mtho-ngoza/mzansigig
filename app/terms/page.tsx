@@ -180,7 +180,7 @@ export default function TermsOfService() {
                 For questions about these Terms, contact us at:
               </p>
               <p className="text-gray-700">
-                Email: legal@mzansigig.co.za<br />
+                Email: legal@mzansigigs.co.za<br />
                 Physical Address: MzansiGig (Pty) Ltd, Johannesburg, South Africa<br />
                 Postal Address: P.O. Box 12345, Johannesburg, 2000, South Africa
               </p>

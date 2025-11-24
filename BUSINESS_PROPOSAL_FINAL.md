@@ -57,7 +57,7 @@ South Africa faces a critical unemployment crisis affecting **11.2 million peopl
 - Security rules deployment (Firestore/Storage)
 - Legal documents (Terms of Service, POPIA-compliant Privacy Policy)
 - Beta testing (20-30 users)
-- Domain registration (kasigig.co.za)
+- Domain registration (mzansigigs.co.za)
 
 ---
 

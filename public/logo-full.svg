@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="400" height="120" viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <!-- KasiGig Full Logo with Tagline -->
+  <!-- MzansiGig Full Logo with Tagline -->
 
   <!-- Icon (Hands Connecting) -->
   <g id="icon" transform="translate(40, 35)">
@@ -28,13 +28,13 @@
     <circle cx="0" cy="0" r="2.5" fill="#FFFFFF"/>
   </g>
 
-  <!-- Text: KasiGig -->
+  <!-- Text: MzansiGig -->
   <g id="text" transform="translate(85, 60)">
     <text x="0" y="0"
           font-family="Inter, Arial, sans-serif"
           font-size="42"
           font-weight="700"
-          fill="#1F2937">KasiGig</text>
+          fill="#1F2937">MzansiGig</text>
   </g>
 
   <!-- Tagline -->

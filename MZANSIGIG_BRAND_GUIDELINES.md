@@ -110,7 +110,7 @@ font-weight: 400 (Regular)
 
 ### Social Media Handles
 All platforms: **@MzansiGig**
-(Check for availability; otherwise use @MzansiGigSA)
+(Check for availability; otherwise use @MzansiGig)
 
 ### Bios (Adapt per platform)
 
@@ -125,7 +125,7 @@ All platforms: **@MzansiGig**
 
 ### File Naming Conventions
 
-Replace old `kasigig_` prefix with `mzansigig_`.
+File Naming Conventions: Use mzansigig_ prefix
 
 **Social Media Assets:**
 ```
@@ -166,7 +166,7 @@ Example: mzansigig_flyer_launch_v1.pdf
 ### What Changed
 - **Name:** MzansiGig → MzansiGig Pty Ltd
 - **Scope:** Township-focused → All of Mzansi (South Africa)
-- **Slogan:** "From kasi to career" → "Mzansi's Gig Connection: Work Starts Here"
+- Slogan: "Mzansi gig connection: Work Starts Here"
 - **Positioning:** Inclusive platform for ALL South Africans, not just informal sector
 
 ### What Stayed the Same

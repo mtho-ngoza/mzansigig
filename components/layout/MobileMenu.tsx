@@ -233,7 +233,7 @@ export function MobileMenu({
           {/* Footer */}
           <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
             <p className="text-xs text-gray-500 text-center">
-              GigSA - South Africa&apos;s Premier Gig Platform
+              MzansiGig - South Africa&apos;s Premier Gig Platform
             </p>
           </div>
         </div>

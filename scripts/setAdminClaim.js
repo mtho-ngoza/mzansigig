@@ -5,7 +5,7 @@
  *   node scripts/setAdminClaim.js <email>
  *
  * Example:
- *   node scripts/setAdminClaim.js admin@gigsa.co.za
+ *   node scripts/setAdminClaim.js admin@mzansigigs.co.za
  *
  * Prerequisites:
  *   1. Install firebase-admin: npm install firebase-admin
@@ -139,7 +139,7 @@ Usage:
   List all admins:     node scripts/setAdminClaim.js --list
 
 Examples:
-  node scripts/setAdminClaim.js admin@gigsa.co.za
+  node scripts/setAdminClaim.js admin@mzansigigs.co.za
   node scripts/setAdminClaim.js user@example.com --remove
   node scripts/setAdminClaim.js --list
     `);

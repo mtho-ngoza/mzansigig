@@ -385,7 +385,7 @@ Create multiple sizes for browser compatibility:
 - **Version:** Full logo
 - **Size:** 150-200px width
 - **Format:** PNG (for compatibility)
-- **Link:** Link to kasigig.co.za
+- **Link:** Link to mzansigigs.co.za
 - **Alt text:** "MzansiGig - From kasi to career"
 
 ### PowerPoint/Presentations

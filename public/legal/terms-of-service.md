@@ -8,15 +8,15 @@
 
 ## 1. Acceptance of Terms
 
-By accessing and using Kasigig ("the Platform"), you accept and agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use the Platform.
+By accessing and using MzansiGig ("the Platform"), you accept and agree to be bound by these Terms of Service ("Terms"). If you do not agree to these Terms, you may not use the Platform.
 
-These Terms constitute a legally binding agreement between you and Kasigig (Pty) Ltd ("Kasigig", "we", "us", or "our").
+These Terms constitute a legally binding agreement between you and MzansiGig (Pty) Ltd ("MzansiGig", "we", "us", or "our").
 
 ---
 
 ## 2. Service Description
 
-Kasigig is an online platform that connects employers with workers for temporary gigs and freelance work in South Africa. We provide:
+MzansiGig is an online platform that connects employers with workers for temporary gigs and freelance work in South Africa. We provide:
 
 - A marketplace for posting and finding gigs
 - Payment escrow services
@@ -24,13 +24,13 @@ Kasigig is an online platform that connects employers with workers for temporary
 - Communication tools
 - Rating and review systems
 
-**Kasigig is a platform, not an employer or employment agency.** We facilitate connections but do not employ workers or control how work is performed.
+**MzansiGig is a platform, not an employer or employment agency.** We facilitate connections but do not employ workers or control how work is performed.
 
 ---
 
 ## 3. Eligibility
 
-To use Kasigig, you must:
+To use MzansiGig, you must:
 
 - Be at least 18 years old
 - Be legally eligible to work in South Africa
@@ -144,7 +144,7 @@ Fees are automatically deducted before payment release.
 ### 6.5 Taxes
 
 - Users are responsible for their own tax obligations
-- Kasigig may report earnings to SARS as required by law
+- MzansiGig may report earnings to SARS as required by law
 - Workers should consider registering as independent contractors
 
 ---
@@ -181,15 +181,15 @@ All content (gig posts, profiles, messages) must:
 
 ### 8.1 Platform Ownership
 
-Kasigig owns all rights to:
+MzansiGig owns all rights to:
 - The Platform software and design
-- Kasigig trademarks and logos
+- MzansiGig trademarks and logos
 - Platform content and data
 
 ### 8.2 User Content
 
 - You retain ownership of content you post
-- You grant Kasigig a license to use, display, and distribute your content on the Platform
+- You grant MzansiGig a license to use, display, and distribute your content on the Platform
 - You represent that you own or have rights to posted content
 
 ### 8.3 Work Product
@@ -229,13 +229,13 @@ THE PLATFORM IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND. WE DO NOT GUARA
 ### 10.3 Limitation of Liability
 
 TO THE MAXIMUM EXTENT PERMITTED BY LAW:
-- Kasigig's total liability shall not exceed the fees paid by you in the past 6 months
+- MzansiGig's total liability shall not exceed the fees paid by you in the past 6 months
 - We are not liable for indirect, incidental, or consequential damages
 - We are not liable for loss of profits, data, or goodwill
 
 ### 10.4 Indemnification
 
-You agree to indemnify and hold Kasigig harmless from any claims, damages, or expenses arising from:
+You agree to indemnify and hold MzansiGig harmless from any claims, damages, or expenses arising from:
 - Your use of the Platform
 - Your violation of these Terms
 - Your violation of any rights of others
@@ -300,7 +300,7 @@ Upon termination:
 
 ### 14.1 Entire Agreement
 
-These Terms constitute the entire agreement between you and Kasigig.
+These Terms constitute the entire agreement between you and MzansiGig.
 
 ### 14.2 Severability
 
@@ -324,7 +324,7 @@ We are not liable for failures due to circumstances beyond our control.
 
 For questions about these Terms:
 
-**Email**: legal@mzansigig.co.za
+**Email**: legal@mzansigigs.co.za
 **Address**: [TO BE INSERTED]
 **Phone**: [TO BE INSERTED]
 
@@ -332,7 +332,7 @@ For questions about these Terms:
 
 ## Acknowledgment
 
-BY USING KASIGIG, YOU ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREE TO BE BOUND BY THESE TERMS OF SERVICE.
+BY USING MZANSIGIG, YOU ACKNOWLEDGE THAT YOU HAVE READ, UNDERSTOOD, AND AGREE TO BE BOUND BY THESE TERMS OF SERVICE.
 
 ---
 

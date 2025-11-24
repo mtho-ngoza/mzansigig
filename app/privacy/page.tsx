@@ -191,7 +191,7 @@ export default function PrivacyPolicy() {
                 <li><strong>Withdraw Consent:</strong> Withdraw consent for marketing communications</li>
               </ul>
               <p className="text-gray-700">
-                To exercise these rights, contact our Information Officer at <a href="mailto:privacy@mzansigig.co.za" className="text-primary-600 hover:underline">privacy@mzansigig.co.za</a>. See our <Link href="/popia" className="text-primary-600 hover:underline">POPIA Compliance page</Link> for detailed procedures.
+                To exercise these rights, contact our Information Officer at <a href="mailto:privacy@mzansigigs.co.za" className="text-primary-600 hover:underline">privacy@mzansigigs.co.za</a>. See our <Link href="/popia" className="text-primary-600 hover:underline">POPIA Compliance page</Link> for detailed procedures.
               </p>
             </section>
 
@@ -239,7 +239,7 @@ export default function PrivacyPolicy() {
               </p>
               <p className="text-gray-700">
                 <strong>Information Officer:</strong> Privacy Officer, MzansiGig (Pty) Ltd<br />
-                <strong>Email:</strong> <a href="mailto:privacy@mzansigig.co.za" className="text-primary-600 hover:underline">privacy@mzansigig.co.za</a><br />
+                <strong>Email:</strong> <a href="mailto:privacy@mzansigigs.co.za" className="text-primary-600 hover:underline">privacy@mzansigigs.co.za</a><br />
                 <strong>Physical Address:</strong> MzansiGig (Pty) Ltd, Johannesburg, South Africa<br />
                 {/*<strong>Postal Address:</strong> P.O. Box 12345, Johannesburg, 2000, South Africa<br />*/}
                 <strong>Information Regulator:</strong> If you are not satisfied with our response, you may lodge a complaint with the Information Regulator at <a href="https://inforegulator.org.za" target="_blank" rel="noopener noreferrer" className="text-primary-600 hover:underline">inforegulator.org.za</a>

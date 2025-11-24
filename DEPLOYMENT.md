@@ -1,6 +1,6 @@
-# GigSA Deployment Guide
+# MzansiGig Deployment Guide
 
-This document provides step-by-step instructions for deploying GigSA to Vercel.
+This document provides step-by-step instructions for deploying MzansiGig to Vercel.
 
 ## Prerequisites
 

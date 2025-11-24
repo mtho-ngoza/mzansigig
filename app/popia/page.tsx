@@ -147,7 +147,7 @@ export default function POPIACompliance() {
                 </p>
                 <div className="text-primary-900">
                   <p className="mb-2"><strong>Information Officer:</strong> Privacy Officer, MzansiGig (Pty) Ltd</p>
-                  <p className="mb-2"><strong>Email:</strong> <a href="mailto:privacy@mzansigig.co.za" className="underline hover:text-primary-700">privacy@mzansigig.co.za</a></p>
+                  <p className="mb-2"><strong>Email:</strong> <a href="mailto:privacy@mzansigigs.co.za" className="underline hover:text-primary-700">privacy@mzansigigs.co.za</a></p>
                   <p className="mb-2"><strong>Phone:</strong> +27 (0) 11 123 4567</p>
                   <p className="mb-2"><strong>Physical Address:</strong> MzansiGig (Pty) Ltd, Johannesburg, South Africa</p>
                   <p className="mb-2"><strong>Postal Address:</strong> P.O. Box 12345, Johannesburg, 2000, South Africa</p>
@@ -264,7 +264,7 @@ export default function POPIACompliance() {
                 If you have questions about POPIA compliance or your data rights, we&apos;re here to help.
               </p>
               <p className="text-secondary-800">
-                Contact our Information Officer at <a href="mailto:privacy@mzansigig.co.za" className="underline hover:text-secondary-700">privacy@mzansigig.co.za</a>
+                Contact our Information Officer at <a href="mailto:privacy@mzansigigs.co.za" className="underline hover:text-secondary-700">privacy@mzansigigs.co.za</a>
               </p>
             </div>
           </div>
