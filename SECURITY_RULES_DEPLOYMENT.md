@@ -1,6 +1,6 @@
 # Firebase Security Rules Deployment Guide
 
-This guide provides step-by-step instructions for deploying and testing Firebase security rules for the GigSA platform.
+This guide provides step-by-step instructions for deploying and testing Firebase security rules for the MzansiGig platform.
 
 ## 📋 Overview
 
@@ -100,7 +100,7 @@ async function setAdminClaim(email) {
 }
 
 // Replace with your admin email
-setAdminClaim('admin@gigsa.co.za');
+setAdminClaim('admin@mzansigigs.co.za');
 ```
 
 Run it:
@@ -348,4 +348,4 @@ If you encounter issues:
 
 **Last Updated:** 2025-01-28
 **Version:** 1.0.0
-**Maintained by:** GigSA Development Team
+**Maintained by:** MzansiGig Development Team

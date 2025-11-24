@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kasigig-v2' // Updated to force service worker refresh
+const CACHE_NAME = 'mzansigig-v2' // Updated to force service worker refresh
 const urlsToCache = [
   '/',
   '/manifest.json',

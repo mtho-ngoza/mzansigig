@@ -1,6 +1,6 @@
 # Infrastructure Setup Guide
 
-This guide provides step-by-step instructions for setting up production infrastructure for Kasigig.
+This guide provides step-by-step instructions for setting up production infrastructure for MzansiGig.
 
 **Estimated Setup Time**: 3-5 days (including account approvals)
 
@@ -21,7 +21,7 @@ This guide provides step-by-step instructions for setting up production infrastr
 
 ### Overview
 
-Kasigig requires a payment gateway for escrow payments between employers and workers. The platform needs to:
+MzansiGig requires a payment gateway for escrow payments between employers and workers. The platform needs to:
 - Accept card payments from employers
 - Hold funds in escrow
 - Release payments to workers upon gig completion
@@ -204,7 +204,7 @@ Kasigig requires a payment gateway for escrow payments between employers and wor
 
 2. **Configure Authorized Domains**
    - Go to Authentication → Settings → Authorized domains
-   - Add your production domain: `kasigigs.co.za` (example)
+   - Add your production domain: `mzansigigs.co.za` (example)
    - Add staging domain if you have one
 
 3. **Email Templates**
@@ -213,7 +213,7 @@ Kasigig requires a payment gateway for escrow payments between employers and wor
      - Email verification
      - Password reset
      - Email address change
-   - Update sender name to "Kasigig"
+   - Update sender name to "MzansiGig"
    - Add your support email
 
 #### 2.3 Set Up Billing Alerts
@@ -278,7 +278,7 @@ firebase deploy --only storage:rules
 
 ### Overview
 
-Kasigig uses Google Cloud Vision API for ID verification (OCR to extract ID details from uploaded documents).
+MzansiGig uses Google Cloud Vision API for ID verification (OCR to extract ID details from uploaded documents).
 
 **Current Implementation**: `lib/services/idVerificationService.ts`
 
@@ -298,7 +298,7 @@ Kasigig uses Google Cloud Vision API for ID verification (OCR to extract ID deta
 3. **Create Service Account** (for server-side)
    - Go to IAM & Admin → Service Accounts
    - Click "Create Service Account"
-   - Name: "kasigig-vision-api"
+   - Name: "mzansigig-vision-api"
    - Role: "Cloud Vision AI Service Agent"
    - Click "Create Key" → JSON
    - Download JSON file (keep secure!)
@@ -321,7 +321,7 @@ GOOGLE_CLOUD_CREDENTIALS='{"type":"service_account","project_id":"..."}'
 2. Create credentials → API key
 3. Restrict API key:
    - Application restrictions: HTTP referrers
-   - Add your domain: `kasigigs.co.za/*`
+   - Add your domain: `mzansigigs.co.za/*`
    - API restrictions: Cloud Vision API only
 
 ```bash
@@ -382,10 +382,10 @@ South African law (POPIA - Protection of Personal Information Act) requires clea
 Last Updated: [DATE]
 
 ## 1. Acceptance of Terms
-By accessing Kasigig, you agree to these terms...
+By accessing MzansiGig, you agree to these terms...
 
 ## 2. Service Description
-Kasigig is a platform connecting employers with workers...
+MzansiGig is a platform connecting employers with workers...
 
 ## 3. User Accounts
 - Workers must be 18+ years old
@@ -403,7 +403,7 @@ Kasigig is a platform connecting employers with workers...
 - Off-platform payments
 
 ## 6. Limitation of Liability
-Kasigig is a platform, not an employer...
+MzansiGig is a platform, not an employer...
 
 ## 7. Dispute Resolution
 [Process for handling disputes]
@@ -464,7 +464,7 @@ We respect your privacy and comply with POPIA...
 - Regular security audits
 
 ## 7. Contact Us
-For privacy concerns: privacy@kasigigs.co.za
+For privacy concerns: privacy@mzansigigs.co.za
 ```
 
 #### 4.3 Cookie Policy (If using analytics)
@@ -555,7 +555,7 @@ export interface User {
 
 ```bash
 # ============================================
-# KASIGIG PRODUCTION ENVIRONMENT VARIABLES
+# MZANSIGIG PRODUCTION ENVIRONMENT VARIABLES
 # ============================================
 
 # ------------------
@@ -586,30 +586,30 @@ GOOGLE_APPLICATION_CREDENTIALS=/etc/secrets/google-credentials.json
 # ------------------
 # Application URLs
 # ------------------
-NEXT_PUBLIC_APP_URL=https://kasigigs.co.za
-NEXT_PUBLIC_API_URL=https://kasigigs.co.za/api
+NEXT_PUBLIC_APP_URL=https://mzansigigs.co.za
+NEXT_PUBLIC_API_URL=https://mzansigigs.co.za/api
 
 # ------------------
 # Security
 # ------------------
 NEXTAUTH_SECRET=generate_with_openssl_rand_base64_32
-NEXTAUTH_URL=https://kasigigs.co.za
+NEXTAUTH_URL=https://mzansigigs.co.za
 
 # ------------------
 # Email (Optional - for notifications)
 # ------------------
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
-SMTP_USER=noreply@kasigigs.co.za
+SMTP_USER=noreply@mzansigigs.co.za
 SMTP_PASSWORD=your_app_password
-SMTP_FROM=Mzansigig <noreply@kasigigs.co.za>
+SMTP_FROM=Mzansigig <noreply@mzansigigs.co.za>
 
 # ------------------
 # SMS (Optional - for emergency notifications)
 # ------------------
 # If using Twilio, Africa's Talking, or similar
 SMS_API_KEY=xxxxxxxxxxxxx
-SMS_SENDER_ID=Kasigig
+SMS_SENDER_ID=MzansiGig
 
 # ------------------
 # Analytics (Optional)

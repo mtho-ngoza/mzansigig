@@ -344,7 +344,7 @@ async function setAdminClaim(email) {
 }
 
 // Set your admin email here
-setAdminClaim('admin@kasigig.co.za')
+setAdminClaim('admin@mzansigigs.co.za')
   .then(() => process.exit(0))
   .catch(console.error);
 ```

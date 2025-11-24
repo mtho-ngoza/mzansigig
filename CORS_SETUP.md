@@ -57,7 +57,7 @@ gsutil cors get gs://kasigig-dev.appspot.com
 ## Current CORS Configuration
 
 The `cors.json` file in the project root contains:
-- Allowed origins: localhost:3000-3005, kasigig.co.za
+- Allowed origins: localhost:3000-3005, mzansigigs.co.za
 - Allowed methods: GET, HEAD, PUT, POST, DELETE
 - Max age: 3600 seconds
 

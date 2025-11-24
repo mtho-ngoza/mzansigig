@@ -158,7 +158,7 @@ MzansiGig empowers all South Africans - from informal sector workers to professi
 1. **Clone the repository**
 ```bash
 git clone <repository-url>
-cd kasigig
+cd mzansigig
 ```
 
 2. **Install dependencies**
@@ -501,11 +501,11 @@ npm run lint     # Run ESLint
 #### 1. Secure Digital Assets (Day 1-2) 🔒
 **Cost**: R100-3,000 | **Priority**: IMMEDIATE
 
-- [ ] **Register kasigig.co.za domain** (R99/year)
+- [ ] **Register mzansigigs.co.za domain** (R99/year)
   - Providers: [Afrihost](https://www.afrihost.com/domains) or [Register.co.za](https://www.register.co.za/)
-  - Alternative: kasigig.africa (R249/year)
-- [ ] **Check kasigig.com availability** (for future expansion)
-- [ ] **Secure social media handles**: @kasigig on Twitter, Instagram, Facebook, TikTok, LinkedIn
+  - Alternative: mzansigig.africa (R249/year)
+- [ ] **Check mzansigig.com availability** (for future expansion)
+- [ ] **Secure social media handles**: @mzansigig on Twitter, Instagram, Facebook, TikTok, LinkedIn
   - Register ALL handles today to prevent squatting
 
 #### 2. File Trademark Application (Day 1-3) 📋
@@ -575,7 +575,7 @@ In Vercel Project Settings → Git:
 - [ ] Enable services: Authentication, Firestore, Storage
 - [ ] Configure Authentication:
   - [ ] Enable Email/Password provider
-  - [ ] Add authorized domains (kasigig.co.za, kasigig.com)
+  - [ ] Add authorized domains (mzansigigs.co.za, mzansigig.com)
   - [ ] Customize email templates (verification, password reset)
   - [ ] Enable email verification requirement
 - [ ] Set up Firebase billing alerts (prevent surprise costs)
@@ -588,7 +588,7 @@ In Vercel Project Settings → Git:
 - [ ] Generate production API key
 - [ ] Restrict API key:
   - [ ] Vision API only
-  - [ ] Domain restrictions (kasigig.co.za)
+  - [ ] Domain restrictions (mzansigigs.co.za)
   - [ ] IP restrictions (if possible)
 - [ ] Set up billing alerts
 - [ ] Test ID verification with real SA ID documents
@@ -731,7 +731,7 @@ NODE_ENV=production
 - [ ] Weekly digest (new gigs, platform updates)
 
 **Support Infrastructure:**
-- [ ] Set up support email: support@kasigig.co.za
+- [ ] Set up support email: support@mzansigigs.co.za
 - [ ] Choose helpdesk system: [Freshdesk](https://freshdesk.com/) (free tier) or [Zendesk](https://www.zendesk.com/)
 - [ ] Create support response templates (10-15 common issues)
 - [ ] Define Support SLAs:
@@ -911,7 +911,7 @@ NODE_ENV=production
 ### Immediate Setup Costs (One-Time)
 | Item | Cost (ZAR) | Priority | Timeline |
 |------|-----------|----------|----------|
-| Domain (kasigig.co.za) | R99/year | CRITICAL | Day 1 |
+| Domain (mzansigigs.co.za) | R99/year | CRITICAL | Day 1 |
 | Trademark filing | R2,990 | HIGH | Day 3 |
 | Legal consultation (T&Cs, Privacy) | R5,000-15,000 | HIGH | Week 2 |
 | Beta testing incentives | R2,000-5,000 | MEDIUM | Week 2 |
@@ -975,7 +975,7 @@ npm run start
 # 3. Deploy Firebase security rules
 firebase deploy --only firestore:rules,storage
 
-# 4. Configure custom domain (kasigig.co.za)
+# 4. Configure custom domain (mzansigigs.co.za)
 # In Vercel/Netlify: Domains → Add Custom Domain
 
 # 5. Enable SSL (automatic with Vercel/Netlify)

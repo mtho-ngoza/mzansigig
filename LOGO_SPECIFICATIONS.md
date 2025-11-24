@@ -126,7 +126,7 @@ The MzansiGig logo represents the platform's core mission through three intercon
 - **Color:** #1F2937 (Charcoal)
 - **Tracking:** Default (no letter-spacing adjustment)
 
-### Tagline: "From kasi to career"
+### Tagline: "Mzansi gig connection"
 - **Font:** Inter Regular (weight: 400)
 - **Size:** 14px (in 400px wide logo)
 - **Color:** #6B7280 (Gray-500)
@@ -144,7 +144,7 @@ The MzansiGig logo represents the platform's core mission through three intercon
 │                                     │
 │         ┌─────────────────┐        │ ← 1x height
 │         │                 │        │
-│    1x   │   KASIGIG LOGO  │   1x  │
+│    1x   │   MZANSIGIG LOGO  │   1x  │
 │  width  │                 │  width│
 │         └─────────────────┘        │
 │                                     │
@@ -385,8 +385,8 @@ Create multiple sizes for browser compatibility:
 - **Version:** Full logo
 - **Size:** 150-200px width
 - **Format:** PNG (for compatibility)
-- **Link:** Link to kasigig.co.za
-- **Alt text:** "MzansiGig - From kasi to career"
+- **Link:** Link to mzansigigs.co.za
+- **Alt text:** "MzansiGig - Mzansi gig connection"
 
 ### PowerPoint/Presentations
 - **Position:** Top left or bottom right
@@ -414,7 +414,7 @@ SVG logos are compatible with:
 - ✅ Mobile browsers (iOS Safari, Chrome Mobile)
 
 ### Accessibility
-- Include alt text: "MzansiGig logo" or "MzansiGig - From kasi to career"
+- Include alt text: "MzansiGig logo" or "MzansiGig - Mzansi gig connection"
 - Ensure sufficient color contrast (already met)
 - Don't rely on color alone to convey meaning
 - Logo is recognizable even in monochrome
@@ -502,12 +502,12 @@ This mockup provides a strong foundation. For final production, consider:
 
 ### Naming Convention
 ```
-kasigig-logo-[version]-[color]-[size].[format]
+mzansigig-logo-[version]-[color]-[size].[format]
 
 Examples:
-kasigig-logo-full-color-1x.png
-kasigig-logo-icon-white-2x.png
-kasigig-logo-monochrome.svg
+mzansigig-logo-full-color-1x.png
+mzansigig-logo-icon-white-2x.png
+mzansigig-logo-monochrome.svg
 ```
 
 ---
@@ -532,4 +532,4 @@ For logo usage questions or custom applications:
 ---
 
 **MzansiGig Logo © 2025**
-**From kasi to career 🇿🇦**
+**Mzansi gig connection 🇿🇦**

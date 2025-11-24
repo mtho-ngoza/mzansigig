@@ -8,11 +8,11 @@
 
 ## 1. Introduction
 
-Kasigig (Pty) Ltd ("Kasigig", "we", "us", or "our") respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.
+MzansiGig (Pty) Ltd ("MzansiGig", "we", "us", or "our") respects your privacy and is committed to protecting your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our platform.
 
 This policy complies with South Africa's **Protection of Personal Information Act (POPIA), Act 4 of 2013**.
 
-By using Kasigig, you consent to the data practices described in this policy.
+By using MzansiGig, you consent to the data practices described in this policy.
 
 ---
 
@@ -159,7 +159,7 @@ We may disclose information:
 
 ### 4.4 Business Transfers
 
-If Kasigig is acquired or merged, your information may be transferred to the new entity. You will be notified of any such change.
+If MzansiGig is acquired or merged, your information may be transferred to the new entity. You will be notified of any such change.
 
 ### 4.5 What We DON'T Do
 
@@ -178,7 +178,7 @@ As a South African resident, you have the following rights:
 
 You can request a copy of all personal information we hold about you.
 
-**How**: Email privacy@mzansigig.co.za with subject "Data Access Request"
+**How**: Email privacy@mzansigigs.co.za with subject "Data Access Request"
 
 ### 5.2 Right to Correction
 
@@ -190,7 +190,7 @@ You can request correction of inaccurate or incomplete information.
 
 You can request deletion of your personal information (subject to legal retention requirements).
 
-**How**: Email privacy@mzansigig.co.za with subject "Data Deletion Request"
+**How**: Email privacy@mzansigigs.co.za with subject "Data Deletion Request"
 
 ### 5.4 Right to Object
 
@@ -202,13 +202,13 @@ You can object to processing of your data for direct marketing or other purposes
 
 You can request that we limit how we use your data.
 
-**How**: Email privacy@mzansigig.co.za
+**How**: Email privacy@mzansigigs.co.za
 
 ### 5.6 Right to Data Portability
 
 You can request your data in a machine-readable format.
 
-**How**: Email privacy@mzansigig.co.za with subject "Data Portability Request"
+**How**: Email privacy@mzansigigs.co.za with subject "Data Portability Request"
 
 ### 5.7 Right to Lodge a Complaint
 
@@ -287,9 +287,9 @@ After retention periods expire, we securely delete data through:
 
 ## 8. Children's Privacy
 
-Kasigig is not intended for users under 18. We do not knowingly collect information from children. If we discover we've collected a child's information, we will delete it immediately.
+MzansiGig is not intended for users under 18. We do not knowingly collect information from children. If we discover we've collected a child's information, we will delete it immediately.
 
-If you believe a child has provided information to us, contact: privacy@mzansigig.co.za
+If you believe a child has provided information to us, contact: privacy@mzansigigs.co.za
 
 ---
 
@@ -346,7 +346,7 @@ Note: Disabling essential cookies may limit platform functionality.
 With your consent, we may send:
 - Platform updates
 - New feature announcements
-- Tips for using Kasigig
+- Tips for using MzansiGig
 - Promotional offers
 
 ### 11.2 Opting Out
@@ -354,7 +354,7 @@ With your consent, we may send:
 You can opt out at any time:
 - Click "Unsubscribe" in any email
 - Update preferences in account settings
-- Email optout@mzansigig.co.za
+- Email optout@mzansigigs.co.za
 
 We will still send essential service emails (password resets, transaction confirmations).
 
@@ -386,29 +386,29 @@ Continued use after changes constitutes acceptance of the updated policy.
 
 For questions about this policy or your data:
 
-**Email**: privacy@mzansigig.co.za
+**Email**: privacy@mzansigigs.co.za
 **Subject Line**: "Privacy Inquiry"
 
 ### 13.2 Data Protection Officer
 
 **Name**: [TO BE APPOINTED]
-**Email**: dpo@mzansigig.co.za
+**Email**: dpo@mzansigigs.co.za
 **Phone**: [TO BE INSERTED]
 
 ### 13.3 Company Information
 
-**Kasigig (Pty) Ltd**
+**MzansiGig (Pty) Ltd**
 **Registration Number**: [TO BE INSERTED]
 **Physical Address**: [TO BE INSERTED]
 **Postal Address**: [TO BE INSERTED]
-**Website**: https://mzansigig.co.za
+**Website**: https://mzansigigs.co.za
 
 ### 13.4 POPIA Information Officer
 
 As required by POPIA:
 
 **Name**: [TO BE APPOINTED]
-**Email**: infofficer@mzansigig.co.za
+**Email**: infofficer@mzansigigs.co.za
 **Phone**: [TO BE INSERTED]
 **Address**: [TO BE INSERTED]
 
@@ -416,7 +416,7 @@ As required by POPIA:
 
 ## 14. Consent
 
-By using Kasigig, you consent to:
+By using MzansiGig, you consent to:
 - Collection of information as described
 - Use of information for stated purposes
 - Sharing with third-party service providers
@@ -424,7 +424,7 @@ By using Kasigig, you consent to:
 
 You can withdraw consent at any time by:
 - Closing your account
-- Contacting privacy@mzansigig.co.za
+- Contacting privacy@mzansigigs.co.za
 - Limiting data sharing in settings
 
 ---
@@ -452,7 +452,7 @@ You can disable location access in device settings.
 
 ## Acknowledgment
 
-BY USING KASIGIG, YOU ACKNOWLEDGE THAT YOU HAVE READ AND UNDERSTOOD THIS PRIVACY POLICY AND CONSENT TO THE COLLECTION, USE, AND DISCLOSURE OF YOUR PERSONAL INFORMATION AS DESCRIBED.
+BY USING MZANSIGIG, YOU ACKNOWLEDGE THAT YOU HAVE READ AND UNDERSTOOD THIS PRIVACY POLICY AND CONSENT TO THE COLLECTION, USE, AND DISCLOSURE OF YOUR PERSONAL INFORMATION AS DESCRIBED.
 
 ---
 
@@ -471,7 +471,7 @@ BY USING KASIGIG, YOU ACKNOWLEDGE THAT YOU HAVE READ AND UNDERSTOOD THIS PRIVACY
 
 **Data Subject**: The individual whose personal information is being processed (you)
 
-**Responsible Party**: Kasigig (the entity determining the purpose and means of processing)
+**Responsible Party**: MzansiGig (the entity determining the purpose and means of processing)
 
 **Operator**: Third parties processing data on our behalf (payment processors, etc.)
 

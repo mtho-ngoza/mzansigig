@@ -25,7 +25,7 @@ This project uses a **3-tier environment strategy** for safe development and dep
 │ 3. PRODUCTION (kasigig-production)                  │
 │    - Vercel deployment ONLY                         │
 │    - Real user data - DO NOT TEST HERE              │
-│    - Domain: kasigig.co.za                          │
+│    - Domain: mzansigigs.co.za                          │
 │    - Command: firebase use production               │
 └─────────────────────────────────────────────────────┘
 ```

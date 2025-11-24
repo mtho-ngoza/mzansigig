@@ -94,7 +94,7 @@ After adding the fee config, verify it works:
 3. You should see fee breakdown displayed correctly
 
 ### Production Environment:
-1. Open https://kasigig-two.vercel.app
+1. Open https://mzansigig.vercel.app
 2. Go to any gig posting page
 3. You should see fee breakdown displayed correctly
 

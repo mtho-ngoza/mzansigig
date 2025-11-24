@@ -653,7 +653,7 @@
 ### This Week:
 - [ ] Choose logo concept (or brief designer with concepts)
 - [ ] Register social media handles (@MzansiGig)
-- [ ] Create branded email (hello@kasigig.co.za)
+- [ ] Create branded email (hello@mzansigigs.co.za)
 - [ ] Set up Canva account with brand colors
 - [ ] Draft 10 social media posts for launch
 

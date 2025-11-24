@@ -1,6 +1,6 @@
 # Firebase Security Rules - Quick Start Guide
 
-Quick reference for deploying and managing Firebase security rules for GigSA.
+Quick reference for deploying and managing Firebase security rules for MzansiGig.
 
 ## 🚀 Quick Deploy (3 Steps)
 
@@ -16,7 +16,7 @@ firebase deploy --only firestore:rules,storage
 
 ### 3. Set Admin Claims
 ```bash
-node scripts/setAdminClaim.js admin@gigsa.co.za
+node scripts/setAdminClaim.js admin@mzansigigs.co.za
 ```
 
 ## 📋 Common Commands

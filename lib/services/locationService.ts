@@ -2,8 +2,8 @@ import { Coordinates, UserLocation, SA_CITIES } from '@/types/location'
 import { getCurrentLocation, getCityCoordinates, getNearestCity } from '@/lib/utils/locationUtils'
 
 export class LocationService {
-  private static readonly LOCATION_STORAGE_KEY = 'gigsa_user_location'
-  private static readonly PERMISSION_STORAGE_KEY = 'gigsa_location_permission'
+  private static readonly LOCATION_STORAGE_KEY = 'mzansigig_user_location'
+  private static readonly PERMISSION_STORAGE_KEY = 'mzansigig_location_permission'
 
   /**
    * Request location permission and get current coordinates

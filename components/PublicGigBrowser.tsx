@@ -1299,7 +1299,7 @@ export default function PublicGigBrowser({
               Ready to Get Started?
             </h4>
             <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-              Join thousands of South Africans finding work and hiring talent on GigSA.
+              Join thousands of South Africans finding work and hiring talent on MzansiGig.
               Sign up today to apply for gigs or post your own opportunities.
             </p>
             <div className="space-x-4">
