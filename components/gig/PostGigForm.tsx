@@ -100,6 +100,7 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<GigFormData>>({})
   const [warnings, setWarnings] = useState<Partial<Record<keyof GigFormData, string>>>({})
+  const [isUnauthorized, setIsUnauthorized] = useState(false)
   const [budgetSuggestion, setBudgetSuggestion] = useState<{
     minimum: number
     recommended: number
@@ -118,6 +119,19 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
     maxApplicants: '',
     workType: 'physical' // Default to physical work
   })
+
+  // Authorization check when editing
+  useEffect(() => {
+    if (editGig && user) {
+      // Verify the current user is the owner of the gig
+      if (editGig.employerId !== user.id) {
+        setIsUnauthorized(true)
+        showError('Unauthorized: You can only edit your own gigs')
+      } else {
+        setIsUnauthorized(false)
+      }
+    }
+  }, [editGig, user, showError])
 
   // Populate form when editing
   useEffect(() => {
@@ -445,6 +459,29 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  // Show unauthorized message if user is not the owner
+  if (isUnauthorized && editGig) {
+    return (
+      <Card className="max-w-4xl mx-auto">
+        <CardHeader>
+          <CardTitle className="text-2xl">Unauthorized Access</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-red-600 mb-4">
+              You are not authorized to edit this gig. Only the gig owner can make changes.
+            </p>
+            {onCancel && (
+              <Button variant="outline" onClick={onCancel}>
+                Go Back
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
