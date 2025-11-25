@@ -62,33 +62,79 @@ export function validateDeadline(deadline: Date): {
 }
 
 /**
+ * Budget constraints for gig creation
+ */
+export const BUDGET_LIMITS = {
+  MIN: 100,
+  MAX: 1000000,
+  WARNING_THRESHOLD: 50000
+} as const
+
+/**
  * Validate budget is within reasonable limits
  * Returns validation result with warnings for very high budgets
+ *
+ * SECURITY: Prevents:
+ * - Negative budgets
+ * - Excessively high budgets
+ * - Invalid numeric values (NaN, Infinity)
+ * - Non-integer budgets (must be whole Rands)
  */
 export function validateBudget(budget: number): {
   isValid: boolean
   warning?: string
   message?: string
 } {
-  const MIN_BUDGET = 100
-  const WARNING_THRESHOLD = 50000
-  const MAX_BUDGET = 1000000
-
-  if (budget < MIN_BUDGET) {
+  // Check for non-numeric values
+  if (typeof budget !== 'number' || isNaN(budget)) {
     return {
       isValid: false,
-      message: `Budget must be at least R${MIN_BUDGET}`
+      message: 'Budget must be a valid number'
     }
   }
 
-  if (budget > MAX_BUDGET) {
+  // Check for infinite values
+  if (!isFinite(budget)) {
     return {
       isValid: false,
-      message: `Budget cannot exceed R${MAX_BUDGET.toLocaleString()}`
+      message: 'Budget must be a finite number'
     }
   }
 
-  if (budget > WARNING_THRESHOLD) {
+  // Check for negative or zero budgets
+  if (budget <= 0) {
+    return {
+      isValid: false,
+      message: 'Budget must be a positive number'
+    }
+  }
+
+  // Check for decimal values (budgets should be whole Rands)
+  if (!Number.isInteger(budget)) {
+    return {
+      isValid: false,
+      message: 'Budget must be a whole number (no cents)'
+    }
+  }
+
+  // Check minimum budget
+  if (budget < BUDGET_LIMITS.MIN) {
+    return {
+      isValid: false,
+      message: `Budget must be at least R${BUDGET_LIMITS.MIN}`
+    }
+  }
+
+  // Check maximum budget
+  if (budget > BUDGET_LIMITS.MAX) {
+    return {
+      isValid: false,
+      message: `Budget cannot exceed R${BUDGET_LIMITS.MAX.toLocaleString()}`
+    }
+  }
+
+  // Warning for high budgets
+  if (budget > BUDGET_LIMITS.WARNING_THRESHOLD) {
     return {
       isValid: true,
       warning: `High budget detected. Please confirm amount of R${budget.toLocaleString()} is correct.`
@@ -96,6 +142,38 @@ export function validateBudget(budget: number): {
   }
 
   return { isValid: true }
+}
+
+/**
+ * Parse and validate budget string input
+ * Sanitizes input and converts to number
+ */
+export function parseBudgetInput(input: string): {
+  value: number | null
+  error?: string
+} {
+  if (!input || typeof input !== 'string') {
+    return { value: null, error: 'Budget is required' }
+  }
+
+  // Remove any non-numeric characters except decimal point
+  const sanitized = input.trim().replace(/[^0-9.]/g, '')
+
+  if (!sanitized) {
+    return { value: null, error: 'Budget must contain numbers' }
+  }
+
+  const parsed = parseFloat(sanitized)
+
+  // Round to nearest integer (no cents allowed)
+  const rounded = Math.round(parsed)
+
+  const validation = validateBudget(rounded)
+  if (!validation.isValid) {
+    return { value: null, error: validation.message }
+  }
+
+  return { value: rounded, error: validation.warning }
 }
 
 /**

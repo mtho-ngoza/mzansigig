@@ -9,7 +9,7 @@ import {
 } from '@/lib/utils/locationUtils';
 import type { DocumentSnapshot, DocumentData } from 'firebase/firestore';
 import { ConfigService } from './configService';
-import { sanitizeGigText, normalizeSkills, GIG_TEXT_LIMITS } from '@/lib/utils/gigValidation';
+import { sanitizeGigText, normalizeSkills, validateBudget, GIG_TEXT_LIMITS } from '@/lib/utils/gigValidation';
 import { sanitizeApplicationMessage, APPLICATION_TEXT_LIMITS } from '@/lib/utils/applicationValidation';
 
 // Application limits to prevent spam (configurable via admin)
@@ -19,12 +19,19 @@ const MAX_ACTIVE_APPLICATIONS_PER_WORKER = 20;
 export class GigService {
   // Gig CRUD operations
   static async createGig(gigData: Omit<Gig, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+    // Validate budget
+    const budgetValidation = validateBudget(gigData.budget);
+    if (!budgetValidation.isValid) {
+      throw new Error(`Invalid budget: ${budgetValidation.message}`);
+    }
+
     // Sanitize text inputs to prevent XSS
     const sanitizedData = {
       ...gigData,
       title: sanitizeGigText(gigData.title, GIG_TEXT_LIMITS.TITLE_MAX),
       description: sanitizeGigText(gigData.description, GIG_TEXT_LIMITS.DESCRIPTION_MAX),
       skillsRequired: normalizeSkills(gigData.skillsRequired),
+      budget: Math.round(gigData.budget), // Ensure integer
       createdAt: new Date(),
       updatedAt: new Date(),
       applicants: [],
@@ -60,6 +67,14 @@ export class GigService {
       }
     }
 
+    // Validate budget if being updated
+    if (updates.budget !== undefined) {
+      const budgetValidation = validateBudget(updates.budget);
+      if (!budgetValidation.isValid) {
+        throw new Error(`Invalid budget: ${budgetValidation.message}`);
+      }
+    }
+
     // Sanitize text inputs if they're being updated
     const sanitizedUpdates: Partial<Gig> = { ...updates };
 
@@ -68,6 +83,9 @@ export class GigService {
     }
     if (updates.description !== undefined) {
       sanitizedUpdates.description = sanitizeGigText(updates.description, GIG_TEXT_LIMITS.DESCRIPTION_MAX);
+    }
+    if (updates.budget !== undefined) {
+      sanitizedUpdates.budget = Math.round(updates.budget); // Ensure integer
     }
     if (updates.skillsRequired !== undefined) {
       sanitizedUpdates.skillsRequired = normalizeSkills(updates.skillsRequired);

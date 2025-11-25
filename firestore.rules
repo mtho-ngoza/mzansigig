@@ -103,14 +103,22 @@ service cloud.firestore {
                       hasRequiredFields(['title', 'description', 'category', 'budget', 'employerId']) &&
                       request.resource.data.employerId == request.auth.uid &&
                       request.resource.data.status == 'open' &&
-                      request.resource.data.budget >= 100; // Minimum R100
+                      // Budget validation: must be integer between R100 and R1,000,000
+                      request.resource.data.budget is int &&
+                      request.resource.data.budget >= 100 &&
+                      request.resource.data.budget <= 1000000;
 
       // Only the employer (owner) can update their gig
       allow update: if isAuthenticated() &&
                       resource.data.employerId == request.auth.uid &&
                       // Cannot change employer
                       request.resource.data.employerId == resource.data.employerId &&
-                      request.resource.data.createdAt == resource.data.createdAt;
+                      request.resource.data.createdAt == resource.data.createdAt &&
+                      // If budget is updated, validate it
+                      (request.resource.data.budget == resource.data.budget ||
+                       (request.resource.data.budget is int &&
+                        request.resource.data.budget >= 100 &&
+                        request.resource.data.budget <= 1000000));
 
       // Only the employer or admin can delete the gig
       allow delete: if isAuthenticated() &&

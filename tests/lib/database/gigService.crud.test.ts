@@ -8,12 +8,18 @@ jest.mock('@/lib/utils/locationUtils')
 jest.mock('@/lib/utils/gigValidation', () => ({
   sanitizeGigText: jest.fn((text: string) => text.trim()),
   normalizeSkills: jest.fn((skills: string[]) => skills.map(s => s.toLowerCase())),
+  validateBudget: jest.fn((budget: number) => ({ isValid: true })),
   GIG_TEXT_LIMITS: {
     TITLE_MAX: 100,
     DESCRIPTION_MAX: 2000,
     OTHER_CATEGORY_MAX: 100,
     TITLE_MIN: 10,
     DESCRIPTION_MIN: 30
+  },
+  BUDGET_LIMITS: {
+    MIN: 100,
+    MAX: 1000000,
+    WARNING_THRESHOLD: 50000
   }
 }))
 
