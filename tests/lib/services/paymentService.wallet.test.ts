@@ -18,14 +18,15 @@ jest.mock('firebase/firestore', () => ({
   getDoc: jest.fn(),
   updateDoc: jest.fn(),
   getDocs: jest.fn(),
-  query: jest.fn(),
-  where: jest.fn(),
+  query: jest.fn((coll) => coll),
+  where: jest.fn((field, op, value) => ({ field, op, value })),
   orderBy: jest.fn(),
   doc: jest.fn(),
   // runTransaction removed to force fallback path in processPayment
   increment: jest.fn((val) => ({ __increment: val })),
   Timestamp: {
-    now: jest.fn(() => ({ toDate: () => new Date() }))
+    now: jest.fn(() => ({ toDate: () => new Date() })),
+    fromMillis: jest.fn((ms) => ({ toDate: () => new Date(ms), toMillis: () => ms }))
   }
 }))
 jest.mock('@/lib/services/walletService')
@@ -354,6 +355,7 @@ describe('PaymentService - Wallet Integration', () => {
 
   describe('requestWithdrawal', () => {
     it('should use atomic transaction to debit wallet when requesting withdrawal', async () => {
+      ;(getDocs as jest.Mock).mockResolvedValue({ size: 0, docs: [] }) // No recent withdrawals
       ;(WalletService.debitWalletAtomic as jest.Mock).mockResolvedValue(undefined)
       ;(addDoc as jest.Mock).mockResolvedValue({ id: 'withdrawal-123' })
 
@@ -363,6 +365,7 @@ describe('PaymentService - Wallet Integration', () => {
     })
 
     it('should reject withdrawal if balance is insufficient (atomic check)', async () => {
+      ;(getDocs as jest.Mock).mockResolvedValue({ size: 0, docs: [] }) // No recent withdrawals
       ;(WalletService.debitWalletAtomic as jest.Mock).mockRejectedValue(new Error('Insufficient balance'))
 
       await expect(PaymentService.requestWithdrawal(mockWorkerId, 500, 'pm-123')).rejects.toThrow('Insufficient balance')
@@ -375,6 +378,7 @@ describe('PaymentService - Wallet Integration', () => {
       // Only first should succeed, second should fail
 
       let callCount = 0
+      ;(getDocs as jest.Mock).mockResolvedValue({ size: 0, docs: [] }) // No recent withdrawals
       ;(WalletService.debitWalletAtomic as jest.Mock).mockImplementation(async (userId: string, amount: number) => {
         callCount++
         if (callCount === 1) {
@@ -395,6 +399,70 @@ describe('PaymentService - Wallet Integration', () => {
 
       // Verify atomic method was called twice
       expect(WalletService.debitWalletAtomic).toHaveBeenCalledTimes(2)
+    })
+
+    it('should reject withdrawal if rate limit exceeded (3 requests in 24 hours)', async () => {
+      // Mock 3 recent withdrawals in last 24 hours
+      ;(getDocs as jest.Mock).mockResolvedValue({ size: 3, docs: [] })
+
+      await expect(PaymentService.requestWithdrawal(mockWorkerId, 500, 'pm-123'))
+        .rejects.toThrow('Withdrawal limit exceeded. You can only request 3 withdrawals per 24 hours.')
+
+      // Should not debit wallet if rate limit exceeded
+      expect(WalletService.debitWalletAtomic).not.toHaveBeenCalled()
+      expect(addDoc).not.toHaveBeenCalled()
+    })
+
+    it('should reject withdrawal if amount exceeds maximum (R50,000)', async () => {
+      ;(getDocs as jest.Mock).mockResolvedValue({ size: 0, docs: [] })
+
+      await expect(PaymentService.requestWithdrawal(mockWorkerId, 51000, 'pm-123'))
+        .rejects.toThrow('Maximum withdrawal amount is')
+
+      expect(WalletService.debitWalletAtomic).not.toHaveBeenCalled()
+      expect(addDoc).not.toHaveBeenCalled()
+    })
+
+    it('should reject withdrawal if amount below minimum (R50)', async () => {
+      ;(getDocs as jest.Mock).mockResolvedValue({ size: 0, docs: [] })
+
+      await expect(PaymentService.requestWithdrawal(mockWorkerId, 30, 'pm-123'))
+        .rejects.toThrow('Minimum withdrawal amount is R50.')
+
+      expect(WalletService.debitWalletAtomic).not.toHaveBeenCalled()
+      expect(addDoc).not.toHaveBeenCalled()
+    })
+
+    it('should allow withdrawal if under rate limit', async () => {
+      // Mock 2 recent withdrawals (under limit of 3)
+      ;(getDocs as jest.Mock).mockResolvedValue({ size: 2, docs: [] })
+      ;(WalletService.debitWalletAtomic as jest.Mock).mockResolvedValue(undefined)
+      ;(addDoc as jest.Mock).mockResolvedValue({ id: 'withdrawal-123' })
+
+      await expect(PaymentService.requestWithdrawal(mockWorkerId, 500, 'pm-123')).resolves.toBeDefined()
+
+      expect(WalletService.debitWalletAtomic).toHaveBeenCalledWith(mockWorkerId, 500)
+      expect(addDoc).toHaveBeenCalled()
+    })
+
+    it('should allow withdrawal at exactly maximum amount (R50,000)', async () => {
+      ;(getDocs as jest.Mock).mockResolvedValue({ size: 0, docs: [] })
+      ;(WalletService.debitWalletAtomic as jest.Mock).mockResolvedValue(undefined)
+      ;(addDoc as jest.Mock).mockResolvedValue({ id: 'withdrawal-123' })
+
+      await expect(PaymentService.requestWithdrawal(mockWorkerId, 50000, 'pm-123')).resolves.toBeDefined()
+
+      expect(WalletService.debitWalletAtomic).toHaveBeenCalledWith(mockWorkerId, 50000)
+    })
+
+    it('should allow withdrawal at exactly minimum amount (R50)', async () => {
+      ;(getDocs as jest.Mock).mockResolvedValue({ size: 0, docs: [] })
+      ;(WalletService.debitWalletAtomic as jest.Mock).mockResolvedValue(undefined)
+      ;(addDoc as jest.Mock).mockResolvedValue({ id: 'withdrawal-123' })
+
+      await expect(PaymentService.requestWithdrawal(mockWorkerId, 50, 'pm-123')).resolves.toBeDefined()
+
+      expect(WalletService.debitWalletAtomic).toHaveBeenCalledWith(mockWorkerId, 50)
     })
   })
 
@@ -562,13 +630,14 @@ describe('PaymentService - Wallet Integration', () => {
 
       // Initial analytics
       ;(WalletService.getWalletBalance as jest.Mock).mockResolvedValueOnce(initialBalance)
-      ;(getDocs as jest.Mock).mockResolvedValue({ empty: false, docs: [] })
+      ;(getDocs as jest.Mock).mockResolvedValue({ empty: false, docs: [], size: 0 })
 
       const analyticsBeforeWithdrawal = await PaymentService.getUserPaymentAnalytics(mockWorkerId)
       expect(analyticsBeforeWithdrawal.availableBalance).toBe(1000)
       expect(analyticsBeforeWithdrawal.totalWithdrawn).toBe(0)
 
       // Simulate withdrawal (uses atomic method now)
+      ;(getDocs as jest.Mock).mockResolvedValue({ size: 0, docs: [] }) // No recent withdrawals for rate limit check
       ;(WalletService.debitWalletAtomic as jest.Mock).mockResolvedValue(undefined)
       ;(addDoc as jest.Mock).mockResolvedValue({ id: 'withdrawal-123' })
       await PaymentService.requestWithdrawal(mockWorkerId, 500, 'pm-123')

@@ -683,6 +683,35 @@ export class PaymentService {
   ): Promise<WithdrawalRequest> {
     let walletDebited = false
     try {
+      // STEP 0: Rate limiting - Check withdrawal request limits
+      // Prevent abuse by limiting number of requests per day and maximum amount
+      const twentyFourHoursAgo = Timestamp.fromMillis(Date.now() - 24 * 60 * 60 * 1000)
+      const recentWithdrawalsQuery = query(
+        collection(db, COLLECTIONS.WITHDRAWALS),
+        where('userId', '==', userId),
+        where('requestedAt', '>=', twentyFourHoursAgo)
+      )
+
+      const recentWithdrawalsSnapshot = await getDocs(recentWithdrawalsQuery)
+      const recentWithdrawalsCount = recentWithdrawalsSnapshot.size
+
+      // Rate limit: Maximum 3 withdrawal requests per 24 hours
+      if (recentWithdrawalsCount >= 3) {
+        throw new Error('Withdrawal limit exceeded. You can only request 3 withdrawals per 24 hours.')
+      }
+
+      // Maximum withdrawal amount: R50,000 per request
+      const MAX_WITHDRAWAL_AMOUNT = 50000
+      if (amount > MAX_WITHDRAWAL_AMOUNT) {
+        throw new Error(`Maximum withdrawal amount is R${MAX_WITHDRAWAL_AMOUNT.toLocaleString()} per request.`)
+      }
+
+      // Minimum withdrawal amount: R50
+      const MIN_WITHDRAWAL_AMOUNT = 50
+      if (amount < MIN_WITHDRAWAL_AMOUNT) {
+        throw new Error(`Minimum withdrawal amount is R${MIN_WITHDRAWAL_AMOUNT}.`)
+      }
+
       // STEP 1: Atomically check balance and debit wallet
       // This prevents race conditions where multiple concurrent withdrawals could exceed balance
       await WalletService.debitWalletAtomic(userId, amount)
@@ -735,8 +764,13 @@ export class PaymentService {
         }
       }
 
-      // Re-throw with original message if it's a known error (like insufficient balance)
-      if (error instanceof Error && error.message.includes('Insufficient')) {
+      // Re-throw with original message if it's a known error (like insufficient balance, rate limit, or amount validation)
+      if (error instanceof Error && (
+        error.message.includes('Insufficient') ||
+        error.message.includes('limit') ||
+        error.message.includes('Maximum') ||
+        error.message.includes('Minimum')
+      )) {
         throw error
       }
       throw new Error('Failed to request withdrawal. Please try again or contact support if the problem persists.')

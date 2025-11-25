@@ -323,11 +323,15 @@ service cloud.firestore {
                     (request.auth.uid == resource.data.userId || isAdmin());
 
       // Users can create withdrawal requests for their own account
+      // Rate limiting is enforced at the application level (PaymentService.requestWithdrawal)
+      // Rules validate structure and basic constraints
       allow create: if isAuthenticated() &&
-                      hasRequiredFields(['userId', 'amount', 'paymentMethodId']) &&
+                      hasRequiredFields(['userId', 'amount', 'paymentMethodId', 'requestedAt']) &&
                       request.resource.data.userId == request.auth.uid &&
                       request.resource.data.amount >= 50 && // Minimum R50
-                      request.resource.data.status == 'pending';
+                      request.resource.data.amount <= 50000 && // Maximum R50,000 per withdrawal
+                      request.resource.data.status == 'pending' &&
+                      request.resource.data.requestedAt is timestamp;
 
       // Only users can cancel pending withdrawals, admins can update status
       allow update: if isAuthenticated() &&
