@@ -155,7 +155,7 @@ describe('MobileMenu - Routing and Logout', () => {
       const browseButton = screen.getByText('Browse Gigs')
       fireEvent.click(browseButton)
 
-      expect(onNavigate).toHaveBeenCalledWith('browse')
+      expect(onNavigate).toHaveBeenCalledWith('browse', undefined)
       expect(onClose).toHaveBeenCalled()
     })
 
