@@ -46,6 +46,62 @@ describe('messageValidation', () => {
       const result = sanitizeMessageContent(input)
       expect(result).toBe('Hello World')
     })
+
+    // Additional XSS prevention tests
+    it('should remove iframe tags', () => {
+      const input = '<iframe src="malicious.com"></iframe>Hello'
+      const result = sanitizeMessageContent(input)
+      expect(result).not.toContain('iframe')
+      expect(result).toBe('Hello')
+    })
+
+    it('should remove style tags', () => {
+      const input = '<style>body{display:none}</style>Hello'
+      const result = sanitizeMessageContent(input)
+      expect(result).not.toContain('style')
+      expect(result).toBe('Hello')
+    })
+
+    it('should remove object/embed tags', () => {
+      const input1 = '<object data="malicious"></object>Hello'
+      const input2 = '<embed src="malicious">Hello'
+      expect(sanitizeMessageContent(input1)).toBe('Hello')
+      expect(sanitizeMessageContent(input2)).toBe('Hello')
+    })
+
+    it('should remove data: protocol', () => {
+      const input = 'Test data:text/html,<script>alert()</script> here'
+      const result = sanitizeMessageContent(input)
+      expect(result).not.toContain('data:')
+    })
+
+    it('should remove vbscript: protocol', () => {
+      const input = 'Test vbscript:msgbox() here'
+      const result = sanitizeMessageContent(input)
+      expect(result).not.toContain('vbscript:')
+    })
+
+    it('should remove HTML entity obfuscation attempts', () => {
+      const input1 = '&lt;script&gt;alert()&lt;/script&gt;Hello'
+      const input2 = '&lt;iframe src="bad"&gt;Hello'
+      expect(sanitizeMessageContent(input1)).not.toContain('&lt;script')
+      expect(sanitizeMessageContent(input2)).not.toContain('&lt;iframe')
+    })
+
+    it('should handle complex XSS attempts', () => {
+      const complexXSS = '<IMG SRC="javascript:alert(\'XSS\');">Hello<script>alert(document.cookie)</script>'
+      const result = sanitizeMessageContent(complexXSS)
+      expect(result).not.toContain('<')
+      expect(result).not.toContain('>')
+      expect(result).not.toContain('javascript:')
+      expect(result).toContain('Hello')
+    })
+
+    it('should preserve safe text content', () => {
+      const safeContent = 'Hello! How are you? I am interested in this job opportunity.'
+      const result = sanitizeMessageContent(safeContent)
+      expect(result).toBe(safeContent)
+    })
   })
 
   describe('validateMessageContent', () => {
