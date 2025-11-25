@@ -105,7 +105,7 @@ function MessageBubble({ message, isOwn, isSystem, showTimestamp }: MessageBubbl
                   d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <span>{message.content}</span>
+              <span>{sanitizeForDisplay(message.content)}</span>
             </div>
           )}
           {message.type === 'application-update' && (
@@ -118,7 +118,7 @@ function MessageBubble({ message, isOwn, isSystem, showTimestamp }: MessageBubbl
                   d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <span>{message.content}</span>
+              <span>{sanitizeForDisplay(message.content)}</span>
             </div>
           )}
         </div>

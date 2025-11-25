@@ -15,26 +15,48 @@ export const MESSAGE_LIMITS = {
 /**
  * Sanitize message content to prevent XSS attacks
  * Removes HTML tags, dangerous characters, and limits length
+ *
+ * SECURITY: This function prevents XSS by removing:
+ * - All HTML tags (including <script>, <iframe>, <object>, <style>)
+ * - Dangerous protocols (javascript:, data:, vbscript:)
+ * - Event handlers (onclick, onerror, etc.)
+ * - HTML entity obfuscation attempts
+ *
+ * @param input - The message content to sanitize
+ * @param maxLength - Maximum length of the sanitized content
+ * @returns Sanitized message content safe for storage and display
  */
 export function sanitizeMessageContent(input: string, maxLength: number = MESSAGE_LIMITS.CONTENT_MAX): string {
   if (!input) return ''
 
   let sanitized = input.trim()
 
-  // Remove script tags and their content (with multiline support)
+  // Remove script tags and their content (case-insensitive, including multiline)
   sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
 
-  // Remove all HTML tags
+  // Remove style tags and their content
+  sanitized = sanitized.replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+
+  // Remove iframe tags
+  sanitized = sanitized.replace(/<iframe[^>]*>.*?<\/iframe>/gi, '')
+
+  // Remove object/embed tags
+  sanitized = sanitized.replace(/<(object|embed)[^>]*>.*?<\/\1>/gi, '')
+
+  // Remove all remaining HTML tags
   sanitized = sanitized.replace(/<[^>]*>/g, '')
 
-  // Remove javascript: protocol
+  // Remove dangerous protocols
   sanitized = sanitized.replace(/javascript:/gi, '')
+  sanitized = sanitized.replace(/data:/gi, '')
+  sanitized = sanitized.replace(/vbscript:/gi, '')
 
   // Remove event handlers (onclick, onerror, etc.)
   sanitized = sanitized.replace(/on\w+\s*=/gi, '')
 
-  // Remove data: URLs
-  sanitized = sanitized.replace(/data:/gi, '')
+  // Remove HTML entities that could be used for obfuscation
+  sanitized = sanitized.replace(/&lt;script/gi, '')
+  sanitized = sanitized.replace(/&lt;iframe/gi, '')
 
   return sanitized.slice(0, maxLength)
 }
