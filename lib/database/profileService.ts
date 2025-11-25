@@ -7,6 +7,30 @@ import { sanitizeText, validatePhoneNumber, validateUrl } from '@/lib/utils/prof
 
 export class ProfileService {
   /**
+   * Sanitize filename to prevent path traversal attacks
+   * Returns only the validated file extension, not the full filename
+   */
+  private static getSafeFileExtension(file: File): string {
+    // Check for path traversal attempts in the full filename first
+    if (file.name.includes('..') || file.name.includes('/') || file.name.includes('\\')) {
+      throw new Error('Invalid file extension detected')
+    }
+
+    // Get basename only (no directory path)
+    const basename = file.name.split('/').pop()?.split('\\').pop() || ''
+
+    // Extract extension and validate it's safe
+    const extension = basename.split('.').pop()?.toLowerCase() || ''
+
+    const validExtensions = ['jpg', 'jpeg', 'png']
+    if (!validExtensions.includes(extension)) {
+      throw new Error('Invalid file extension. Only JPG and PNG files are allowed')
+    }
+
+    return extension
+  }
+
+  /**
    * Validate file for profile uploads
    */
   private static validateImageFile(file: File): void {
@@ -29,13 +53,8 @@ export class ProfileService {
       throw new Error('Only JPEG and PNG images are allowed')
     }
 
-    // Validate file extension matches mime type
-    const fileExtension = file.name.split('.').pop()?.toLowerCase()
-    const validExtensions = ['jpg', 'jpeg', 'png']
-
-    if (!fileExtension || !validExtensions.includes(fileExtension)) {
-      throw new Error('Invalid file extension. Only JPG and PNG files are allowed')
-    }
+    // Validate file extension is safe (no path traversal)
+    this.getSafeFileExtension(file)
   }
 
   static async uploadProfilePhoto(userId: string, file: File): Promise<string> {
@@ -43,7 +62,7 @@ export class ProfileService {
       // Validate file before upload
       this.validateImageFile(file)
 
-      const fileExtension = file.name.split('.').pop()
+      const fileExtension = this.getSafeFileExtension(file)
       const fileName = `${userId}-profile.${fileExtension}`
       const storageRef = ref(storage, `profile-photos/${fileName}`)
 
@@ -76,7 +95,7 @@ export class ProfileService {
       // Validate file before upload
       this.validateImageFile(file)
 
-      const fileExtension = file.name.split('.').pop()
+      const fileExtension = this.getSafeFileExtension(file)
       const fileName = `${userId}-${uuidv4()}.${fileExtension}`
       const storageRef = ref(storage, `portfolio/${fileName}`)
 

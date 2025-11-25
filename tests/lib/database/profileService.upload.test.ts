@@ -77,6 +77,43 @@ describe('ProfileService - Upload Operations', () => {
       await expect(ProfileService.uploadProfilePhoto(userId, validFile))
         .rejects.toThrow('Storage error')
     })
+
+    it('should reject files with path traversal attempts in filename', async () => {
+      const maliciousFile = new File(
+        [new ArrayBuffer(2 * 1024 * 1024)],
+        '../../../etc/passwd.jpg',
+        { type: 'image/jpeg' }
+      )
+
+      await expect(ProfileService.uploadProfilePhoto(userId, maliciousFile))
+        .rejects.toThrow('Invalid file extension detected')
+    })
+
+    it('should reject files with invalid extensions', async () => {
+      const invalidFile = new File(
+        [new ArrayBuffer(2 * 1024 * 1024)],
+        'file.exe',
+        { type: 'image/jpeg' }
+      )
+
+      await expect(ProfileService.uploadProfilePhoto(userId, invalidFile))
+        .rejects.toThrow('Invalid file extension. Only JPG and PNG files are allowed')
+    })
+
+    it('should handle files with multiple dots in filename', async () => {
+      const validComplexFile = new File(
+        [new ArrayBuffer(2 * 1024 * 1024)],
+        'my.profile.photo.jpg',
+        { type: 'image/jpeg' }
+      )
+
+      mockUploadBytes.mockResolvedValueOnce({} as any)
+      mockGetDownloadURL.mockResolvedValueOnce('https://storage.example.com/url.jpg')
+      mockUpdateDoc.mockResolvedValueOnce()
+
+      await expect(ProfileService.uploadProfilePhoto(userId, validComplexFile))
+        .resolves.toBeDefined()
+    })
   })
 
   describe('uploadPortfolioImage', () => {
@@ -116,6 +153,28 @@ describe('ProfileService - Upload Operations', () => {
 
       await expect(ProfileService.uploadPortfolioImage(userId, validFile))
         .rejects.toThrow('Network error')
+    })
+
+    it('should reject files with path traversal attempts', async () => {
+      const maliciousFile = new File(
+        [new ArrayBuffer(2 * 1024 * 1024)],
+        '../../malicious.png',
+        { type: 'image/png' }
+      )
+
+      await expect(ProfileService.uploadPortfolioImage(userId, maliciousFile))
+        .rejects.toThrow('Invalid file extension detected')
+    })
+
+    it('should reject files with backslash path traversal', async () => {
+      const maliciousFile = new File(
+        [new ArrayBuffer(2 * 1024 * 1024)],
+        '..\\..\\malicious.jpg',
+        { type: 'image/jpeg' }
+      )
+
+      await expect(ProfileService.uploadPortfolioImage(userId, maliciousFile))
+        .rejects.toThrow('Invalid file extension detected')
     })
   })
 
