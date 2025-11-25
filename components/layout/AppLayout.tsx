@@ -22,6 +22,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   const router = useRouter()
   const { user, isLoading } = useAuth()
   const [currentView, setCurrentView] = useState<PageView>('browse')
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
   const [messageConversationId, setMessageConversationId] = useState<string | undefined>(undefined)
   const [showPostGig, setShowPostGig] = useState(false)
 
@@ -94,8 +95,12 @@ export function AppLayout({ children }: AppLayoutProps) {
     return <>{children}</>
   }
 
-  const handleNavigation = (page: PageView) => {
+  const handleNavigation = (page: PageView, mode?: 'login' | 'register') => {
     setCurrentView(page)
+    // Set auth mode if provided
+    if (page === 'auth' && mode) {
+      setAuthMode(mode)
+    }
     // Update URL to match the navigation
     const newPath = viewToPath[page]
     if (newPath && pathname !== newPath) {
@@ -191,6 +196,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     return (
       <AuthPage
         onBackClick={() => handleNavigation('browse')}
+        initialView={authMode}
       />
     )
   }

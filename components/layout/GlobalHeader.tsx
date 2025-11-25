@@ -10,7 +10,7 @@ import { MobileMenu } from './MobileMenu'
 
 interface GlobalHeaderProps {
   currentPage?: 'browse' | 'dashboard' | 'messages' | 'profile'
-  onNavigate?: (page: 'browse' | 'dashboard' | 'messages' | 'profile' | 'auth') => void
+  onNavigate?: (page: 'browse' | 'dashboard' | 'messages' | 'profile' | 'auth', authMode?: 'login' | 'register') => void
   onShowPostGig?: () => void
   showAuthButtons?: boolean
   className?: string
@@ -91,19 +91,6 @@ export function GlobalHeader({
 
             {/* Right side - Actions and user menu */}
             <div className="flex items-center space-x-3">
-              {/* Mobile menu button - Only show hamburger on mobile */}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowMobileMenu(true)}
-                className="lg:hidden p-3 touch-manipulation active:bg-gray-100"
-                title="Open menu"
-              >
-                <svg className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                </svg>
-              </Button>
-
               {user ? (
                 <>
                   {/* Quick Post Gig Button - Only for employers - Desktop only */}
@@ -118,12 +105,12 @@ export function GlobalHeader({
                     </Button>
                   )}
 
-                  {/* Messages Button - Desktop only */}
+                  {/* Messages Button - Show on both mobile and desktop */}
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleMessagesClick}
-                    className="relative p-2 hidden lg:flex"
+                    className="relative p-2"
                     title="Messages"
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,6 +121,19 @@ export function GlobalHeader({
                         {totalUnreadCount > 9 ? '9+' : totalUnreadCount}
                       </span>
                     )}
+                  </Button>
+
+                  {/* Mobile menu button - Show on mobile only for authenticated users */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowMobileMenu(true)}
+                    className="lg:hidden p-3 touch-manipulation active:bg-gray-100"
+                    title="Open menu"
+                  >
+                    <svg className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    </svg>
                   </Button>
 
                   {/* Profile Dropdown - Desktop only */}
@@ -283,22 +283,39 @@ export function GlobalHeader({
                     )}
                   </div>
                 </>
-              ) : showAuthButtons ? (
-                <div className="hidden lg:flex lg:items-center lg:space-x-3">
-                  {/* Auth buttons - Only visible on desktop for PWA-friendly mobile experience */}
+              ) : (
+                <>
+                  {/* Mobile menu button - Show for non-authenticated users */}
                   <Button
-                    variant="outline"
-                    onClick={() => onNavigate?.('auth')}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowMobileMenu(true)}
+                    className="lg:hidden p-3 touch-manipulation active:bg-gray-100"
+                    title="Open menu"
                   >
-                    Log In
+                    <svg className="w-6 h-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                    </svg>
                   </Button>
-                  <Button
-                    onClick={() => onNavigate?.('auth')}
-                  >
-                    Get Started
-                  </Button>
-                </div>
-              ) : null}
+
+                  {showAuthButtons && (
+                    <div className="hidden lg:flex lg:items-center lg:space-x-3">
+                      {/* Auth buttons - Only visible on desktop for PWA-friendly mobile experience */}
+                      <Button
+                        variant="outline"
+                        onClick={() => onNavigate?.('auth', 'login')}
+                      >
+                        Log In
+                      </Button>
+                      <Button
+                        onClick={() => onNavigate?.('auth', 'register')}
+                      >
+                        Get Started
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>

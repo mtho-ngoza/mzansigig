@@ -9,10 +9,11 @@ import { Button } from '@/components/ui/Button'
 
 interface AuthPageProps {
   onBackClick?: () => void
+  initialView?: 'login' | 'register' | 'forgot-password'
 }
 
-export default function AuthPage({ onBackClick }: AuthPageProps) {
-  const [activeView, setActiveView] = useState<'login' | 'register' | 'forgot-password'>('login')
+export default function AuthPage({ onBackClick, initialView = 'login' }: AuthPageProps) {
+  const [activeView, setActiveView] = useState<'login' | 'register' | 'forgot-password'>(initialView)
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

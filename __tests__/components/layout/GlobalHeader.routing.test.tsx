@@ -358,7 +358,7 @@ describe('GlobalHeader - Routing and Logout', () => {
 
       fireEvent.click(desktopLoginButton)
 
-      expect(onNavigate).toHaveBeenCalledWith('auth')
+      expect(onNavigate).toHaveBeenCalledWith('auth', 'login')
     })
   })
 })
