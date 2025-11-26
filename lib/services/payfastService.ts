@@ -194,7 +194,7 @@ export class PayFastService {
 
     // Log signature generation for debugging (can be removed after successful production test)
     console.log('PayFast signature generated:', {
-      mode: this.config.mode,
+      mode: this.config.sandbox ? 'sandbox' : 'live',
       signatureHash: signature,
       fieldCount: sortedKeys.length
     })
@@ -216,15 +216,16 @@ export class PayFastService {
     }
 
     // Filter out undefined, null, and empty string values
-    const data: PayFastPaymentData = Object.entries(rawData).reduce((acc, [key, value]) => {
+    const data = Object.entries(rawData).reduce<Partial<PayFastPaymentData>>((acc, [key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
-        acc[key as keyof PayFastPaymentData] = value as any
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (acc as any)[key] = value
       }
       return acc
-    }, {} as PayFastPaymentData)
+    }, {}) as PayFastPaymentData
 
     // Generate signature
-    const signature = this.generateSignature(data as unknown as Record<string, string | number>)
+    const signature = this.generateSignature(data as unknown as Record<string, string | number | undefined>)
 
     return {
       ...data,
