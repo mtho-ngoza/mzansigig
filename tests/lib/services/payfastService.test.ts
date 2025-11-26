@@ -258,15 +258,16 @@ describe('PayFastService', () => {
       }
 
       // Calculate correct signature
+      // IMPORTANT: PayFast expects plain text values (NOT URL-encoded) in signature
       const paramString = Object.entries(itnData)
         .filter(([key]) => key !== 'signature')
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${key}=${encodeURIComponent(value.toString().trim())}`)
+        .map(([key, value]) => `${key}=${value.toString().trim()}`)
         .join('&')
 
       itnData.signature = crypto
         .createHash('md5')
-        .update(paramString + '&passphrase=' + encodeURIComponent('jt7NOE43FZPn'))
+        .update(paramString + '&passphrase=jt7NOE43FZPn')
         .digest('hex')
         .toLowerCase()
 
@@ -316,15 +317,16 @@ describe('PayFastService', () => {
       }
 
       // Calculate valid signature so we can test IP validation
+      // IMPORTANT: PayFast expects plain text values (NOT URL-encoded) in signature
       const paramString = Object.entries(itnData)
         .filter(([key]) => key !== 'signature')
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${key}=${encodeURIComponent(value.toString().trim())}`)
+        .map(([key, value]) => `${key}=${value.toString().trim()}`)
         .join('&')
 
       itnData.signature = crypto
         .createHash('md5')
-        .update(paramString + '&passphrase=' + encodeURIComponent('test'))
+        .update(paramString + '&passphrase=test')
         .digest('hex')
         .toLowerCase()
 
@@ -355,15 +357,16 @@ describe('PayFastService', () => {
       }
 
       // Calculate signature
+      // IMPORTANT: PayFast expects plain text values (NOT URL-encoded) in signature
       const paramString = Object.entries(itnData)
         .filter(([key]) => key !== 'signature')
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${key}=${encodeURIComponent(value.toString().trim())}`)
+        .map(([key, value]) => `${key}=${value.toString().trim()}`)
         .join('&')
 
       itnData.signature = crypto
         .createHash('md5')
-        .update(paramString + '&passphrase=' + encodeURIComponent('test'))
+        .update(paramString + '&passphrase=test')
         .digest('hex')
         .toLowerCase()
 
