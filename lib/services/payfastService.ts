@@ -100,12 +100,12 @@ export class PayFastService {
    * Generate MD5 signature for PayFast payment data
    *
    * CRITICAL: The signature generation follows PayFast's exact specification:
-   * 1. Build parameter string in alphabetical order
-   * 2. URL encode values
+   * 1. Build parameter string in specific order (payment) or alphabetical (ITN)
+   * 2. Use plain text values (NOT URL-encoded)
    * 3. Append passphrase if configured
    * 4. Generate MD5 hash
    */
-  private generateSignature(data: Record<string, string | number | undefined>, includePassphrase: boolean = true): string {
+  private generateSignature(data: Record<string, string | number | undefined>, includePassphrase: boolean = true, useAlphabetical: boolean = false): string {
     // Remove signature if present and filter out undefined values
     const filteredData: Record<string, string | number> = {}
     Object.entries(data).forEach(([key, value]) => {
@@ -154,22 +154,24 @@ export class PayFastService {
       'cycles'
     ]
 
-    // Sort keys according to PayFast's field order, then alphabetically for any remaining fields
-    const sortedKeys = Object.keys(filteredData).sort((a, b) => {
-      const aIndex = fieldOrder.indexOf(a)
-      const bIndex = fieldOrder.indexOf(b)
+    // Sort keys according to PayFast's field order, or alphabetically for ITN
+    const sortedKeys = useAlphabetical
+      ? Object.keys(filteredData).sort((a, b) => a.localeCompare(b))
+      : Object.keys(filteredData).sort((a, b) => {
+          const aIndex = fieldOrder.indexOf(a)
+          const bIndex = fieldOrder.indexOf(b)
 
-      // If both are in the field order list, sort by their position
-      if (aIndex !== -1 && bIndex !== -1) {
-        return aIndex - bIndex
-      }
-      // If only a is in the list, it comes first
-      if (aIndex !== -1) return -1
-      // If only b is in the list, it comes first
-      if (bIndex !== -1) return 1
-      // If neither is in the list, sort alphabetically
-      return a.localeCompare(b)
-    })
+          // If both are in the field order list, sort by their position
+          if (aIndex !== -1 && bIndex !== -1) {
+            return aIndex - bIndex
+          }
+          // If only a is in the list, it comes first
+          if (aIndex !== -1) return -1
+          // If only b is in the list, it comes first
+          if (bIndex !== -1) return 1
+          // If neither is in the list, sort alphabetically
+          return a.localeCompare(b)
+        })
 
     // Build parameter string
     // NOTE: PayFast expects plain text values (NOT URL encoded) in the signature string
@@ -313,8 +315,9 @@ ${fields}
   }> {
     try {
       // 1. Verify signature
+      // NOTE: ITN uses alphabetical sorting (different from payment creation)
       const receivedSignature = itnData.signature
-      const calculatedSignature = this.generateSignature(itnData as unknown as Record<string, string | number>)
+      const calculatedSignature = this.generateSignature(itnData as unknown as Record<string, string | number>, true, true)
 
       if (receivedSignature !== calculatedSignature) {
         return {
