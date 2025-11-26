@@ -54,11 +54,7 @@ export async function POST(request: NextRequest) {
     const payfastService = new PayFastService()
 
     // Get app URL from environment
-    // VERCEL_URL is auto-set by Vercel for each deployment (without protocol)
-    // Fall back to NEXT_PUBLIC_APP_URL or localhost
-    const appUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
     // Create payment data
     const paymentData = payfastService.createPayment({
@@ -69,8 +65,8 @@ export async function POST(request: NextRequest) {
       email_address: customerEmail,
       name_first: customerName?.split(' ')[0],
       name_last: customerName?.split(' ').slice(1).join(' '),
-      return_url: `${appUrl}/dashboard/manage-applications?payment=success&gig=${gigId}`,
-      cancel_url: `${appUrl}/dashboard/manage-applications?payment=cancelled&gig=${gigId}`,
+      return_url: `${appUrl}/dashboard?payment=success&gig=${gigId}`,
+      cancel_url: `${appUrl}/dashboard?payment=cancelled&gig=${gigId}`,
       notify_url: `${appUrl}/api/payments/payfast/itn`,
       // Store gig and user info in custom fields for ITN processing
       custom_str1: gigId,
@@ -91,7 +87,7 @@ export async function POST(request: NextRequest) {
     // Store payment intent in database for tracking (optional in development)
     try {
       const app = getFirebaseAdmin()
-      await app.firestore().collection('paymentIntents').add({
+      await app.firestore().collection('payment_intents').add({
         gigId,
         userId,
         amount,

@@ -100,12 +100,12 @@ export class PayFastService {
    * Generate MD5 signature for PayFast payment data
    *
    * CRITICAL: The signature generation follows PayFast's exact specification:
-   * 1. Build parameter string in specific order (payment) or alphabetical (ITN)
-   * 2. Use plain text values (NOT URL-encoded)
+   * 1. Build parameter string in alphabetical order
+   * 2. URL encode values
    * 3. Append passphrase if configured
    * 4. Generate MD5 hash
    */
-  private generateSignature(data: Record<string, string | number | undefined>, includePassphrase: boolean = true, useAlphabetical: boolean = false): string {
+  private generateSignature(data: Record<string, string | number | undefined>, includePassphrase: boolean = true): string {
     // Remove signature if present and filter out undefined values
     const filteredData: Record<string, string | number> = {}
     Object.entries(data).forEach(([key, value]) => {
@@ -154,60 +154,49 @@ export class PayFastService {
       'cycles'
     ]
 
-    // Sort keys according to PayFast's field order, or alphabetically for ITN
-    const sortedKeys = useAlphabetical
-      ? Object.keys(filteredData).sort((a, b) => a.localeCompare(b))
-      : Object.keys(filteredData).sort((a, b) => {
-          const aIndex = fieldOrder.indexOf(a)
-          const bIndex = fieldOrder.indexOf(b)
+    // Sort keys according to PayFast's field order, then alphabetically for any remaining fields
+    const sortedKeys = Object.keys(filteredData).sort((a, b) => {
+      const aIndex = fieldOrder.indexOf(a)
+      const bIndex = fieldOrder.indexOf(b)
 
-          // If both are in the field order list, sort by their position
-          if (aIndex !== -1 && bIndex !== -1) {
-            return aIndex - bIndex
-          }
-          // If only a is in the list, it comes first
-          if (aIndex !== -1) return -1
-          // If only b is in the list, it comes first
-          if (bIndex !== -1) return 1
-          // If neither is in the list, sort alphabetically
-          return a.localeCompare(b)
-        })
+      // If both are in the field order list, sort by their position
+      if (aIndex !== -1 && bIndex !== -1) {
+        return aIndex - bIndex
+      }
+      // If only a is in the list, it comes first
+      if (aIndex !== -1) return -1
+      // If only b is in the list, it comes first
+      if (bIndex !== -1) return 1
+      // If neither is in the list, sort alphabetically
+      return a.localeCompare(b)
+    })
 
     // Build parameter string
-    // PayFast requires URL-encoded values with spaces as + (not %20)
-    const urlEncode = (value: string): string => {
-      return encodeURIComponent(value).replace(/%20/g, '+')
-    }
-
+    // NOTE: PayFast expects plain text values (NOT URL encoded) in the signature string
+    // The form will URL encode when POSTing, but signature must be from plain text
     const paramString = sortedKeys
       .map(key => {
         const value = filteredData[key]
-        // PayFast requires amount to have exactly 2 decimal places (e.g., "100.00")
-        if (key === 'amount' && typeof value === 'number') {
-          return `${key}=${urlEncode(value.toFixed(2))}`
-        }
-        return `${key}=${urlEncode(value.toString().trim())}`
+        return `${key}=${value.toString().trim()}`
       })
       .join('&')
 
     // Append passphrase if configured and should be included
-    // IMPORTANT: Empty passphrase should not be appended
+    // IMPORTANT: Empty passphrase should not be appended (learned from 2025 production issue)
+    // NOTE: Passphrase is also plain text, not URL encoded
     let signatureString = paramString
     if (includePassphrase && this.config.passphrase && this.config.passphrase.trim() !== '') {
-      signatureString += `&passphrase=${urlEncode(this.config.passphrase.trim())}`
+      signatureString += `&passphrase=${this.config.passphrase.trim()}`
     }
 
     // Generate MD5 hash (lowercase as per PayFast spec)
     const signature = crypto.createHash('md5').update(signatureString).digest('hex').toLowerCase()
 
     // Log signature generation for debugging (can be removed after successful production test)
-    console.log('PayFast signature DEBUG:', {
-      mode: this.config.sandbox ? 'sandbox' : 'live',
+    console.log('PayFast signature generated:', {
+      mode: this.config.mode,
       signatureHash: signature,
-      fieldCount: sortedKeys.length,
-      paramString: paramString,
-      hasPassphrase: !!(this.config.passphrase && this.config.passphrase.trim() !== ''),
-      signatureString: signatureString.replace(this.config.passphrase || '', '***')
+      fieldCount: sortedKeys.length
     })
 
     return signature
@@ -227,16 +216,15 @@ export class PayFastService {
     }
 
     // Filter out undefined, null, and empty string values
-    const data = Object.entries(rawData).reduce<Partial<PayFastPaymentData>>((acc, [key, value]) => {
+    const data: PayFastPaymentData = Object.entries(rawData).reduce((acc, [key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (acc as any)[key] = value
+        acc[key as keyof PayFastPaymentData] = value as any
       }
       return acc
-    }, {}) as PayFastPaymentData
+    }, {} as PayFastPaymentData)
 
     // Generate signature
-    const signature = this.generateSignature(data as unknown as Record<string, string | number | undefined>)
+    const signature = this.generateSignature(data as unknown as Record<string, string | number>)
 
     return {
       ...data,
@@ -267,11 +255,7 @@ export class PayFastService {
     const fields = Object.entries(paymentData)
       .map(([key, value]) => {
         if (value !== undefined && value !== '') {
-          // PayFast requires amount to have exactly 2 decimal places
-          const formattedValue = key === 'amount' && typeof value === 'number'
-            ? value.toFixed(2)
-            : value.toString()
-          return `    <input type="hidden" name="${this.escapeHtml(key)}" value="${this.escapeHtml(formattedValue)}" />`
+          return `    <input type="hidden" name="${this.escapeHtml(key)}" value="${this.escapeHtml(value.toString())}" />`
         }
         return ''
       })
@@ -328,9 +312,8 @@ ${fields}
   }> {
     try {
       // 1. Verify signature
-      // NOTE: ITN uses alphabetical sorting (different from payment creation)
       const receivedSignature = itnData.signature
-      const calculatedSignature = this.generateSignature(itnData as unknown as Record<string, string | number>, true, true)
+      const calculatedSignature = this.generateSignature(itnData as unknown as Record<string, string | number>)
 
       if (receivedSignature !== calculatedSignature) {
         return {
