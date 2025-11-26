@@ -41,6 +41,8 @@ export async function POST(request: NextRequest) {
                       request.headers.get('x-real-ip') ||
                       'unknown'
 
+    // Type assertion needed: FormData values are all strings, but PayFastService accepts the ITN data object
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const validation = await payfastService.validateITN(itnData as any, sourceIp)
 
     if (!validation.isValid) {
@@ -103,19 +105,18 @@ async function processPaymentAsync(itnData: Record<string, string>) {
       console.log(`Payment ${m_payment_id} not complete. Status: ${payment_status}`)
 
       // Update payment intent with failed status
-      await db.collection('payment_intents')
+      const failedPaymentQuery = await db.collection('payment_intents')
         .where('paymentId', '==', m_payment_id)
         .limit(1)
         .get()
-        .then((snapshot: admin.firestore.QuerySnapshot) => {
-          if (!snapshot.empty) {
-            snapshot.docs[0].ref.update({
-              status: payment_status.toLowerCase(),
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-              failureReason: `Payment ${payment_status}`
-            })
-          }
+
+      if (!failedPaymentQuery.empty) {
+        await failedPaymentQuery.docs[0].ref.update({
+          status: payment_status.toLowerCase(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          failureReason: `Payment ${payment_status}`
         })
+      }
 
       return
     }
@@ -135,7 +136,7 @@ async function processPaymentAsync(itnData: Record<string, string>) {
     })
 
     // Run in transaction to ensure atomic operations
-    await db.runTransaction(async (transaction: admin.firestore.Transaction) => {
+    await db.runTransaction(async (transaction) => {
       // 1. Get gig details
       const gigRef = db.collection('gigs').doc(gigId)
       const gigDoc = await transaction.get(gigRef)

@@ -131,8 +131,8 @@ export default function PayFastPayment({
               <div className="text-sm text-blue-800">
                 <p className="font-medium mb-1">Secure Payment with PayFast</p>
                 <p>
-                  You'll be redirected to PayFast's secure payment page.
-                  PayFast is South Africa's leading payment gateway, trusted by over 80,000 businesses.
+                  You&apos;ll be redirected to PayFast&apos;s secure payment page.
+                  PayFast is South Africa&apos;s leading payment gateway, trusted by over 80,000 businesses.
                 </p>
               </div>
             </div>
