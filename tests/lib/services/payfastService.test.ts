@@ -237,7 +237,7 @@ describe('PayFastService', () => {
       const form = service.generatePaymentForm(paymentData)
 
       expect(form).toContain('value="test-123"')
-      expect(form).toContain('value="100"')
+      expect(form).toContain('value="100.00"')
       expect(form).toContain('value="Test Gig"')
       expect(form).toContain('value="gig-123"')
     })
