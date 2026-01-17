@@ -69,8 +69,8 @@ export async function POST(request: NextRequest) {
       email_address: customerEmail,
       name_first: customerName?.split(' ')[0],
       name_last: customerName?.split(' ').slice(1).join(' '),
-      return_url: `${appUrl}/dashboard?payment=success&gig=${gigId}`,
-      cancel_url: `${appUrl}/dashboard?payment=cancelled&gig=${gigId}`,
+      return_url: `${appUrl}/dashboard/manage-applications?payment=success&gig=${gigId}`,
+      cancel_url: `${appUrl}/dashboard/manage-applications?payment=cancelled&gig=${gigId}`,
       notify_url: `${appUrl}/api/payments/payfast/itn`,
       // Store gig and user info in custom fields for ITN processing
       custom_str1: gigId,
