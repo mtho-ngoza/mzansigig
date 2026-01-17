@@ -179,6 +179,10 @@ export class PayFastService {
     const paramString = sortedKeys
       .map(key => {
         const value = filteredData[key]
+        // PayFast requires amount to have exactly 2 decimal places (e.g., "100.00")
+        if (key === 'amount' && typeof value === 'number') {
+          return `${key}=${value.toFixed(2)}`
+        }
         return `${key}=${value.toString().trim()}`
       })
       .join('&')
@@ -258,7 +262,11 @@ export class PayFastService {
     const fields = Object.entries(paymentData)
       .map(([key, value]) => {
         if (value !== undefined && value !== '') {
-          return `    <input type="hidden" name="${this.escapeHtml(key)}" value="${this.escapeHtml(value.toString())}" />`
+          // PayFast requires amount to have exactly 2 decimal places
+          const formattedValue = key === 'amount' && typeof value === 'number'
+            ? value.toFixed(2)
+            : value.toString()
+          return `    <input type="hidden" name="${this.escapeHtml(key)}" value="${this.escapeHtml(formattedValue)}" />`
         }
         return ''
       })
