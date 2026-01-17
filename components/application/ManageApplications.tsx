@@ -1,6 +1,7 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { GigService } from '@/lib/database/gigService'
@@ -51,6 +52,54 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
   }>({ isOpen: false, applicationId: '', gigTitle: '' })
   const [disputeReason, setDisputeReason] = useState('')
   const [processingCompletion, setProcessingCompletion] = useState(false)
+  const [paymentVerified, setPaymentVerified] = useState(false)
+
+  const searchParams = useSearchParams()
+
+  // Handle payment return from PayFast
+  const verifyPayment = useCallback(async (gigId: string) => {
+    if (!user || paymentVerified) return
+
+    try {
+      const response = await fetch('/api/payments/payfast/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-user-id': user.id
+        },
+        body: JSON.stringify({
+          gigId,
+          paymentSuccess: true
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        success('Lekker! Payment verified - gig is now funded')
+        setPaymentVerified(true)
+        // Refresh applications to show updated status
+        window.history.replaceState({}, '', '/dashboard/manage-applications')
+      } else {
+        showError(result.message || 'Payment verification pending')
+      }
+    } catch (err) {
+      console.error('Payment verification error:', err)
+    }
+  }, [user, paymentVerified, success, showError])
+
+  // Check for payment success in URL params
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment')
+    const gigId = searchParams.get('gig')
+
+    if (paymentStatus === 'success' && gigId && !paymentVerified) {
+      verifyPayment(gigId)
+    } else if (paymentStatus === 'cancelled') {
+      showError('Payment was cancelled')
+      window.history.replaceState({}, '', '/dashboard/manage-applications')
+    }
+  }, [searchParams, paymentVerified, verifyPayment, showError])
 
   useEffect(() => {
     const loadApplicationsAndGigs = async () => {
