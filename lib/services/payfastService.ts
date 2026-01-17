@@ -174,35 +174,40 @@ export class PayFastService {
         })
 
     // Build parameter string
-    // NOTE: PayFast expects plain text values (NOT URL encoded) in the signature string
-    // The form will URL encode when POSTing, but signature must be from plain text
+    // PayFast requires URL-encoded values with spaces as + (not %20)
+    const urlEncode = (value: string): string => {
+      return encodeURIComponent(value).replace(/%20/g, '+')
+    }
+
     const paramString = sortedKeys
       .map(key => {
         const value = filteredData[key]
         // PayFast requires amount to have exactly 2 decimal places (e.g., "100.00")
         if (key === 'amount' && typeof value === 'number') {
-          return `${key}=${value.toFixed(2)}`
+          return `${key}=${urlEncode(value.toFixed(2))}`
         }
-        return `${key}=${value.toString().trim()}`
+        return `${key}=${urlEncode(value.toString().trim())}`
       })
       .join('&')
 
     // Append passphrase if configured and should be included
-    // IMPORTANT: Empty passphrase should not be appended (learned from 2025 production issue)
-    // NOTE: Passphrase is also plain text, not URL encoded
+    // IMPORTANT: Empty passphrase should not be appended
     let signatureString = paramString
     if (includePassphrase && this.config.passphrase && this.config.passphrase.trim() !== '') {
-      signatureString += `&passphrase=${this.config.passphrase.trim()}`
+      signatureString += `&passphrase=${urlEncode(this.config.passphrase.trim())}`
     }
 
     // Generate MD5 hash (lowercase as per PayFast spec)
     const signature = crypto.createHash('md5').update(signatureString).digest('hex').toLowerCase()
 
     // Log signature generation for debugging (can be removed after successful production test)
-    console.log('PayFast signature generated:', {
+    console.log('PayFast signature DEBUG:', {
       mode: this.config.sandbox ? 'sandbox' : 'live',
       signatureHash: signature,
-      fieldCount: sortedKeys.length
+      fieldCount: sortedKeys.length,
+      paramString: paramString,
+      hasPassphrase: !!(this.config.passphrase && this.config.passphrase.trim() !== ''),
+      signatureString: signatureString.replace(this.config.passphrase || '', '***')
     })
 
     return signature
