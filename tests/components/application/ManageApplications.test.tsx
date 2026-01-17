@@ -9,13 +9,24 @@ import ManageApplications from '@/components/application/ManageApplications'
 import { useAuth } from '@/contexts/AuthContext'
 import { GigService } from '@/lib/database/gigService'
 
+// Mock next/navigation
+const mockSearchParams = new Map<string, string>()
+jest.mock('next/navigation', () => ({
+  useSearchParams: () => ({
+    get: (key: string) => mockSearchParams.get(key) || null
+  })
+}))
+
 // Mock dependencies
 jest.mock('@/contexts/AuthContext')
 jest.mock('@/lib/database/gigService')
+
+const mockSuccess = jest.fn()
+const mockShowError = jest.fn()
 jest.mock('@/contexts/ToastContext', () => ({
   useToast: () => ({
-    success: jest.fn(),
-    error: jest.fn()
+    success: mockSuccess,
+    error: mockShowError
   })
 }))
 jest.mock('@/lib/utils/textSanitization', () => ({
@@ -563,6 +574,132 @@ describe('ManageApplications', () => {
         // Payment dialog should not appear
         expect(screen.queryByText('Payment Dialog')).not.toBeInTheDocument()
       })
+    })
+  })
+
+  describe('Payment Verification on Return', () => {
+    const originalFetch = global.fetch
+
+    beforeEach(() => {
+      mockSearchParams.clear()
+      mockSuccess.mockClear()
+      mockShowError.mockClear()
+      // Mock window.location.href using delete and assign
+      delete (window as { location?: Location }).location
+      window.location = { href: '' } as Location
+    })
+
+    afterEach(() => {
+      global.fetch = originalFetch
+    })
+
+    it('should call verify endpoint when payment=success in URL', async () => {
+      mockSearchParams.set('payment', 'success')
+      mockSearchParams.set('gig', 'gig-123')
+
+      const mockFetch = jest.fn().mockResolvedValue({
+        json: () => Promise.resolve({ success: true, status: 'funded' })
+      })
+      global.fetch = mockFetch
+
+      render(<ManageApplications />)
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          '/api/payments/payfast/verify',
+          expect.objectContaining({
+            method: 'POST',
+            headers: expect.objectContaining({
+              'Content-Type': 'application/json',
+              'x-user-id': 'employer-123'
+            }),
+            body: JSON.stringify({
+              gigId: 'gig-123',
+              paymentSuccess: true
+            })
+          })
+        )
+      })
+    })
+
+    it('should show success toast when verification succeeds', async () => {
+      mockSearchParams.set('payment', 'success')
+      mockSearchParams.set('gig', 'gig-123')
+
+      global.fetch = jest.fn().mockResolvedValue({
+        json: () => Promise.resolve({ success: true, status: 'funded' })
+      })
+
+      render(<ManageApplications />)
+
+      await waitFor(() => {
+        expect(mockSuccess).toHaveBeenCalledWith('Lekker! Payment verified - gig is now funded')
+      })
+    })
+
+    it('should show error toast when payment is cancelled', async () => {
+      mockSearchParams.set('payment', 'cancelled')
+
+      render(<ManageApplications />)
+
+      await waitFor(() => {
+        expect(mockShowError).toHaveBeenCalledWith('Payment was cancelled')
+      })
+    })
+
+    it('should show error message when verification fails', async () => {
+      mockSearchParams.set('payment', 'success')
+      mockSearchParams.set('gig', 'gig-123')
+
+      global.fetch = jest.fn().mockResolvedValue({
+        json: () => Promise.resolve({ success: false, message: 'Verification pending' })
+      })
+
+      render(<ManageApplications />)
+
+      await waitFor(() => {
+        expect(mockShowError).toHaveBeenCalledWith('Verification pending')
+      })
+    })
+
+    it('should not call verify endpoint without gig param', async () => {
+      mockSearchParams.set('payment', 'success')
+      // No gig param set
+
+      const mockFetch = jest.fn()
+      global.fetch = mockFetch
+
+      render(<ManageApplications />)
+
+      await waitFor(() => {
+        expect(screen.getByText('Applied by Jane Smith')).toBeInTheDocument()
+      })
+
+      // Verify endpoint should not be called without gigId
+      expect(mockFetch).not.toHaveBeenCalledWith(
+        '/api/payments/payfast/verify',
+        expect.anything()
+      )
+    })
+
+    it('should not call verify endpoint without payment param', async () => {
+      mockSearchParams.set('gig', 'gig-123')
+      // No payment param set
+
+      const mockFetch = jest.fn()
+      global.fetch = mockFetch
+
+      render(<ManageApplications />)
+
+      await waitFor(() => {
+        expect(screen.getByText('Applied by Jane Smith')).toBeInTheDocument()
+      })
+
+      // Verify endpoint should not be called without payment success
+      expect(mockFetch).not.toHaveBeenCalledWith(
+        '/api/payments/payfast/verify',
+        expect.anything()
+      )
     })
   })
 })

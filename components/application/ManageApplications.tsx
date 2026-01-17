@@ -78,8 +78,8 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
       if (result.success) {
         success('Lekker! Payment verified - gig is now funded')
         setPaymentVerified(true)
-        // Refresh applications to show updated status
-        window.history.replaceState({}, '', '/dashboard/manage-applications')
+        // Refresh page to show updated status
+        window.location.href = '/dashboard/manage-applications'
       } else {
         showError(result.message || 'Payment verification pending')
       }
