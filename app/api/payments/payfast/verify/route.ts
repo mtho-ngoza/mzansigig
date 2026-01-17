@@ -81,18 +81,58 @@ export async function POST(request: NextRequest) {
     if (isSandbox) {
       console.log(`Sandbox payment verification for gig ${gigId} - updating status`)
 
+      // Get the accepted application to find worker and proposed rate
+      const applicationsQuery = await db.collection('applications')
+        .where('gigId', '==', gigId)
+        .where('status', '==', 'accepted')
+        .limit(1)
+        .get()
+
+      const applicationDoc = !applicationsQuery.empty ? applicationsQuery.docs[0] : null
+      const applicationData = applicationDoc?.data()
+      const paidAmount = applicationData?.proposedRate || gigData?.budget || 0
+      const workerId = applicationData?.applicantId || null
+
+      // Update gig status with payment amount
       await gigRef.update({
         status: 'funded',
         paymentStatus: 'completed',
+        paidAmount: paidAmount,
         fundedAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         paymentVerifiedVia: 'sandbox-fallback'
       })
 
+      // Update the accepted application to funded status
+      if (applicationDoc) {
+        await applicationDoc.ref.update({
+          status: 'funded',
+          paymentStatus: 'in_escrow',
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        })
+        console.log(`Updated application ${applicationDoc.id} to funded`)
+      }
+
+      // Create escrow record for tracking
+      const escrowRef = db.collection('escrow').doc(gigId)
+      await escrowRef.set({
+        id: gigId,
+        gigId,
+        employerId: userId,
+        workerId: workerId,
+        totalAmount: paidAmount,
+        releasedAmount: 0,
+        status: 'active',
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        verifiedVia: 'sandbox-fallback'
+      })
+      console.log(`Created escrow record for gig ${gigId}`)
+
       return NextResponse.json({
         success: true,
         message: 'Payment verified and gig funded (sandbox mode)',
-        status: 'funded'
+        status: 'funded',
+        paidAmount: paidAmount
       })
     } else {
       // In production, don't trust client-side verification
