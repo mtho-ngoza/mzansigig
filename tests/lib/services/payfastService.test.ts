@@ -257,17 +257,20 @@ describe('PayFastService', () => {
         signature: ''
       }
 
-      // Calculate correct signature
-      // IMPORTANT: PayFast expects plain text values (NOT URL-encoded) in signature
+      // Calculate correct signature with URL encoding (spaces as +)
+      const urlEncode = (value: string): string => {
+        return encodeURIComponent(value).replace(/%20/g, '+')
+      }
+
       const paramString = Object.entries(itnData)
         .filter(([key]) => key !== 'signature')
         .sort(([a], [b]) => a.localeCompare(b))
-        .map(([key, value]) => `${key}=${value.toString().trim()}`)
+        .map(([key, value]) => `${key}=${urlEncode(value.toString().trim())}`)
         .join('&')
 
       itnData.signature = crypto
         .createHash('md5')
-        .update(paramString + '&passphrase=jt7NOE43FZPn')
+        .update(paramString + '&passphrase=' + urlEncode('jt7NOE43FZPn'))
         .digest('hex')
         .toLowerCase()
 
