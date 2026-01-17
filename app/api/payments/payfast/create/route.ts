@@ -54,7 +54,11 @@ export async function POST(request: NextRequest) {
     const payfastService = new PayFastService()
 
     // Get app URL from environment
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    // VERCEL_URL is auto-set by Vercel for each deployment (without protocol)
+    // Fall back to NEXT_PUBLIC_APP_URL or localhost
+    const appUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
     // Create payment data
     const paymentData = payfastService.createPayment({
