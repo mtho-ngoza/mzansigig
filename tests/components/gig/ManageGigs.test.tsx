@@ -221,6 +221,44 @@ describe('ManageGigs', () => {
         expect(screen.getByText('Completed')).toHaveClass('bg-gray-100', 'text-gray-800')
       })
     })
+
+    it('should display "Funded" badge for funded gigs', async () => {
+      const mockFundedGig: Gig = {
+        ...mockGig,
+        id: 'gig-funded',
+        title: 'Funded Project',
+        status: 'funded' as Gig['status']
+      }
+      ;(GigService.getGigsByEmployer as jest.Mock).mockResolvedValue([mockFundedGig])
+      ;(GigService.getApplicationsByGig as jest.Mock).mockResolvedValue([])
+
+      render(<ManageGigs onBack={mockOnBack} />)
+
+      await waitFor(() => {
+        expect(screen.getByText('Funded')).toBeInTheDocument()
+        expect(screen.getByText('Funded')).toHaveClass('bg-blue-100', 'text-blue-800')
+      })
+    })
+
+    it('should handle unknown status gracefully with fallback styling', async () => {
+      const mockUnknownStatusGig: Gig = {
+        ...mockGig,
+        id: 'gig-unknown',
+        title: 'Unknown Status Project',
+        status: 'some-future-status' as Gig['status']
+      }
+      ;(GigService.getGigsByEmployer as jest.Mock).mockResolvedValue([mockUnknownStatusGig])
+      ;(GigService.getApplicationsByGig as jest.Mock).mockResolvedValue([])
+
+      render(<ManageGigs onBack={mockOnBack} />)
+
+      await waitFor(() => {
+        // Should display the raw status value as label
+        expect(screen.getByText('some-future-status')).toBeInTheDocument()
+        // Should have fallback gray styling
+        expect(screen.getByText('some-future-status')).toHaveClass('bg-gray-100', 'text-gray-800')
+      })
+    })
   })
 
   describe('Action Buttons', () => {

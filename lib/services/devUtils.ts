@@ -10,10 +10,10 @@ import { db } from '@/lib/firebase'
 import { WalletService } from './walletService'
 
 const COLLECTIONS = {
-  PAYMENT_HISTORY: 'payment_history',
-  WITHDRAWALS: 'withdrawal_requests',
+  PAYMENT_HISTORY: 'paymentHistory',
+  WITHDRAWALS: 'withdrawals',
   PAYMENTS: 'payments',
-  ESCROW_ACCOUNTS: 'escrow_accounts'
+  ESCROW_ACCOUNTS: 'escrowAccounts'
 }
 
 export class DevUtils {

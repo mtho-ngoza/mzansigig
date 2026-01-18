@@ -191,15 +191,16 @@ export default function ManageGigs({ onBack, onViewGig }: ManageGigsProps) {
   }
 
   const getStatusBadge = (status: Gig['status']) => {
-    const badges = {
+    const badges: Record<string, { label: string; className: string }> = {
       'open': { label: 'Open', className: 'bg-green-100 text-green-800' },
       'in-progress': { label: 'In Progress', className: 'bg-secondary-100 text-secondary-800' },
+      'funded': { label: 'Funded', className: 'bg-blue-100 text-blue-800' },
       'completed': { label: 'Completed', className: 'bg-gray-100 text-gray-800' },
       'cancelled': { label: 'Cancelled', className: 'bg-red-100 text-red-800' },
       'reviewing': { label: 'Reviewing', className: 'bg-yellow-100 text-yellow-800' }
     }
 
-    const badge = badges[status]
+    const badge = badges[status] || { label: status, className: 'bg-gray-100 text-gray-800' }
 
     return (
       <span className={`px-3 py-1 rounded-full text-sm font-medium ${badge.className}`}>

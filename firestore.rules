@@ -634,7 +634,7 @@ service cloud.firestore {
     }
 
     // ========================================
-    // Payment Intents Collection
+    // Payment Intents Collection (camelCase)
     // ========================================
     match /paymentIntents/{intentId} {
       // Users can read their own payment intents
@@ -652,6 +652,71 @@ service cloud.firestore {
                       (request.auth.uid == resource.data.employerId || isAdmin());
 
       // Only admins can delete payment intents
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Payment Intents Collection (snake_case - for PayFast integration)
+    // ========================================
+    match /payment_intents/{intentId} {
+      // Users can read their own payment intents
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.userId);
+
+      // Users can create payment intents (client-side for payment gateway)
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['gigId', 'userId', 'amount']) &&
+                      request.resource.data.userId == request.auth.uid;
+
+      // System/admin can update payment intent status
+      allow update: if isAuthenticated() &&
+                      (request.auth.uid == resource.data.userId || isAdmin());
+
+      // Only admins can delete payment intents
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Wallet Transactions Collection
+    // ========================================
+    match /wallet_transactions/{transactionId} {
+      // Users can read their own wallet transactions
+      allow read: if isAuthenticated() &&
+                    resource.data.userId == request.auth.uid;
+
+      // Users can create wallet transactions (deposits, etc.)
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['userId', 'type', 'amount', 'status']) &&
+                      request.resource.data.userId == request.auth.uid;
+
+      // System/admin can update transaction status
+      allow update: if isAuthenticated() &&
+                      (request.auth.uid == resource.data.userId || isAdmin());
+
+      // Only admins can delete transactions
+      allow delete: if isAdmin();
+    }
+
+    // ========================================
+    // Escrow Collection
+    // ========================================
+    match /escrow/{escrowId} {
+      // Employer, worker, and admin can read escrow
+      allow read: if isAuthenticated() &&
+                    (request.auth.uid == resource.data.employerId ||
+                     request.auth.uid == resource.data.workerId ||
+                     isAdmin());
+
+      // Users can create escrow (when funding gigs)
+      allow create: if isAuthenticated() &&
+                      hasRequiredFields(['gigId', 'employerId', 'totalAmount']) &&
+                      request.resource.data.employerId == request.auth.uid;
+
+      // Employer can release escrow, admin can manage
+      allow update: if isAuthenticated() &&
+                      (request.auth.uid == resource.data.employerId || isAdmin());
+
+      // Only admins can delete escrow
       allow delete: if isAdmin();
     }
 

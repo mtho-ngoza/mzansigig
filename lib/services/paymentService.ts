@@ -577,6 +577,7 @@ export class PaymentService {
 
       const paymentData = paymentDoc.data()
       const releaseAmount = amount || paymentData.amount
+      const gigId = paymentData.gigId
 
       // Update payment status
       await updateDoc(doc(db, COLLECTIONS.PAYMENTS, paymentId), {
@@ -586,29 +587,36 @@ export class PaymentService {
         completedAt: Timestamp.now()
       })
 
-      // Get gig title for better description
-      let gigTitle = `Gig ${paymentData.gigId}` // fallback
+      // Update escrow record
       try {
-        const gig = await GigService.getGigById(paymentData.gigId)
-        if (gig?.title) {
-          gigTitle = gig.title
-        }
+        await updateDoc(doc(db, COLLECTIONS.ESCROW_ACCOUNTS, gigId), {
+          status: 'released',
+          releasedAmount: releaseAmount,
+          releasedAt: Timestamp.now()
+        })
       } catch {
-        console.log('Could not fetch gig title for escrow release history, using ID')
+        console.log('Could not update escrow record, may not exist')
       }
 
-      // Update payment history for worker
-      await this.addPaymentHistory(
-        paymentData.workerId,
-        'earnings',
-        releaseAmount,
-        'completed',
-        paymentData.gigId,
-        paymentId,
-        `Payment released for "${gigTitle}"`
+      // Update existing payment history records from 'pending' to 'completed'
+      // This updates both employer and worker records that were created when escrow was funded
+      const pendingHistoryQuery = query(
+        collection(db, COLLECTIONS.PAYMENT_HISTORY),
+        where('gigId', '==', gigId),
+        where('status', '==', 'pending')
       )
+      const pendingHistorySnapshot = await getDocs(pendingHistoryQuery)
 
-      // Move funds from pending to wallet
+      const updatePromises = pendingHistorySnapshot.docs.map(historyDoc =>
+        updateDoc(historyDoc.ref, {
+          status: 'completed',
+          completedAt: Timestamp.now()
+        })
+      )
+      await Promise.all(updatePromises)
+      console.log(`Updated ${pendingHistorySnapshot.size} payment history records to completed`)
+
+      // Move funds from pending to wallet for worker
       await WalletService.movePendingToWallet(paymentData.workerId, releaseAmount)
     } catch (error) {
       console.debug('Error releasing escrow:', error)

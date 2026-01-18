@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/Input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { usePayment } from '@/contexts/PaymentContext'
 import { useToast } from '@/contexts/ToastContext'
+import { useAuth } from '@/contexts/AuthContext'
 import { PaymentMethod, Payment } from '@/types/payment'
 import PaymentMethodList from './PaymentMethodList'
 import PaymentMethodForm from './PaymentMethodForm'
@@ -42,6 +43,7 @@ export default function PaymentDialog({
     isLoading
   } = usePayment()
   const { success: showSuccess, error: showError } = useToast()
+  const { user } = useAuth()
 
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
   const [customAmount, setCustomAmount] = useState(amount.toString())
@@ -121,6 +123,55 @@ export default function PaymentDialog({
     try {
       setStep('processing')
 
+      // For PayFast provider, redirect to PayFast payment page
+      if (selectedMethod.provider === 'payfast') {
+        // Verify user is authenticated
+        if (!user) {
+          showError('Please sign in to continue with payment')
+          setStep('confirm')
+          return
+        }
+
+        // Create PayFast payment
+        const response = await fetch('/api/payments/payfast/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user.id
+          },
+          body: JSON.stringify({
+            gigId,
+            amount: finalAmount,
+            itemName: description || `Payment for gig work to ${workerName}`,
+            itemDescription: `Funding gig ${gigId}`,
+            customerEmail: user.email,
+            customerName: `${user.firstName || ''} ${user.lastName || ''}`.trim()
+          })
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.message || 'Failed to create PayFast payment')
+        }
+
+        // Get the HTML form that will redirect to PayFast
+        const html = await response.text()
+
+        // Open payment in current window (user will be redirected to PayFast)
+        const paymentWindow = window.open('', '_self')
+        if (paymentWindow) {
+          paymentWindow.document.write(html)
+          paymentWindow.document.close()
+        } else {
+          // Fallback: write to current document
+          document.write(html)
+          document.close()
+        }
+
+        return
+      }
+
+      // For other providers, use the old flow (will need backend API routes)
       // Create payment intent
       const intent = await createPaymentIntent(
         gigId,

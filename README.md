@@ -206,9 +206,8 @@ Empower all of Mzansi (South Africa) - from informal sector workers to professio
 
 ## 🚀 Development Roadmap
 
-**Platform Status**: Feature-complete with 1489 passing tests. Two blockers remain for public launch:
+**Platform Status**: Feature-complete with 1489 passing tests. One blocker remains for public launch:
 1. **Payment Gateway Integration** (PayFast/Yoco API)
-2. **Legal Documents** (POPIA-compliant Terms & Privacy Policy)
 
 ### 🎯 Priority 1: Launch Essentials
 **Critical - Required before public launch**
@@ -216,8 +215,12 @@ Empower all of Mzansi (South Africa) - from informal sector workers to professio
 - [ ] **Payment Gateway Integration** - Connect PayFast/Yoco for real transactions (BLOCKER - no platform without payments)
   - PayFast types defined, UI ready, needs API integration
   - Alternative: Yoco or Ozow (all supported in types)
-- [ ] **Legal Documents** - POPIA-compliant Terms of Service and Privacy Policy (BLOCKER - legal requirement)
-  - Privacy page exists, needs actual legal content
+- [x] **Legal Documents** - POPIA-compliant Terms of Service and Privacy Policy
+  - Terms of Service: 205 lines, fully implemented with SA law references
+  - Privacy Policy: 265 lines, POPIA-compliant
+  - POPIA page: 278 lines, detailed compliance info
+  - All routed and accessible from footer
+  - Ready for lawyer review
 - [ ] **Firebase Production Setup** - Deploy production environment with billing alerts and security
   - Development environment complete and tested
   - Ready for production deployment with env vars
