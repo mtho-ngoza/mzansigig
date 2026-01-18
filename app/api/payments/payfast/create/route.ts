@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     // Store payment intent in database for tracking (optional in development)
     try {
       const app = getFirebaseAdmin()
-      await app.firestore().collection('payment_intents').add({
+      await app.firestore().collection('paymentIntents').add({
         gigId,
         userId,
         amount,
