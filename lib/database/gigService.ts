@@ -433,14 +433,19 @@ export class GigService {
     }
 
     // Sanitize message to prevent XSS
-    const sanitizedData = {
+    // Note: Firestore doesn't allow undefined values, so we omit the field if no message
+    const sanitizedData: Record<string, unknown> = {
       ...applicationData,
-      message: applicationData.message
-        ? sanitizeApplicationMessage(applicationData.message, APPLICATION_TEXT_LIMITS.MESSAGE_MAX)
-        : undefined,
       createdAt: new Date(),
       status: 'pending' as const
     };
+
+    // Only include message field if provided (Firestore rejects undefined)
+    if (applicationData.message) {
+      sanitizedData.message = sanitizeApplicationMessage(applicationData.message, APPLICATION_TEXT_LIMITS.MESSAGE_MAX);
+    } else {
+      delete sanitizedData.message;
+    }
 
     const applicationId = await FirestoreService.create('applications', sanitizedData);
 
