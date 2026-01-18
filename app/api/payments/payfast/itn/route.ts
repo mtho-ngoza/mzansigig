@@ -106,7 +106,7 @@ async function processPaymentAsync(itnData: Record<string, string>) {
       console.log(`[PayFast ITN] Payment ${m_payment_id} not complete. Status: ${payment_status}`)
 
       // Update payment intent with failed status
-      const failedPaymentQuery = await db.collection('payment_intents')
+      const failedPaymentQuery = await db.collection('paymentIntents')
         .where('paymentId', '==', m_payment_id)
         .limit(1)
         .get()

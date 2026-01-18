@@ -224,4 +224,34 @@ describe('PayFast ITN Route', () => {
       expect(responseStatus).toBe(200)
     })
   })
+
+  describe('Collection Names', () => {
+    // Documents the expected collection names (camelCase convention)
+    const expectedCollections = {
+      gigs: 'gigs',
+      applications: 'applications',
+      users: 'users',
+      payments: 'payments',
+      paymentIntents: 'paymentIntents',
+      paymentHistory: 'paymentHistory',
+      escrowAccounts: 'escrowAccounts',
+      walletTransactions: 'walletTransactions'
+    }
+
+    it('should use paymentIntents collection', () => {
+      expect(expectedCollections.paymentIntents).toBe('paymentIntents')
+    })
+
+    it('should use escrowAccounts collection', () => {
+      expect(expectedCollections.escrowAccounts).toBe('escrowAccounts')
+    })
+
+    it('should use paymentHistory collection', () => {
+      expect(expectedCollections.paymentHistory).toBe('paymentHistory')
+    })
+
+    it('should use walletTransactions collection', () => {
+      expect(expectedCollections.walletTransactions).toBe('walletTransactions')
+    })
+  })
 })

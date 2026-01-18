@@ -155,7 +155,7 @@ export async function processSuccessfulPayment(
     console.log(`[PaymentProcessing] Updated application ${applicationDoc.id} to funded`)
 
     // 5. Create escrow record
-    const escrowRef = db.collection('escrow').doc(gigId)
+    const escrowRef = db.collection('escrowAccounts').doc(gigId)
     transaction.set(escrowRef, {
       id: gigId,
       gigId,
@@ -179,7 +179,7 @@ export async function processSuccessfulPayment(
     console.log(`[PaymentProcessing] Updated worker ${workerId} pending balance +${paidAmount}`)
 
     // 7. Create wallet transaction record for employer
-    const walletTxRef = db.collection('wallet_transactions').doc()
+    const walletTxRef = db.collection('walletTransactions').doc()
     walletTransactionId = walletTxRef.id
     transaction.set(walletTxRef, {
       id: walletTxRef.id,
@@ -261,7 +261,7 @@ export async function processSuccessfulPayment(
 
     // 11. Update payment intent (if exists)
     if (paymentId) {
-      const intentQuery = await db.collection('payment_intents')
+      const intentQuery = await db.collection('paymentIntents')
         .where('paymentId', '==', paymentId)
         .limit(1)
         .get()
