@@ -260,6 +260,52 @@ describe('ManageApplications', () => {
         expect(acceptedElements.length).toBeGreaterThanOrEqual(1)
       })
     })
+
+    it('should display funded status badge with correct styling', async () => {
+      const fundedApplication = {
+        ...mockApplications[0],
+        id: 'app-funded',
+        status: 'funded' as const
+      }
+
+      ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+        if (gigId === 'gig-1') return Promise.resolve([fundedApplication])
+        return Promise.resolve([])
+      })
+
+      render(<ManageApplications />)
+
+      await waitFor(() => {
+        // Find the status badge (has rounded-full class)
+        const fundedBadges = screen.getAllByText('Funded')
+        const statusBadge = fundedBadges.find(el => el.classList.contains('rounded-full'))
+        expect(statusBadge).toBeInTheDocument()
+        expect(statusBadge).toHaveClass('bg-blue-100', 'text-blue-800')
+      })
+    })
+
+    it('should display completed status badge with correct styling', async () => {
+      const completedApplication = {
+        ...mockApplications[0],
+        id: 'app-completed',
+        status: 'completed' as const
+      }
+
+      ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+        if (gigId === 'gig-1') return Promise.resolve([completedApplication])
+        return Promise.resolve([])
+      })
+
+      render(<ManageApplications />)
+
+      await waitFor(() => {
+        // Find the status badge (has rounded-full class)
+        const completedBadges = screen.getAllByText('Completed')
+        const statusBadge = completedBadges.find(el => el.classList.contains('rounded-full'))
+        expect(statusBadge).toBeInTheDocument()
+        expect(statusBadge).toHaveClass('bg-purple-100', 'text-purple-800')
+      })
+    })
   })
 
   describe('Empty State', () => {
