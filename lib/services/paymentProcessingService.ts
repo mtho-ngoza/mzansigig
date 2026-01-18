@@ -44,9 +44,12 @@ export interface ProcessPaymentResult {
  * 2. Update gig status to 'funded'
  * 3. Update application status to 'funded'
  * 4. Create escrow record
- * 5. Create wallet transaction record
- * 6. Create payment record
- * 7. Update payment intent (if exists)
+ * 5. Update worker's pending balance (money held in escrow)
+ * 6. Create wallet transaction record for employer
+ * 7. Create payment record
+ * 8. Create payment history for employer (in escrow)
+ * 9. Create payment history for worker (pending earnings)
+ * 10. Update payment intent (if exists)
  */
 export async function processSuccessfulPayment(
   params: ProcessPaymentParams
@@ -167,7 +170,15 @@ export async function processSuccessfulPayment(
     })
     console.log(`[PaymentProcessing] Created escrow record for gig ${gigId}`)
 
-    // 6. Create wallet transaction record
+    // 6. Update worker's pending balance (money held in escrow for them)
+    const workerRef = db.collection('users').doc(workerId)
+    transaction.update(workerRef, {
+      pendingBalance: admin.firestore.FieldValue.increment(paidAmount),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    })
+    console.log(`[PaymentProcessing] Updated worker ${workerId} pending balance +${paidAmount}`)
+
+    // 7. Create wallet transaction record for employer
     const walletTxRef = db.collection('wallet_transactions').doc()
     walletTransactionId = walletTxRef.id
     transaction.set(walletTxRef, {
@@ -187,7 +198,7 @@ export async function processSuccessfulPayment(
     })
     console.log(`[PaymentProcessing] Created wallet transaction ${walletTxRef.id}`)
 
-    // 7. Create payment record
+    // 8. Create payment record
     const paymentRef = db.collection('payments').doc()
     paymentRecordId = paymentRef.id
     transaction.set(paymentRef, {
@@ -216,7 +227,39 @@ export async function processSuccessfulPayment(
     })
     console.log(`[PaymentProcessing] Created payment record ${paymentRef.id}`)
 
-    // 8. Update payment intent (if exists)
+    // 9. Create payment history for employer (shows payment in escrow)
+    const employerHistoryRef = db.collection('payment_history').doc()
+    transaction.set(employerHistoryRef, {
+      id: employerHistoryRef.id,
+      userId: employerId,
+      paymentId: paymentRecordId,
+      gigId,
+      type: 'payments',
+      amount: paidAmount,
+      currency: 'ZAR',
+      status: 'pending', // pending = in escrow, will be 'completed' when released
+      description: `Payment to escrow for: ${gigData?.title || gigId}`,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    })
+    console.log(`[PaymentProcessing] Created employer payment history`)
+
+    // 10. Create payment history for worker (shows incoming payment in escrow)
+    const workerHistoryRef = db.collection('payment_history').doc()
+    transaction.set(workerHistoryRef, {
+      id: workerHistoryRef.id,
+      userId: workerId,
+      paymentId: paymentRecordId,
+      gigId,
+      type: 'earnings',
+      amount: paidAmount,
+      currency: 'ZAR',
+      status: 'pending', // pending = in escrow, will be 'completed' when released
+      description: `Payment in escrow for: ${gigData?.title || gigId}`,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    })
+    console.log(`[PaymentProcessing] Created worker payment history`)
+
+    // 11. Update payment intent (if exists)
     if (paymentId) {
       const intentQuery = await db.collection('payment_intents')
         .where('paymentId', '==', paymentId)

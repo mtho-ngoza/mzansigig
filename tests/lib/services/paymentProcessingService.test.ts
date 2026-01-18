@@ -31,7 +31,8 @@ jest.mock('@/lib/firebase-admin', () => ({
 jest.mock('firebase-admin', () => ({
   firestore: {
     FieldValue: {
-      serverTimestamp: () => 'SERVER_TIMESTAMP'
+      serverTimestamp: () => 'SERVER_TIMESTAMP',
+      increment: (amount: number) => ({ _increment: amount })
     }
   }
 }))
@@ -100,7 +101,15 @@ describe('PaymentProcessingService', () => {
           })
         }
       }
-      // For escrow, wallet_transactions, payments
+      if (collectionName === 'users') {
+        // For worker pending balance update
+        return {
+          doc: jest.fn().mockReturnValue({
+            id: 'worker-doc-id'
+          })
+        }
+      }
+      // For escrow, wallet_transactions, payments, payment_history
       return {
         doc: jest.fn().mockReturnValue({
           id: `${collectionName}-new-id`
@@ -226,7 +235,7 @@ describe('PaymentProcessingService', () => {
       expect(mockTransaction.update).toHaveBeenCalled()
     })
 
-    it('should create escrow, wallet transaction, and payment records', async () => {
+    it('should create escrow, wallet transaction, payment, and history records', async () => {
       mockGet
         .mockResolvedValueOnce({ empty: false, docs: [mockApplicationDoc], size: 1 })
         .mockResolvedValueOnce(mockGigDoc)
@@ -235,8 +244,27 @@ describe('PaymentProcessingService', () => {
 
       await processSuccessfulPayment(defaultParams)
 
-      // Should call set at least 3 times (escrow, wallet_tx, payment)
-      expect(mockTransaction.set).toHaveBeenCalled()
+      // Should call set at least 5 times:
+      // 1. escrow record
+      // 2. wallet_transaction
+      // 3. payment record
+      // 4. employer payment_history
+      // 5. worker payment_history
+      expect(mockTransaction.set.mock.calls.length).toBeGreaterThanOrEqual(5)
+    })
+
+    it('should update worker pending balance in transaction', async () => {
+      mockGet
+        .mockResolvedValueOnce({ empty: false, docs: [mockApplicationDoc], size: 1 })
+        .mockResolvedValueOnce(mockGigDoc)
+
+      mockTransaction.get.mockResolvedValue(mockGigDoc)
+
+      await processSuccessfulPayment(defaultParams)
+
+      // Should call update for gig, application, worker, and possibly payment_intent
+      // At minimum: gig update, application update, worker pending balance update
+      expect(mockTransaction.update.mock.calls.length).toBeGreaterThanOrEqual(3)
     })
   })
 
