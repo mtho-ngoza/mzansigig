@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getFirebaseAdmin } from '@/lib/firebase-admin'
-import * as admin from 'firebase-admin'
+import { processSuccessfulPayment } from '@/lib/services/paymentProcessingService'
 
 /**
  * POST /api/payments/payfast/verify
@@ -79,96 +79,32 @@ export async function POST(request: NextRequest) {
     const isSandbox = process.env.PAYFAST_MODE !== 'live'
 
     if (isSandbox) {
-      console.log(`[PayFast Verify] Sandbox mode - verifying gig ${gigId}`)
+      console.log(`[PayFast Verify] Sandbox mode - processing payment for gig ${gigId}`)
 
-      // Get the accepted application to find worker and proposed rate
-      const applicationsQuery = await db.collection('applications')
-        .where('gigId', '==', gigId)
-        .where('status', '==', 'accepted')
-        .limit(1)
-        .get()
-
-      // Log query results for debugging
-      console.log(`[PayFast Verify] Found ${applicationsQuery.size} accepted application(s) for gig ${gigId}`)
-
-      if (applicationsQuery.empty) {
-        // No accepted application found - this is an error state
-        // Query all applications for this gig to help diagnose
-        const allAppsQuery = await db.collection('applications')
-          .where('gigId', '==', gigId)
-          .get()
-
-        const appStatuses = allAppsQuery.docs.map(doc => ({
-          id: doc.id,
-          status: doc.data().status,
-          applicantId: doc.data().applicantId
-        }))
-
-        console.error(`[PayFast Verify] No accepted application found for gig ${gigId}`)
-        console.error(`[PayFast Verify] All applications for this gig:`, JSON.stringify(appStatuses))
-
-        return NextResponse.json({
-          success: false,
-          message: 'No accepted application found for this gig. Please accept an application before funding.',
-          status: gigData?.status,
-          debug: {
-            gigId,
-            applicationsFound: allAppsQuery.size,
-            applicationStatuses: appStatuses
-          }
-        })
-      }
-
-      const applicationDoc = applicationsQuery.docs[0]
-      const applicationData = applicationDoc.data()
-      const paidAmount = applicationData.proposedRate || gigData?.budget || 0
-      const workerId = applicationData.applicantId
-
-      console.log(`[PayFast Verify] Processing payment - Amount: R${paidAmount}, Worker: ${workerId}, Application: ${applicationDoc.id}`)
-
-      // Update gig status with payment amount
-      await gigRef.update({
-        status: 'funded',
-        paymentStatus: 'completed',
-        paidAmount: paidAmount,
-        fundedAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-        paymentVerifiedVia: 'sandbox-fallback'
-      })
-      console.log(`[PayFast Verify] Updated gig ${gigId} to funded`)
-
-      // Update the accepted application to funded status
-      await applicationDoc.ref.update({
-        status: 'funded',
-        paymentStatus: 'in_escrow',
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      })
-      console.log(`[PayFast Verify] Updated application ${applicationDoc.id} to funded`)
-
-      // Create escrow record for tracking
-      const escrowRef = db.collection('escrow').doc(gigId)
-      await escrowRef.set({
-        id: gigId,
+      // Use shared payment processing service
+      const result = await processSuccessfulPayment({
         gigId,
         employerId: userId,
-        workerId: workerId,
-        totalAmount: paidAmount,
-        releasedAmount: 0,
-        status: 'active',
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
-        verifiedVia: 'sandbox-fallback'
+        amount: gigData?.budget || 0, // Will be overridden by application.proposedRate in service
+        verifiedVia: 'sandbox-fallback',
+        itemName: `Funded gig: ${gigData?.title || gigId}`
       })
-      console.log(`[PayFast Verify] Created escrow record for gig ${gigId} - Amount: R${paidAmount}`)
 
-      console.log(`[PayFast Verify] ✅ Payment verification complete for gig ${gigId}`)
+      if (!result.success) {
+        return NextResponse.json({
+          success: false,
+          message: result.error || 'Payment processing failed',
+          status: gigData?.status
+        })
+      }
 
       return NextResponse.json({
         success: true,
         message: 'Payment verified and gig funded (sandbox mode)',
         status: 'funded',
-        paidAmount: paidAmount,
-        applicationId: applicationDoc.id,
-        workerId: workerId
+        paidAmount: result.paidAmount,
+        applicationId: result.applicationId,
+        workerId: result.workerId
       })
     } else {
       // In production, don't trust client-side verification
