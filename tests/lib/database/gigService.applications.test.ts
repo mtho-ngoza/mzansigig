@@ -215,6 +215,37 @@ describe('GigService - Application Management', () => {
   });
 
   describe('createApplication', () => {
+    it('should create application without message field when message is undefined', async () => {
+      // Firestore doesn't allow undefined values, so message field should be omitted
+      const applicationData = {
+        gigId: mockGigId,
+        applicantId: mockApplicantId,
+        applicantName: 'John Doe',
+        employerId: mockEmployerId,
+        proposedRate: 5000
+        // message is intentionally omitted (undefined)
+      };
+
+      const mockGig = {
+        id: mockGigId,
+        status: 'open' as const,
+        employerId: mockEmployerId
+      };
+      (FirestoreService.getById as jest.Mock).mockResolvedValue(mockGig);
+      (FirestoreService.getWhere as jest.Mock).mockResolvedValue([]);
+      (FirestoreService.getWhereCompound as jest.Mock).mockResolvedValue([]);
+      (FirestoreService.create as jest.Mock).mockResolvedValue(mockApplicationId);
+
+      const result = await GigService.createApplication(applicationData);
+
+      expect(result).toBe(mockApplicationId);
+
+      // Verify that the created document does NOT have a message field with undefined
+      const createCall = (FirestoreService.create as jest.Mock).mock.calls[0];
+      const createdData = createCall[1];
+      expect(createdData).not.toHaveProperty('message');
+    });
+
     it('should create application with sanitized message and employerId', async () => {
       const applicationData = {
         gigId: mockGigId,

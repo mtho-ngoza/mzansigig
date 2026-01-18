@@ -185,6 +185,14 @@ describe('PaymentService - Wallet Integration', () => {
         })
       }
 
+      // Mock payment history query (for updating pending records to completed)
+      const mockPendingHistorySnapshot = {
+        docs: [
+          { ref: { id: 'history-1' } },
+          { ref: { id: 'history-2' } }
+        ]
+      }
+      ;(getDocs as jest.Mock).mockResolvedValue(mockPendingHistorySnapshot)
       ;(getDoc as jest.Mock).mockResolvedValue(mockPaymentDoc)
       ;(doc as jest.Mock).mockReturnValue('payment-doc')
       ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
@@ -211,6 +219,13 @@ describe('PaymentService - Wallet Integration', () => {
         })
       }
 
+      // Mock payment history query (for updating pending records to completed)
+      const mockPendingHistorySnapshot = {
+        docs: [
+          { ref: { id: 'history-1' } }
+        ]
+      }
+      ;(getDocs as jest.Mock).mockResolvedValue(mockPendingHistorySnapshot)
       ;(getDoc as jest.Mock).mockResolvedValue(mockPaymentDoc)
       ;(doc as jest.Mock).mockReturnValue('payment-doc')
       ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
@@ -243,6 +258,11 @@ describe('PaymentService - Wallet Integration', () => {
         })
       }
 
+      // Mock payment history query (for updating pending records to completed)
+      const mockPendingHistorySnapshot = {
+        docs: []
+      }
+      ;(getDocs as jest.Mock).mockResolvedValue(mockPendingHistorySnapshot)
       ;(getDoc as jest.Mock).mockResolvedValue(mockPaymentDoc)
       ;(doc as jest.Mock).mockReturnValue('payment-doc')
       ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
