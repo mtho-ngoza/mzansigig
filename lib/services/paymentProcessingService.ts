@@ -228,7 +228,7 @@ export async function processSuccessfulPayment(
     console.log(`[PaymentProcessing] Created payment record ${paymentRef.id}`)
 
     // 9. Create payment history for employer (shows payment in escrow)
-    const employerHistoryRef = db.collection('payment_history').doc()
+    const employerHistoryRef = db.collection('paymentHistory').doc()
     transaction.set(employerHistoryRef, {
       id: employerHistoryRef.id,
       userId: employerId,
@@ -244,7 +244,7 @@ export async function processSuccessfulPayment(
     console.log(`[PaymentProcessing] Created employer payment history`)
 
     // 10. Create payment history for worker (shows incoming payment in escrow)
-    const workerHistoryRef = db.collection('payment_history').doc()
+    const workerHistoryRef = db.collection('paymentHistory').doc()
     transaction.set(workerHistoryRef, {
       id: workerHistoryRef.id,
       userId: workerId,
