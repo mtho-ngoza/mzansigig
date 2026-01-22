@@ -14,21 +14,6 @@ const mockRequestWithdrawal = jest.fn()
 const mockFormatCurrency = jest.fn((amount) => `R${amount.toFixed(2)}`)
 
 const mockPaymentContextValue = {
-  paymentMethods: [
-    {
-      id: 'pm-123',
-      type: 'bank' as const,
-      provider: 'eft' as const,
-      bankName: 'FNB',
-      accountLast4: '1234',
-      accountType: 'cheque' as const,
-      accountHolder: 'John Doe',
-      isDefault: true,
-      isVerified: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-  ],
   payments: [],
   withdrawals: [],
   analytics: {
@@ -46,10 +31,6 @@ const mockPaymentContextValue = {
   },
   isLoading: false,
   error: null,
-  addPaymentMethod: jest.fn(),
-  setDefaultPaymentMethod: jest.fn(),
-  deletePaymentMethod: jest.fn(),
-  refreshPaymentMethods: jest.fn(),
   createPaymentIntent: jest.fn(),
   processPayment: jest.fn(),
   releaseEscrow: jest.fn(),
@@ -87,10 +68,11 @@ describe('WithdrawalForm', () => {
       expect(screen.getByText('R1000.00')).toBeInTheDocument()
     })
 
-    it('should show existing payment methods', () => {
+    it('should show bank details form', () => {
       renderWithdrawalForm()
 
-      expect(screen.getByText(/John Doe - FNB ending in 1234/)).toBeInTheDocument()
+      expect(screen.getByText(/Bank Account Details/)).toBeInTheDocument()
+      expect(screen.getByText(/We never store your bank details/)).toBeInTheDocument()
     })
 
     it('should have amount input field', () => {
@@ -116,23 +98,48 @@ describe('WithdrawalForm', () => {
   })
 
   describe('Submission', () => {
-    it('should call requestWithdrawal with correct data on valid submission', async () => {
-      mockRequestWithdrawal.mockResolvedValue({ id: 'withdrawal-123' })
-
-      renderWithdrawalForm()
-
+    const fillBankDetails = () => {
+      // Fill in amount
       const amountInput = screen.getByLabelText(/Withdrawal Amount \(ZAR\)/)
       fireEvent.change(amountInput, { target: { value: '500' } })
 
-      // Select the payment method
-      const selectElement = screen.getByRole('combobox')
-      fireEvent.change(selectElement, { target: { value: 'pm-123' } })
+      // Select bank
+      const bankSelect = screen.getAllByRole('combobox')[0]
+      fireEvent.change(bankSelect, { target: { value: 'ABSA Bank' } })
+
+      // Fill account holder
+      const accountHolderInput = screen.getByLabelText(/Account Holder Name/i)
+      fireEvent.change(accountHolderInput, { target: { value: 'John Doe' } })
+
+      // Fill account number
+      const accountNumberInput = screen.getByLabelText(/Account Number/i)
+      fireEvent.change(accountNumberInput, { target: { value: '1234567890' } })
+
+      // Fill branch code
+      const branchCodeInput = screen.getByLabelText(/Branch Code/i)
+      fireEvent.change(branchCodeInput, { target: { value: '632005' } })
+    }
+
+    it('should call requestWithdrawal with bank details on valid submission', async () => {
+      mockRequestWithdrawal.mockResolvedValue({ id: 'withdrawal-123' })
+
+      renderWithdrawalForm()
+      fillBankDetails()
 
       const submitButton = screen.getByRole('button', { name: /Request Withdrawal/i })
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        expect(mockRequestWithdrawal).toHaveBeenCalledWith(500, 'pm-123', undefined)
+        expect(mockRequestWithdrawal).toHaveBeenCalledWith(
+          500,
+          expect.objectContaining({
+            bankName: 'ABSA Bank',
+            accountHolder: 'John Doe',
+            accountNumber: '1234567890',
+            branchCode: '632005',
+            accountType: 'cheque'
+          })
+        )
       })
     })
 
@@ -141,13 +148,7 @@ describe('WithdrawalForm', () => {
       mockRequestWithdrawal.mockResolvedValue({ id: 'withdrawal-123' })
 
       renderWithdrawalForm({ onSuccess })
-
-      const amountInput = screen.getByLabelText(/Withdrawal Amount \(ZAR\)/)
-      fireEvent.change(amountInput, { target: { value: '500' } })
-
-      // Select the payment method
-      const selectElement = screen.getByRole('combobox')
-      fireEvent.change(selectElement, { target: { value: 'pm-123' } })
+      fillBankDetails()
 
       const submitButton = screen.getByRole('button', { name: /Request Withdrawal/i })
       fireEvent.click(submitButton)
@@ -161,19 +162,12 @@ describe('WithdrawalForm', () => {
       mockRequestWithdrawal.mockRejectedValue(new Error('Insufficient balance'))
 
       renderWithdrawalForm()
-
-      const amountInput = screen.getByLabelText(/Withdrawal Amount \(ZAR\)/)
-      fireEvent.change(amountInput, { target: { value: '500' } })
-
-      // Select the payment method
-      const selectElement = screen.getByRole('combobox')
-      fireEvent.change(selectElement, { target: { value: 'pm-123' } })
+      fillBankDetails()
 
       const submitButton = screen.getByRole('button', { name: /Request Withdrawal/i })
       fireEvent.click(submitButton)
 
       await waitFor(() => {
-        // Error handling happens but we just verify the call was made
         expect(mockRequestWithdrawal).toHaveBeenCalled()
       })
     })
@@ -231,31 +225,38 @@ describe('WithdrawalForm', () => {
     })
   })
 
-  describe('Payment Method Selection', () => {
-    it('should have existing method selected by default', () => {
+  describe('Bank Details Form', () => {
+    it('should show all bank details fields', () => {
       renderWithdrawalForm()
 
-      const existingMethodRadio = screen.getByLabelText(/Use existing bank account/i)
-      expect(existingMethodRadio).toBeChecked()
-    })
-
-    it('should show option to add new bank account', () => {
-      renderWithdrawalForm()
-
-      expect(screen.getByText(/Add new bank account/i)).toBeInTheDocument()
-    })
-
-    it('should show bank details form when add new is selected', () => {
-      renderWithdrawalForm()
-
-      const addNewRadio = screen.getByLabelText(/Add new bank account/i)
-      fireEvent.click(addNewRadio)
-
-      // Check for form fields (some don't have proper label associations)
       expect(screen.getByText(/Bank Name/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/Account Holder Name/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/Account Number/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/Branch Code/i)).toBeInTheDocument()
+      expect(screen.getByText(/Account Type/i)).toBeInTheDocument()
+    })
+
+    it('should have bank selection dropdown with SA banks', () => {
+      renderWithdrawalForm()
+
+      const bankSelect = screen.getAllByRole('combobox')[0]
+      expect(bankSelect).toBeInTheDocument()
+
+      // Check that some major SA banks are listed
+      fireEvent.click(bankSelect)
+      expect(screen.getByText('ABSA Bank')).toBeInTheDocument()
+      expect(screen.getByText('Standard Bank')).toBeInTheDocument()
+      expect(screen.getByText('Capitec Bank')).toBeInTheDocument()
+    })
+
+    it('should allow selecting account type', () => {
+      renderWithdrawalForm()
+
+      const accountTypeSelect = screen.getAllByRole('combobox')[1]
+      expect(accountTypeSelect).toBeInTheDocument()
+
+      fireEvent.change(accountTypeSelect, { target: { value: 'savings' } })
+      expect((accountTypeSelect as HTMLSelectElement).value).toBe('savings')
     })
   })
 })

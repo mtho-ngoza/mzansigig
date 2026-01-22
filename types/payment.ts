@@ -40,9 +40,11 @@ export interface Payment {
   type: 'milestone' | 'hourly' | 'fixed' | 'bonus'
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'disputed'
 
-  // Payment method used
-  paymentMethodId: string
-  paymentMethod: PaymentMethod
+  // Payment provider (payfast, ozow, yoco)
+  provider?: string
+  // Legacy fields for backward compatibility with existing data
+  paymentMethodId?: string
+  paymentMethod?: PaymentMethod
 
   // Transaction details
   transactionId?: string

@@ -10,8 +10,7 @@ import {
   query,
   Timestamp,
   updateDoc,
-  where,
-  writeBatch
+  where
 } from 'firebase/firestore'
 import {db} from '@/lib/firebase'
 import {
@@ -137,26 +136,10 @@ export class PaymentService {
         }
       }
 
-      console.debug('Fetching payment method data...')
-      const paymentMethodDoc = await getDoc(doc(db, COLLECTIONS.PAYMENT_METHODS, intentData.paymentMethodId))
-
-      if (!paymentMethodDoc.exists()) {
-        console.error('Payment method not found:', intentData.paymentMethodId)
-        throw new Error('Payment method not found')
-      }
-
-      const paymentMethod = {
-        id: paymentMethodDoc.id,
-        ...paymentMethodDoc.data(),
-        createdAt: paymentMethodDoc.data().createdAt?.toDate() || new Date(),
-        updatedAt: paymentMethodDoc.data().updatedAt?.toDate() || new Date()
-      } as PaymentMethod
-
-      console.debug('Payment method data:', {
-        id: paymentMethod.id,
-        type: paymentMethod.type,
-        isDefault: paymentMethod.isDefault
-      })
+      // Payment provider (e.g., 'payfast') is stored directly in paymentMethodId
+      // No need to fetch from database since we no longer store payment methods
+      const provider = intentData.paymentMethodId || 'payfast'
+      console.debug('Payment provider:', provider)
 
       // Get gig details for better descriptions
       let gigTitle = `Gig ${intentData.gigId}` // fallback
@@ -182,8 +165,7 @@ export class PaymentService {
         currency: 'ZAR' as const,
         type: intentData.type,
         status: 'processing' as const,
-        paymentMethodId: intentData.paymentMethodId,
-        paymentMethod,
+        provider, // Payment provider (payfast, ozow, yoco)
         escrowStatus: 'pending' as const,
         transactionId: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         providerTransactionId: `prov_${Date.now()}`,

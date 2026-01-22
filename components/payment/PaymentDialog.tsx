@@ -59,11 +59,11 @@ interface PaymentDialogProps {
 
 export default function PaymentDialog({
   gigId,
-  workerId,
+  workerId: _workerId,
   workerName,
   amount,
   description,
-  onSuccess,
+  onSuccess: _onSuccess,
   onCancel,
   isOpen
 }: PaymentDialogProps) {
@@ -72,7 +72,7 @@ export default function PaymentDialog({
     formatCurrency,
     isLoading
   } = usePayment()
-  const { success: showSuccess, error: showError } = useToast()
+  const { success: _showSuccess, error: showError } = useToast()
   const { user } = useAuth()
 
   const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>('payfast')
