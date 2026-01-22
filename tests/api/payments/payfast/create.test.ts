@@ -172,7 +172,7 @@ describe('PayFast Create Route', () => {
     })
 
     it('should handle undefined customer name', () => {
-      const customerName: string | undefined = undefined
+      const customerName = undefined as string | undefined
       const firstName = customerName?.split(' ')[0]
       const lastName = customerName?.split(' ').slice(1).join(' ')
 

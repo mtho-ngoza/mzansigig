@@ -191,7 +191,7 @@ describe('PayFast Verify API Route', () => {
     })
 
     it('should handle payment failure', () => {
-      const paymentSuccess = false
+      const paymentSuccess = false as boolean
       const shouldUpdate = paymentSuccess === true
       expect(shouldUpdate).toBe(false)
     })

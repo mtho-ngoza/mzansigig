@@ -631,8 +631,10 @@ describe('ManageApplications', () => {
       mockSuccess.mockClear()
       mockShowError.mockClear()
       // Mock window.location.href using delete and assign
-      delete (window as { location?: Location }).location
-      window.location = { href: '' } as Location
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      delete (window as any).location
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(window as any).location = { href: '' }
     })
 
     afterEach(() => {

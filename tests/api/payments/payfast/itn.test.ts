@@ -44,17 +44,20 @@ describe('PayFast ITN Route', () => {
     })
 
     it('should not process FAILED payment status', () => {
-      const shouldProcess = 'FAILED' === 'COMPLETE'
+      const status = 'FAILED' as string
+      const shouldProcess = status === 'COMPLETE'
       expect(shouldProcess).toBe(false)
     })
 
     it('should not process CANCELLED payment status', () => {
-      const shouldProcess = 'CANCELLED' === 'COMPLETE'
+      const status = 'CANCELLED' as string
+      const shouldProcess = status === 'COMPLETE'
       expect(shouldProcess).toBe(false)
     })
 
     it('should handle PENDING payment status', () => {
-      const shouldProcess = 'PENDING' === 'COMPLETE'
+      const status = 'PENDING' as string
+      const shouldProcess = status === 'COMPLETE'
       expect(shouldProcess).toBe(false)
     })
   })
