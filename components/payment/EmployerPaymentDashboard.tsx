@@ -9,8 +9,6 @@ import { usePayment } from '@/contexts/PaymentContext'
 import { GigService } from '@/lib/database/gigService'
 import { GigApplication } from '@/types/gig'
 import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
-import PaymentMethodList from './PaymentMethodList'
-import PaymentMethodForm from './PaymentMethodForm'
 import PaymentHistory from './PaymentHistory'
 import PaymentDialog from './PaymentDialog'
 
@@ -28,7 +26,7 @@ interface PendingObligation {
 export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDashboardProps) {
   const { user } = useAuth()
   const { analytics, formatCurrency, refreshAnalytics } = usePayment()
-  const [currentView, setCurrentView] = useState<'overview' | 'methods' | 'add-method' | 'history' | 'obligations'>('overview')
+  const [currentView, setCurrentView] = useState<'overview' | 'history' | 'obligations'>('overview')
   const [pendingObligations, setPendingObligations] = useState<PendingObligation[]>([])
   const [isLoadingObligations, setIsLoadingObligations] = useState(false)
   const [showPaymentDialog, setShowPaymentDialog] = useState(false)
@@ -90,23 +88,6 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
 
   const renderViewContent = () => {
     switch (currentView) {
-      case 'add-method':
-        return (
-          <PaymentMethodForm
-            onSuccess={() => {
-              setCurrentView('methods')
-            }}
-            onCancel={() => setCurrentView('methods')}
-          />
-        )
-
-      case 'methods':
-        return (
-          <PaymentMethodList
-            onAddNew={() => setCurrentView('add-method')}
-          />
-        )
-
       case 'history':
         return <PaymentHistory />
 
@@ -291,7 +272,7 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <Button
                     variant="outline"
                     className="h-20 flex flex-col items-center justify-center space-y-2"
@@ -304,15 +285,6 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
                         ({pendingObligations.length})
                       </span>
                     )}
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="h-20 flex flex-col items-center justify-center space-y-2"
-                    onClick={() => setCurrentView('methods')}
-                  >
-                    <span className="text-2xl">💳</span>
-                    <span>Payment Methods</span>
                   </Button>
 
                   <Button
@@ -376,7 +348,7 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
                       <li>• Fund escrow before work starts</li>
                       <li>• Review work before releasing payment</li>
                       <li>• Communicate clearly with workers</li>
-                      <li>• Keep payment methods up to date</li>
+                      <li>• Pay via PayFast for secure transactions</li>
                     </ul>
                   </div>
                 </div>
@@ -389,8 +361,6 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
 
   const getPageTitle = () => {
     switch (currentView) {
-      case 'methods': return 'Payment Methods'
-      case 'add-method': return 'Add Payment Method'
       case 'history': return 'Payment History'
       case 'obligations': return 'Pending Payments'
       default: return 'Payment Dashboard'
@@ -399,8 +369,6 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
 
   const getPageDescription = () => {
     switch (currentView) {
-      case 'methods': return 'Manage your payment methods and preferences'
-      case 'add-method': return 'Add a new payment method to your account'
       case 'history': return 'View all your payment transactions'
       case 'obligations': return 'Applications waiting for payment'
       default: return 'Manage payments, track spending, and view obligations'
@@ -442,17 +410,6 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
           )
         })
       }
-
-      actions.push({
-        label: 'Payment Methods',
-        onClick: () => setCurrentView('methods'),
-        variant: 'outline' as const,
-        icon: (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-          </svg>
-        )
-      })
     }
 
     return actions

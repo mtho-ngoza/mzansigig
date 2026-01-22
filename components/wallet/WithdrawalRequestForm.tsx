@@ -22,7 +22,6 @@ export default function WithdrawalRequestForm({ onSuccess, onCancel }: Withdrawa
   const [availableBalance, setAvailableBalance] = useState(0)
   const [formData, setFormData] = useState({
     amount: '',
-    paymentMethod: '',
     bankName: '',
     accountNumber: '',
     branchCode: '',
@@ -38,15 +37,6 @@ export default function WithdrawalRequestForm({ onSuccess, onCancel }: Withdrawa
         // Load wallet balance
         const balance = await WalletService.getWalletBalance(user.id)
         setAvailableBalance(balance.walletBalance)
-
-        // Load payment methods
-        const methods = await PaymentService.getUserPaymentMethods(user.id)
-
-        // Set default payment method if exists
-        const defaultMethod = methods.find(m => m.isDefault)
-        if (defaultMethod) {
-          setFormData(prev => ({ ...prev, paymentMethod: defaultMethod.id }))
-        }
       } catch (err) {
         console.error('Error loading withdrawal data:', err)
       }
@@ -106,11 +96,11 @@ export default function WithdrawalRequestForm({ onSuccess, onCancel }: Withdrawa
         isVerified: false
       }
 
-      // Request withdrawal
+      // Request withdrawal with bank transfer
       await PaymentService.requestWithdrawal(
         user.id,
         amount,
-        formData.paymentMethod || 'manual',
+        'bank_transfer',
         bankDetails
       )
 

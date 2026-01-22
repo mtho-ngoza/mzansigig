@@ -66,19 +66,6 @@ describe('PaymentService - Wallet Integration', () => {
 
   describe('processPayment', () => {
     it('should update worker pending balance when payment is processed', async () => {
-      const mockPaymentMethodDoc = {
-        exists: () => true,
-        id: 'pm-123',
-        data: () => ({
-          type: 'card',
-          provider: 'payfast',
-          isDefault: true,
-          isVerified: true,
-          createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now()
-        })
-      }
-
       const mockIntentDoc = {
         exists: () => true,
         data: () => ({
@@ -87,7 +74,7 @@ describe('PaymentService - Wallet Integration', () => {
           workerId: mockWorkerId,
           amount: mockAmount,
           currency: 'ZAR',
-          paymentMethodId: 'pm-123',
+          paymentMethodId: 'payfast', // Provider name, not a document ID
           type: 'fixed',
           status: 'created'
         })
@@ -102,13 +89,11 @@ describe('PaymentService - Wallet Integration', () => {
 
       ;(getDoc as jest.Mock).mockImplementation((docRef: any) => {
         if (docRef === 'intent-doc') return Promise.resolve(mockIntentDoc)
-        if (docRef === 'pm-doc') return Promise.resolve(mockPaymentMethodDoc)
         return Promise.resolve({ exists: () => false })
       })
 
       ;(doc as jest.Mock).mockImplementation((db: any, collection: string, id: string) => {
         if (collection === 'paymentIntents') return 'intent-doc'
-        if (collection === 'paymentMethods') return 'pm-doc'
         return `${collection}-${id}`
       })
 
@@ -123,19 +108,6 @@ describe('PaymentService - Wallet Integration', () => {
     })
 
     it('should handle errors when updating pending balance fails', async () => {
-      const mockPaymentMethodDoc = {
-        exists: () => true,
-        id: 'pm-123',
-        data: () => ({
-          type: 'card',
-          provider: 'payfast',
-          isDefault: true,
-          isVerified: true,
-          createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now()
-        })
-      }
-
       const mockIntentDoc = {
         exists: () => true,
         data: () => ({
@@ -144,7 +116,7 @@ describe('PaymentService - Wallet Integration', () => {
           workerId: mockWorkerId,
           amount: mockAmount,
           currency: 'ZAR',
-          paymentMethodId: 'pm-123',
+          paymentMethodId: 'payfast', // Provider name
           type: 'fixed',
           status: 'created'
         })
@@ -152,13 +124,11 @@ describe('PaymentService - Wallet Integration', () => {
 
       ;(getDoc as jest.Mock).mockImplementation((docRef: any) => {
         if (docRef === 'intent-doc') return Promise.resolve(mockIntentDoc)
-        if (docRef === 'pm-doc') return Promise.resolve(mockPaymentMethodDoc)
         return Promise.resolve({ exists: () => false })
       })
 
       ;(doc as jest.Mock).mockImplementation((db: any, collection: string, id: string) => {
         if (collection === 'paymentIntents') return 'intent-doc'
-        if (collection === 'paymentMethods') return 'pm-doc'
         return `${collection}-${id}`
       })
 
@@ -277,17 +247,6 @@ describe('PaymentService - Wallet Integration', () => {
   describe('Escrow Integration: processPayment → releaseEscrow', () => {
     it('should correctly update pendingBalance when payment processed, then move to wallet when escrow released', async () => {
       // SETUP: Mock for processPayment
-      const mockPaymentMethodDoc = {
-        exists: () => true,
-        id: 'pm-123',
-        data: () => ({
-          type: 'card',
-          provider: 'payfast',
-          isDefault: true,
-          isVerified: true
-        })
-      }
-
       const mockIntentDoc = {
         exists: () => true,
         data: () => ({
@@ -296,7 +255,7 @@ describe('PaymentService - Wallet Integration', () => {
           workerId: mockWorkerId,
           amount: mockAmount,
           currency: 'ZAR',
-          paymentMethodId: 'pm-123',
+          paymentMethodId: 'payfast', // Provider name
           type: 'fixed',
           status: 'created'
         })
@@ -311,8 +270,7 @@ describe('PaymentService - Wallet Integration', () => {
 
       // Setup mocks for processPayment
       ;(getDoc as jest.Mock)
-        .mockResolvedValueOnce(mockIntentDoc) // First call for payment intent
-        .mockResolvedValueOnce(mockPaymentMethodDoc) // Second call for payment method
+        .mockResolvedValueOnce(mockIntentDoc) // Payment intent only (no payment method lookup)
       ;(doc as jest.Mock).mockReturnValue('mock-doc-ref')
       ;(addDoc as jest.Mock).mockResolvedValue({ id: 'payment-123' })
       ;(updateDoc as jest.Mock).mockResolvedValue(undefined)

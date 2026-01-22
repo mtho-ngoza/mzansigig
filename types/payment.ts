@@ -40,9 +40,11 @@ export interface Payment {
   type: 'milestone' | 'hourly' | 'fixed' | 'bonus'
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'disputed'
 
-  // Payment method used
-  paymentMethodId: string
-  paymentMethod: PaymentMethod
+  // Payment provider (payfast, ozow, yoco)
+  provider?: string
+  // Legacy fields for backward compatibility with existing data
+  paymentMethodId?: string
+  paymentMethod?: PaymentMethod
 
   // Transaction details
   transactionId?: string
@@ -129,10 +131,12 @@ export interface PaymentConfig {
   // Worker commission (what platform takes from worker earnings)
   workerCommissionPercentage: number // e.g., 10% - commission taken from worker's earnings
 
-  // Minimum amounts
-  minimumGigAmount: number // R100
+  // Payment amount limits
+  minimumGigAmount: number // R100 - minimum gig/payment value
   minimumWithdrawal: number // R50
   minimumMilestone: number // R50
+  maximumPaymentAmount: number // R100,000 - max per transaction
+  largePaymentThreshold: number // R10,000 - requires confirmation above this
 
   // Escrow settings
   escrowReleaseDelayHours: number // 72 hours default
@@ -234,7 +238,6 @@ export interface PaymentDispute {
 
 // UI state types
 export interface PaymentState {
-  paymentMethods: PaymentMethod[]
   payments: Payment[]
   withdrawals: WithdrawalRequest[]
   analytics: PaymentAnalytics | null

@@ -28,10 +28,12 @@ export const DEFAULT_FEE_CONFIG: Omit<PaymentConfig, 'id' | 'createdAt' | 'updat
   // Worker commission (deducted from worker earnings)
   workerCommissionPercentage: 10, // 10% commission from worker earnings
 
-  // Minimum amounts
-  minimumGigAmount: 100, // R100 minimum gig value
+  // Payment amount limits
+  minimumGigAmount: 100, // R100 minimum gig/payment value
   minimumWithdrawal: 50, // R50 minimum withdrawal
   minimumMilestone: 50, // R50 minimum milestone
+  maximumPaymentAmount: 100000, // R100,000 max per transaction
+  largePaymentThreshold: 10000, // R10,000 requires confirmation
 
   // Escrow settings
   escrowReleaseDelayHours: 72, // 3 days default hold
@@ -265,8 +267,20 @@ export class FeeConfigService {
     }
 
     if (config.minimumGigAmount !== undefined) {
-      if (config.minimumGigAmount < 10 || config.minimumGigAmount > 10000) {
-        errors.push('Minimum gig amount must be between R10 and R10,000')
+      if (config.minimumGigAmount < 1 || config.minimumGigAmount > 10000) {
+        errors.push('Minimum gig amount must be between R1 and R10,000')
+      }
+    }
+
+    if (config.maximumPaymentAmount !== undefined) {
+      if (config.maximumPaymentAmount < 1000 || config.maximumPaymentAmount > 1000000) {
+        errors.push('Maximum payment amount must be between R1,000 and R1,000,000')
+      }
+    }
+
+    if (config.largePaymentThreshold !== undefined) {
+      if (config.largePaymentThreshold < 100 || config.largePaymentThreshold > 100000) {
+        errors.push('Large payment threshold must be between R100 and R100,000')
       }
     }
 

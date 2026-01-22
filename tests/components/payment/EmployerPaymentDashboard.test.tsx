@@ -161,7 +161,6 @@ describe('EmployerPaymentDashboard', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Pending Payments')).toBeInTheDocument()
-        expect(screen.getAllByText('Payment Methods').length).toBeGreaterThan(0)
         expect(screen.getAllByText('Payment History').length).toBeGreaterThan(0)
         expect(screen.getByText('Manage Gigs')).toBeInTheDocument()
       })
@@ -369,18 +368,6 @@ describe('EmployerPaymentDashboard', () => {
       mockGigService.getGigsByEmployer.mockResolvedValue([])
     })
 
-    it('should navigate to payment methods view', async () => {
-      renderEmployerPaymentDashboard()
-
-      await waitFor(() => {
-        const paymentMethodsButtons = screen.getAllByText('Payment Methods')
-        fireEvent.click(paymentMethodsButtons[0])
-      })
-
-      expect(screen.getAllByText('Payment Methods').length).toBeGreaterThan(0)
-      expect(screen.getByText(/Manage your payment methods and preferences/i)).toBeInTheDocument()
-    })
-
     it('should navigate to payment history view', async () => {
       renderEmployerPaymentDashboard()
 
@@ -391,20 +378,6 @@ describe('EmployerPaymentDashboard', () => {
 
       expect(screen.getAllByText('Payment History').length).toBeGreaterThan(0)
       expect(screen.getByText(/View all your payment transactions/i)).toBeInTheDocument()
-    })
-
-    it('should navigate to add payment method view', async () => {
-      renderEmployerPaymentDashboard()
-
-      // First go to payment methods
-      await waitFor(() => {
-        const paymentMethodsButtons = screen.getAllByText('Payment Methods')
-        fireEvent.click(paymentMethodsButtons[0])
-      })
-
-      // Then go to add new method (assuming the button exists in PaymentMethodList)
-      // This tests the routing logic
-      expect(screen.getAllByText('Payment Methods').length).toBeGreaterThan(0)
     })
 
     it('should have back to overview button in sub-views', async () => {

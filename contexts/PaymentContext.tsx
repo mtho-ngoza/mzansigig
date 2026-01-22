@@ -4,8 +4,6 @@ import React, { createContext, useContext, useReducer, useEffect, ReactNode } fr
 import { useAuth } from './AuthContext'
 import { PaymentService } from '@/lib/services/paymentService'
 import {
-  PaymentState,
-  PaymentMethod,
   Payment,
   WithdrawalRequest,
   PaymentAnalytics,
@@ -15,19 +13,21 @@ import {
   FeeBreakdown
 } from '@/types/payment'
 
-interface PaymentContextType extends PaymentState {
-  // Payment Methods
-  addPaymentMethod: (paymentMethodData: Omit<PaymentMethod, 'id' | 'createdAt' | 'updatedAt'>) => Promise<PaymentMethod>
-  setDefaultPaymentMethod: (paymentMethodId: string) => Promise<void>
-  deletePaymentMethod: (paymentMethodId: string) => Promise<void>
-  refreshPaymentMethods: () => Promise<void>
+interface PaymentState {
+  payments: Payment[]
+  withdrawals: WithdrawalRequest[]
+  analytics: PaymentAnalytics | null
+  isLoading: boolean
+  error: string | null
+}
 
+interface PaymentContextType extends PaymentState {
   // Payments
   createPaymentIntent: (
     gigId: string,
     workerId: string,
     amount: number,
-    paymentMethodId: string,
+    provider: string,
     type?: 'milestone' | 'hourly' | 'fixed' | 'bonus'
   ) => Promise<PaymentIntent>
   processPayment: (paymentIntentId: string) => Promise<Payment>
@@ -38,7 +38,7 @@ interface PaymentContextType extends PaymentState {
   updateMilestoneStatus: (milestoneId: string, status: Milestone['status'], paymentId?: string) => Promise<void>
 
   // Withdrawals
-  requestWithdrawal: (amount: number, paymentMethodId: string, bankDetails?: BankAccount) => Promise<WithdrawalRequest>
+  requestWithdrawal: (amount: number, bankDetails: BankAccount) => Promise<WithdrawalRequest>
   refreshWithdrawals: () => Promise<void>
 
   // Analytics
@@ -53,8 +53,6 @@ interface PaymentContextType extends PaymentState {
 type PaymentAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'SET_PAYMENT_METHODS'; payload: PaymentMethod[] }
-  | { type: 'ADD_PAYMENT_METHOD'; payload: PaymentMethod }
   | { type: 'SET_PAYMENTS'; payload: Payment[] }
   | { type: 'ADD_PAYMENT'; payload: Payment }
   | { type: 'UPDATE_PAYMENT'; payload: { id: string; updates: Partial<Payment> } }
@@ -63,7 +61,6 @@ type PaymentAction =
   | { type: 'SET_ANALYTICS'; payload: PaymentAnalytics | null }
 
 const initialState: PaymentState = {
-  paymentMethods: [],
   payments: [],
   withdrawals: [],
   analytics: null,
@@ -78,15 +75,6 @@ function paymentReducer(state: PaymentState, action: PaymentAction): PaymentStat
 
     case 'SET_ERROR':
       return { ...state, error: action.payload, isLoading: false }
-
-    case 'SET_PAYMENT_METHODS':
-      return { ...state, paymentMethods: action.payload }
-
-    case 'ADD_PAYMENT_METHOD':
-      return {
-        ...state,
-        paymentMethods: [action.payload, ...state.paymentMethods]
-      }
 
     case 'SET_PAYMENTS':
       return { ...state, payments: action.payload }
@@ -140,7 +128,6 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
       loadUserPaymentData()
     } else {
       // Clear data when logged out
-      dispatch({ type: 'SET_PAYMENT_METHODS', payload: [] })
       dispatch({ type: 'SET_PAYMENTS', payload: [] })
       dispatch({ type: 'SET_WITHDRAWALS', payload: [] })
       dispatch({ type: 'SET_ANALYTICS', payload: null })
@@ -153,17 +140,12 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
     dispatch({ type: 'SET_LOADING', payload: true })
 
     try {
-      // Fix any multiple default payment methods first
-      await PaymentService.fixMultipleDefaultPaymentMethods(user.id)
-
-      // Load payment methods, analytics, and withdrawals in parallel
-      const [paymentMethods, analytics, withdrawals] = await Promise.all([
-        PaymentService.getUserPaymentMethods(user.id),
+      // Load analytics and withdrawals in parallel
+      const [analytics, withdrawals] = await Promise.all([
         PaymentService.getUserPaymentAnalytics(user.id),
         PaymentService.getUserWithdrawals(user.id)
       ])
 
-      dispatch({ type: 'SET_PAYMENT_METHODS', payload: paymentMethods })
       dispatch({ type: 'SET_ANALYTICS', payload: analytics })
       dispatch({ type: 'SET_WITHDRAWALS', payload: withdrawals })
       dispatch({ type: 'SET_ERROR', payload: null })
@@ -175,70 +157,12 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
     }
   }
 
-  // Payment Methods
-  const addPaymentMethod = async (paymentMethodData: Omit<PaymentMethod, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!user) throw new Error('User not authenticated')
-
-    try {
-      dispatch({ type: 'SET_LOADING', payload: true })
-      const paymentMethod = await PaymentService.addPaymentMethod(user.id, paymentMethodData)
-
-      // Refresh payment methods to ensure UI consistency after potential default changes
-      await refreshPaymentMethods()
-
-      dispatch({ type: 'SET_ERROR', payload: null })
-      return paymentMethod
-    } catch (error: any) {
-      dispatch({ type: 'SET_ERROR', payload: error.message })
-      throw error
-    } finally {
-      dispatch({ type: 'SET_LOADING', payload: false })
-    }
-  }
-
-  const setDefaultPaymentMethod = async (paymentMethodId: string) => {
-    if (!user) throw new Error('User not authenticated')
-
-    try {
-      await PaymentService.setDefaultPaymentMethod(user.id, paymentMethodId)
-      await refreshPaymentMethods()
-    } catch (error: any) {
-      dispatch({ type: 'SET_ERROR', payload: error.message })
-      throw error
-    }
-  }
-
-  const deletePaymentMethod = async (paymentMethodId: string) => {
-    if (!user) throw new Error('User not authenticated')
-
-    try {
-      await PaymentService.deletePaymentMethod(user.id, paymentMethodId)
-      await refreshPaymentMethods()
-    } catch (error: any) {
-      dispatch({ type: 'SET_ERROR', payload: error.message })
-      throw error
-    }
-  }
-
-  const refreshPaymentMethods = async () => {
-    if (!user) return
-
-    try {
-      // Fix any multiple default payment methods first
-      await PaymentService.fixMultipleDefaultPaymentMethods(user.id)
-      const paymentMethods = await PaymentService.getUserPaymentMethods(user.id)
-      dispatch({ type: 'SET_PAYMENT_METHODS', payload: paymentMethods })
-    } catch (error: any) {
-      dispatch({ type: 'SET_ERROR', payload: error.message })
-    }
-  }
-
   // Payments
   const createPaymentIntent = async (
     gigId: string,
     workerId: string,
     amount: number,
-    paymentMethodId: string,
+    provider: string,
     type: 'milestone' | 'hourly' | 'fixed' | 'bonus' = 'fixed'
   ) => {
     if (!user) throw new Error('User not authenticated')
@@ -250,7 +174,7 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
         user.id,
         workerId,
         amount,
-        paymentMethodId,
+        provider, // Provider name (payfast, ozow, yoco) instead of payment method ID
         type
       )
       dispatch({ type: 'SET_ERROR', payload: null })
@@ -354,40 +278,23 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
     }
   }
 
-  // Withdrawals
+  // Withdrawals - now takes bank details directly (no saved payment methods)
   const requestWithdrawal = async (
     amount: number,
-    paymentMethodId: string,
-    bankDetails?: BankAccount
+    bankDetails: BankAccount
   ) => {
     if (!user) throw new Error('User not authenticated')
 
     try {
       dispatch({ type: 'SET_LOADING', payload: true })
 
-      // If new bank details provided, save them as a payment method first
-      let actualPaymentMethodId = paymentMethodId
-      if (bankDetails && paymentMethodId === 'new') {
-        const newPaymentMethod = await PaymentService.addPaymentMethod(user.id, {
-          type: 'bank' as const,
-          provider: 'eft',
-          bankName: bankDetails.bankName,
-          accountNumber: bankDetails.accountNumber,
-          accountLast4: bankDetails.accountNumber.slice(-4),
-          accountHolder: bankDetails.accountHolder,
-          accountType: bankDetails.accountType,
-          branchCode: bankDetails.branchCode,
-          isDefault: false,
-          isVerified: false
-        })
-        actualPaymentMethodId = newPaymentMethod.id
-
-        // Refresh payment methods to show the newly added one
-        await refreshPaymentMethods()
-      }
-
-      // Request withdrawal with saved payment method (no need to pass bankDetails anymore)
-      const withdrawal = await PaymentService.requestWithdrawal(user.id, amount, actualPaymentMethodId, undefined)
+      // Request withdrawal with bank details directly
+      const withdrawal = await PaymentService.requestWithdrawal(
+        user.id,
+        amount,
+        'bank_transfer', // Provider identifier for bank transfers
+        bankDetails
+      )
       dispatch({ type: 'ADD_WITHDRAWAL', payload: withdrawal })
 
       // Refresh analytics
@@ -442,10 +349,6 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
 
   const value: PaymentContextType = {
     ...state,
-    addPaymentMethod,
-    setDefaultPaymentMethod,
-    deletePaymentMethod,
-    refreshPaymentMethods,
     createPaymentIntent,
     processPayment,
     releaseEscrow,

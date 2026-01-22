@@ -213,19 +213,54 @@ export function validateWithdrawalAmount(
   return { isValid: true }
 }
 
+import { FeeConfigService, DEFAULT_FEE_CONFIG } from '@/lib/services/feeConfigService'
+
 /**
- * Payment amount constraints
+ * Payment limits interface for type safety
  */
-export const PAYMENT_LIMITS = {
-  MIN: 100,
-  MAX_SINGLE: 100000, // R100,000 per transaction
-  LARGE_AMOUNT_THRESHOLD: 10000 // Show confirmation for amounts >= R10,000
-} as const
+export interface PaymentLimits {
+  MIN: number
+  MAX_SINGLE: number
+  LARGE_AMOUNT_THRESHOLD: number
+}
+
+/**
+ * Default payment amount constraints (fallback values)
+ * These are used when config cannot be loaded
+ */
+export const PAYMENT_LIMITS: PaymentLimits = {
+  MIN: DEFAULT_FEE_CONFIG.minimumGigAmount,
+  MAX_SINGLE: DEFAULT_FEE_CONFIG.maximumPaymentAmount,
+  LARGE_AMOUNT_THRESHOLD: DEFAULT_FEE_CONFIG.largePaymentThreshold
+}
+
+/**
+ * Get payment limits from Firebase feeConfigs collection
+ * Returns configured limits or defaults if config unavailable
+ */
+export async function getPaymentLimits(): Promise<PaymentLimits> {
+  try {
+    const config = await FeeConfigService.getActiveFeeConfig()
+    return {
+      MIN: config.minimumGigAmount ?? PAYMENT_LIMITS.MIN,
+      MAX_SINGLE: config.maximumPaymentAmount ?? PAYMENT_LIMITS.MAX_SINGLE,
+      LARGE_AMOUNT_THRESHOLD: config.largePaymentThreshold ?? PAYMENT_LIMITS.LARGE_AMOUNT_THRESHOLD
+    }
+  } catch {
+    // Return defaults if config service fails
+    return PAYMENT_LIMITS
+  }
+}
 
 /**
  * Validate payment amount
+ * @param amount - The payment amount to validate
+ * @param limits - Optional pre-fetched limits (use getPaymentLimits() to fetch)
  */
-export function validatePaymentAmount(amount: number): {
+export function validatePaymentAmount(
+  amount: number,
+  limits: PaymentLimits = PAYMENT_LIMITS
+): {
   isValid: boolean
   requiresConfirmation: boolean
   message?: string
@@ -238,28 +273,42 @@ export function validatePaymentAmount(amount: number): {
     }
   }
 
-  if (amount < PAYMENT_LIMITS.MIN) {
+  if (amount < limits.MIN) {
     return {
       isValid: false,
       requiresConfirmation: false,
-      message: `Minimum payment amount is R${PAYMENT_LIMITS.MIN}`
+      message: `Minimum payment amount is R${limits.MIN}`
     }
   }
 
-  if (amount > PAYMENT_LIMITS.MAX_SINGLE) {
+  if (amount > limits.MAX_SINGLE) {
     return {
       isValid: false,
       requiresConfirmation: false,
-      message: `Maximum payment per transaction is R${PAYMENT_LIMITS.MAX_SINGLE.toLocaleString()}`
+      message: `Maximum payment per transaction is R${limits.MAX_SINGLE.toLocaleString()}`
     }
   }
 
-  const requiresConfirmation = amount >= PAYMENT_LIMITS.LARGE_AMOUNT_THRESHOLD
+  const requiresConfirmation = amount >= limits.LARGE_AMOUNT_THRESHOLD
 
   return {
     isValid: true,
     requiresConfirmation
   }
+}
+
+/**
+ * Async version of validatePaymentAmount that fetches limits from config
+ */
+export async function validatePaymentAmountAsync(amount: number): Promise<{
+  isValid: boolean
+  requiresConfirmation: boolean
+  message?: string
+  limits: PaymentLimits
+}> {
+  const limits = await getPaymentLimits()
+  const result = validatePaymentAmount(amount, limits)
+  return { ...result, limits }
 }
 
 /**

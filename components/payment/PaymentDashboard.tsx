@@ -6,8 +6,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { useAuth } from '@/contexts/AuthContext'
 import { usePayment } from '@/contexts/PaymentContext'
-import PaymentMethodList from './PaymentMethodList'
-import PaymentMethodForm from './PaymentMethodForm'
 import EarningsAnalytics from './EarningsAnalytics'
 import WithdrawalForm from './WithdrawalForm'
 import WithdrawalHistory from '../wallet/WithdrawalHistory'
@@ -20,27 +18,10 @@ interface PaymentDashboardProps {
 export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
   const { user } = useAuth()
   const { analytics, formatCurrency, refreshAnalytics } = usePayment()
-  const [currentView, setCurrentView] = useState<'overview' | 'methods' | 'add-method' | 'withdraw' | 'withdrawals' | 'history' | 'analytics'>('overview')
+  const [currentView, setCurrentView] = useState<'overview' | 'withdraw' | 'withdrawals' | 'history' | 'analytics'>('overview')
 
   const renderViewContent = () => {
     switch (currentView) {
-      case 'add-method':
-        return (
-          <PaymentMethodForm
-            onSuccess={() => {
-              setCurrentView('methods')
-            }}
-            onCancel={() => setCurrentView('methods')}
-          />
-        )
-
-      case 'methods':
-        return (
-          <PaymentMethodList
-            onAddNew={() => setCurrentView('add-method')}
-          />
-        )
-
       case 'withdraw':
         return (
           <WithdrawalForm
@@ -156,15 +137,6 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
                   <Button
                     variant="outline"
                     className="h-20 flex flex-col items-center justify-center space-y-2"
-                    onClick={() => setCurrentView('methods')}
-                  >
-                    <span className="text-2xl">💳</span>
-                    <span>Payment Methods</span>
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="h-20 flex flex-col items-center justify-center space-y-2"
                     onClick={() => setCurrentView('history')}
                   >
                     <span className="text-2xl">📋</span>
@@ -236,8 +208,6 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
 
   const getPageTitle = () => {
     switch (currentView) {
-      case 'methods': return 'Payment Methods'
-      case 'add-method': return 'Add Payment Method'
       case 'withdraw': return 'Withdraw Funds'
       case 'withdrawals': return 'My Withdrawals'
       case 'history': return 'Payment History'
@@ -248,8 +218,6 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
 
   const getPageDescription = () => {
     switch (currentView) {
-      case 'methods': return 'Manage your payment methods and preferences'
-      case 'add-method': return 'Add a new payment method to your account'
       case 'withdraw': return 'Withdraw your earnings to your bank account'
       case 'withdrawals': return 'View your pending and completed withdrawal requests'
       case 'history': return 'View all your payment and earning transactions'
@@ -293,17 +261,6 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
           )
         })
       }
-
-      actions.push({
-        label: 'Payment Methods',
-        onClick: () => setCurrentView('methods'),
-        variant: 'outline' as const,
-        icon: (
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-          </svg>
-        )
-      })
     }
 
     return actions

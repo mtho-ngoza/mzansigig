@@ -22,11 +22,10 @@ interface WithdrawalFormProps {
 }
 
 export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormProps) {
-  const { requestWithdrawal, paymentMethods, analytics, formatCurrency, isLoading } = usePayment()
+  const { requestWithdrawal, analytics, formatCurrency, isLoading } = usePayment()
   const { success: showSuccess, error: showError } = useToast()
 
   const [amount, setAmount] = useState('')
-  const [selectedMethodId, setSelectedMethodId] = useState('')
   const [bankDetails, setBankDetails] = useState<BankAccount>({
     bankName: '',
     accountNumber: '',
@@ -35,7 +34,6 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
     accountType: 'cheque',
     isVerified: false
   })
-  const [useExistingMethod, setUseExistingMethod] = useState(true)
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const availableBalance = analytics?.availableBalance || 0
@@ -57,30 +55,24 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
       newErrors.amount = validation.message || 'Invalid withdrawal amount'
     }
 
-    if (useExistingMethod) {
-      if (!selectedMethodId) {
-        newErrors.method = 'Please select a payment method'
-      }
-    } else {
-      const bankNameValidation = validateBankName(bankDetails.bankName)
-      if (!bankNameValidation.isValid) {
-        newErrors.bankName = bankNameValidation.message || 'Invalid bank name'
-      }
+    const bankNameValidation = validateBankName(bankDetails.bankName)
+    if (!bankNameValidation.isValid) {
+      newErrors.bankName = bankNameValidation.message || 'Invalid bank name'
+    }
 
-      const accountHolderValidation = validateAccountHolder(bankDetails.accountHolder)
-      if (!accountHolderValidation.isValid) {
-        newErrors.accountHolder = accountHolderValidation.message || 'Invalid account holder name'
-      }
+    const accountHolderValidation = validateAccountHolder(bankDetails.accountHolder)
+    if (!accountHolderValidation.isValid) {
+      newErrors.accountHolder = accountHolderValidation.message || 'Invalid account holder name'
+    }
 
-      const accountNumberValidation = validateAccountNumber(bankDetails.accountNumber)
-      if (!accountNumberValidation.isValid) {
-        newErrors.accountNumber = accountNumberValidation.message || 'Invalid account number'
-      }
+    const accountNumberValidation = validateAccountNumber(bankDetails.accountNumber)
+    if (!accountNumberValidation.isValid) {
+      newErrors.accountNumber = accountNumberValidation.message || 'Invalid account number'
+    }
 
-      const branchCodeValidation = validateBranchCode(bankDetails.branchCode)
-      if (!branchCodeValidation.isValid) {
-        newErrors.branchCode = branchCodeValidation.message || 'Invalid branch code'
-      }
+    const branchCodeValidation = validateBranchCode(bankDetails.branchCode)
+    if (!branchCodeValidation.isValid) {
+      newErrors.branchCode = branchCodeValidation.message || 'Invalid branch code'
     }
 
     setErrors(newErrors)
@@ -96,22 +88,18 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
 
     try {
       const withdrawalAmount = parseFloat(amount)
-      const methodId = useExistingMethod ? selectedMethodId : 'new'
 
-      // Sanitize bank details if adding new account
-      let bankData = undefined
-      if (!useExistingMethod) {
-        const bankNameValidation = validateBankName(bankDetails.bankName)
-        const accountHolderValidation = validateAccountHolder(bankDetails.accountHolder)
+      // Sanitize bank details
+      const bankNameValidation = validateBankName(bankDetails.bankName)
+      const accountHolderValidation = validateAccountHolder(bankDetails.accountHolder)
 
-        bankData = {
-          ...bankDetails,
-          bankName: bankNameValidation.sanitized,
-          accountHolder: accountHolderValidation.sanitized
-        }
+      const bankData: BankAccount = {
+        ...bankDetails,
+        bankName: bankNameValidation.sanitized,
+        accountHolder: accountHolderValidation.sanitized
       }
 
-      await requestWithdrawal(withdrawalAmount, methodId, bankData)
+      await requestWithdrawal(withdrawalAmount, bankData)
 
       showSuccess(`Withdrawal request for ${formatCurrency(withdrawalAmount)} submitted successfully`)
       onSuccess?.()
@@ -124,8 +112,6 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
   const handleInputChange = (field: string, value: string) => {
     if (field === 'amount') {
       setAmount(value)
-    } else if (field === 'selectedMethodId') {
-      setSelectedMethodId(value)
     } else {
       setBankDetails(prev => ({ ...prev, [field]: value }))
     }
@@ -134,10 +120,6 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
       setErrors(prev => ({ ...prev, [field]: '' }))
     }
   }
-
-  const eligibleMethods = paymentMethods.filter(method =>
-    method.type === 'bank' || method.type === 'eft'
-  )
 
   return (
     <Card className="max-w-2xl mx-auto">
@@ -181,137 +163,80 @@ export default function WithdrawalForm({ onSuccess, onCancel }: WithdrawalFormPr
             </p>
           </div>
 
-          {/* Payment Method Selection */}
+          {/* Bank Details */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-3">
-              Withdrawal Method
+              Bank Account Details
             </label>
+            <p className="text-sm text-gray-600 mb-4">
+              Enter your bank account details for this withdrawal. We never store your bank details.
+            </p>
 
-            <div className="space-y-3">
-              {/* Use Existing Method */}
-              {eligibleMethods.length > 0 && (
-                <div>
-                  <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                    <input
-                      type="radio"
-                      name="withdrawalMethod"
-                      checked={useExistingMethod}
-                      onChange={(e) => setUseExistingMethod(e.target.checked)}
-                      className="h-4 w-4 text-secondary-600"
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-900">Use existing bank account</div>
-                      <div className="text-sm text-gray-600">Select from your saved payment methods</div>
-                    </div>
-                  </label>
-
-                  {useExistingMethod && (
-                    <div className="mt-3 ml-7">
-                      <select
-                        value={selectedMethodId}
-                        onChange={(e) => handleInputChange('selectedMethodId', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      >
-                        <option value="">Select a bank account</option>
-                        {eligibleMethods.map((method) => (
-                          <option key={method.id} value={method.id}>
-                            {method.accountHolder ? `${method.accountHolder} - ` : ''}{method.bankName} ending in {method.accountLast4} ({method.accountType})
-                          </option>
-                        ))}
-                      </select>
-                      {errors.method && (
-                        <p className="mt-1 text-sm text-red-600">{errors.method}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Add New Bank Account */}
+            <div className="space-y-4">
               <div>
-                <label className="flex items-center space-x-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="withdrawalMethod"
-                    checked={!useExistingMethod}
-                    onChange={(e) => setUseExistingMethod(!e.target.checked)}
-                    className="h-4 w-4 text-secondary-600"
-                  />
-                  <div className="flex-1">
-                    <div className="font-medium text-gray-900">Add new bank account</div>
-                    <div className="text-sm text-gray-600">Your bank details will be saved securely for future withdrawals</div>
-                  </div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Bank Name
                 </label>
-
-                {!useExistingMethod && (
-                  <div className="mt-3 ml-7 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Bank Name
-                      </label>
-                      <select
-                        value={bankDetails.bankName}
-                        onChange={(e) => handleInputChange('bankName', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      >
-                        <option value="">Select your bank</option>
-                        {bankOptions.map((bank) => (
-                          <option key={bank} value={bank}>{bank}</option>
-                        ))}
-                      </select>
-                      {errors.bankName && (
-                        <p className="mt-1 text-sm text-red-600">{errors.bankName}</p>
-                      )}
-                    </div>
-
-                    <div>
-                      <Input
-                        label="Account Holder Name"
-                        value={bankDetails.accountHolder}
-                        onChange={(e) => handleInputChange('accountHolder', e.target.value)}
-                        error={errors.accountHolder}
-                        placeholder="Full name as on bank account"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Input
-                          label="Account Number"
-                          value={bankDetails.accountNumber}
-                          onChange={(e) => handleInputChange('accountNumber', e.target.value.replace(/\D/g, ''))}
-                          error={errors.accountNumber}
-                          placeholder="1234567890"
-                          maxLength={11}
-                        />
-                      </div>
-                      <div>
-                        <Input
-                          label="Branch Code"
-                          value={bankDetails.branchCode}
-                          onChange={(e) => handleInputChange('branchCode', e.target.value.replace(/\D/g, ''))}
-                          error={errors.branchCode}
-                          placeholder="051001"
-                          maxLength={6}
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Account Type
-                      </label>
-                      <select
-                        value={bankDetails.accountType}
-                        onChange={(e) => handleInputChange('accountType', e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      >
-                        <option value="cheque">Cheque Account</option>
-                        <option value="savings">Savings Account</option>
-                      </select>
-                    </div>
-                  </div>
+                <select
+                  value={bankDetails.bankName}
+                  onChange={(e) => handleInputChange('bankName', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="">Select your bank</option>
+                  {bankOptions.map((bank) => (
+                    <option key={bank} value={bank}>{bank}</option>
+                  ))}
+                </select>
+                {errors.bankName && (
+                  <p className="mt-1 text-sm text-red-600">{errors.bankName}</p>
                 )}
+              </div>
+
+              <div>
+                <Input
+                  label="Account Holder Name"
+                  value={bankDetails.accountHolder}
+                  onChange={(e) => handleInputChange('accountHolder', e.target.value)}
+                  error={errors.accountHolder}
+                  placeholder="Full name as on bank account"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Input
+                    label="Account Number"
+                    value={bankDetails.accountNumber}
+                    onChange={(e) => handleInputChange('accountNumber', e.target.value.replace(/\D/g, ''))}
+                    error={errors.accountNumber}
+                    placeholder="1234567890"
+                    maxLength={11}
+                  />
+                </div>
+                <div>
+                  <Input
+                    label="Branch Code"
+                    value={bankDetails.branchCode}
+                    onChange={(e) => handleInputChange('branchCode', e.target.value.replace(/\D/g, ''))}
+                    error={errors.branchCode}
+                    placeholder="051001"
+                    maxLength={6}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Account Type
+                </label>
+                <select
+                  value={bankDetails.accountType}
+                  onChange={(e) => handleInputChange('accountType', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="cheque">Cheque Account</option>
+                  <option value="savings">Savings Account</option>
+                </select>
               </div>
             </div>
           </div>

@@ -135,6 +135,8 @@ export default function FeeConfigManager() {
         minimumGigAmount: parseFloat(formData.minimumGigAmount),
         minimumWithdrawal: parseFloat(formData.minimumWithdrawal),
         minimumMilestone: parseFloat(formData.minimumMilestone),
+        maximumPaymentAmount: 100000, // R100,000 max per transaction
+        largePaymentThreshold: 10000, // R10,000 requires confirmation
         escrowReleaseDelayHours: parseInt(formData.escrowReleaseDelayHours),
         autoReleaseEnabled: formData.autoReleaseEnabled,
         enabledProviders: ['payfast', 'ozow', 'yoco'],

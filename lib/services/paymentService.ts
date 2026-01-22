@@ -10,8 +10,7 @@ import {
   query,
   Timestamp,
   updateDoc,
-  where,
-  writeBatch
+  where
 } from 'firebase/firestore'
 import {db} from '@/lib/firebase'
 import {
@@ -25,7 +24,6 @@ import {
   PaymentDispute,
   PaymentHistory,
   PaymentIntent,
-  PaymentMethod,
   WithdrawalRequest
 } from '@/types/payment'
 import {FeeConfigService} from './feeConfigService'
@@ -41,7 +39,6 @@ function isFirebaseError(error: unknown): error is { code: string; message?: str
 
 const COLLECTIONS = {
   PAYMENTS: 'payments',
-  PAYMENT_METHODS: 'paymentMethods',
   PAYMENT_INTENTS: 'paymentIntents',
   MILESTONES: 'milestones',
   WITHDRAWALS: 'withdrawals',
@@ -56,136 +53,6 @@ let configCacheTime: number = 0
 const CONFIG_CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 export class PaymentService {
-  // Payment Methods Management
-  static async addPaymentMethod(userId: string, paymentMethodData: Omit<PaymentMethod, 'id' | 'createdAt' | 'updatedAt'>): Promise<PaymentMethod> {
-    try {
-      // If this payment method is being set as default, remove default from all other methods first
-      if (paymentMethodData.isDefault) {
-        const batch = writeBatch(db)
-        const userMethods = await this.getUserPaymentMethods(userId)
-
-        userMethods.forEach(method => {
-          if (method.isDefault) {
-            batch.update(doc(db, COLLECTIONS.PAYMENT_METHODS, method.id), {
-              isDefault: false,
-              updatedAt: Timestamp.now()
-            })
-          }
-        })
-
-        await batch.commit()
-      }
-
-      const docRef = await addDoc(collection(db, COLLECTIONS.PAYMENT_METHODS), {
-        ...paymentMethodData,
-        userId,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
-      })
-
-      return {
-        id: docRef.id,
-        ...paymentMethodData,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    } catch (error) {
-      console.debug('Error adding payment method:', error)
-      throw new Error('Failed to add payment method')
-    }
-  }
-
-  static async getUserPaymentMethods(userId: string): Promise<PaymentMethod[]> {
-    try {
-      const q = query(
-        collection(db, COLLECTIONS.PAYMENT_METHODS),
-        where('userId', '==', userId),
-        orderBy('createdAt', 'desc')
-      )
-
-      const querySnapshot = await getDocs(q)
-      return querySnapshot.docs
-        .map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt?.toDate() || new Date(),
-          updatedAt: doc.data().updatedAt?.toDate() || new Date()
-        } as PaymentMethod))
-        .filter(method => !method.isDeleted) // Filter out soft-deleted methods
-    } catch (error) {
-      console.debug('Error fetching payment methods:', error)
-      return []
-    }
-  }
-
-  static async deletePaymentMethod(userId: string, paymentMethodId: string): Promise<void> {
-    try {
-      // Check if this is the default method
-      const method = await getDoc(doc(db, COLLECTIONS.PAYMENT_METHODS, paymentMethodId))
-      if (!method.exists()) {
-        throw new Error('Payment method not found')
-      }
-
-      const methodData = method.data()
-      if (methodData.userId !== userId) {
-        throw new Error('Unauthorized: You can only delete your own payment methods')
-      }
-
-      // Delete the payment method
-      await updateDoc(doc(db, COLLECTIONS.PAYMENT_METHODS, paymentMethodId), {
-        isDeleted: true,
-        deletedAt: Timestamp.now(),
-        updatedAt: Timestamp.now()
-      })
-
-      // If this was the default method, set another as default
-      if (methodData.isDefault) {
-        const userMethods = await this.getUserPaymentMethods(userId)
-        const activeMethod = userMethods.find(m => m.id !== paymentMethodId && !m.isDeleted)
-        if (activeMethod) {
-          await this.setDefaultPaymentMethod(userId, activeMethod.id)
-        }
-      }
-    } catch (error) {
-      console.debug('Error deleting payment method:', error)
-      throw new Error(error instanceof Error ? error.message : 'Failed to delete payment method')
-    }
-  }
-
-  static async setDefaultPaymentMethod(userId: string, paymentMethodId: string): Promise<void> {
-    try {
-      // Use a query to find payment methods atomically
-      // This prevents race conditions where concurrent setDefault calls could both succeed
-      const q = query(
-        collection(db, COLLECTIONS.PAYMENT_METHODS),
-        where('userId', '==', userId)
-      )
-
-      const querySnapshot = await getDocs(q)
-      const batch = writeBatch(db)
-
-      // Remove default from all payment methods (including the one we're about to set)
-      // This ensures only ONE method will be default after the batch completes
-      querySnapshot.forEach((docSnap) => {
-        batch.update(docSnap.ref, {
-          isDefault: false,
-          updatedAt: Timestamp.now()
-        })
-      })
-
-      // Set new default
-      batch.update(doc(db, COLLECTIONS.PAYMENT_METHODS, paymentMethodId), {
-        isDefault: true,
-        updatedAt: Timestamp.now()
-      })
-
-      await batch.commit()
-    } catch (error) {
-      console.debug('Error setting default payment method:', error)
-      throw new Error('Failed to set default payment method. Please try again.')
-    }
-  }
-
   // Payment intent expiry duration: 30 minutes
   private static readonly PAYMENT_INTENT_EXPIRY_MS = 30 * 60 * 1000
 
@@ -269,26 +136,10 @@ export class PaymentService {
         }
       }
 
-      console.debug('Fetching payment method data...')
-      const paymentMethodDoc = await getDoc(doc(db, COLLECTIONS.PAYMENT_METHODS, intentData.paymentMethodId))
-
-      if (!paymentMethodDoc.exists()) {
-        console.error('Payment method not found:', intentData.paymentMethodId)
-        throw new Error('Payment method not found')
-      }
-
-      const paymentMethod = {
-        id: paymentMethodDoc.id,
-        ...paymentMethodDoc.data(),
-        createdAt: paymentMethodDoc.data().createdAt?.toDate() || new Date(),
-        updatedAt: paymentMethodDoc.data().updatedAt?.toDate() || new Date()
-      } as PaymentMethod
-
-      console.debug('Payment method data:', {
-        id: paymentMethod.id,
-        type: paymentMethod.type,
-        isDefault: paymentMethod.isDefault
-      })
+      // Payment provider (e.g., 'payfast') is stored directly in paymentMethodId
+      // No need to fetch from database since we no longer store payment methods
+      const provider = intentData.paymentMethodId || 'payfast'
+      console.debug('Payment provider:', provider)
 
       // Get gig details for better descriptions
       let gigTitle = `Gig ${intentData.gigId}` // fallback
@@ -314,8 +165,7 @@ export class PaymentService {
         currency: 'ZAR' as const,
         type: intentData.type,
         status: 'processing' as const,
-        paymentMethodId: intentData.paymentMethodId,
-        paymentMethod,
+        provider, // Payment provider (payfast, ozow, yoco)
         escrowStatus: 'pending' as const,
         transactionId: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         providerTransactionId: `prov_${Date.now()}`,
@@ -1219,34 +1069,5 @@ export class PaymentService {
       currency,
       minimumFractionDigits: 2
     }).format(amount)
-  }
-
-  // Utility function to fix multiple default payment methods
-  static async fixMultipleDefaultPaymentMethods(userId: string): Promise<void> {
-    try {
-      const userMethods = await this.getUserPaymentMethods(userId)
-      const defaultMethods = userMethods.filter(method => method.isDefault)
-
-      // If there are multiple defaults, keep the most recently created one
-      if (defaultMethods.length > 1) {
-        const batch = writeBatch(db)
-
-        // Sort by creation date and keep the most recent as default
-        const sortedDefaults = defaultMethods.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-
-        // Remove default flag from all others
-        sortedDefaults.slice(1).forEach(method => {
-          batch.update(doc(db, COLLECTIONS.PAYMENT_METHODS, method.id), {
-            isDefault: false,
-            updatedAt: Timestamp.now()
-          })
-        })
-
-        await batch.commit()
-        console.log(`Fixed ${defaultMethods.length - 1} duplicate default payment methods for user ${userId}`)
-      }
-    } catch (error) {
-      console.debug('Error fixing multiple default payment methods:', error)
-    }
   }
 }
