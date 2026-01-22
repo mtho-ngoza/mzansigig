@@ -306,29 +306,6 @@ service cloud.firestore {
     }
 
     // ========================================
-    // Payment Methods Collection
-    // ========================================
-    match /paymentMethods/{methodId} {
-      // Users can only read their own payment methods
-      allow read: if isAuthenticated() &&
-                    resource.data.userId == request.auth.uid;
-
-      // Users can create their own payment methods
-      allow create: if isAuthenticated() &&
-                      hasRequiredFields(['type', 'userId']) &&
-                      request.resource.data.userId == request.auth.uid;
-
-      // Users can update their own payment methods
-      allow update: if isAuthenticated() &&
-                      resource.data.userId == request.auth.uid &&
-                      request.resource.data.userId == resource.data.userId;
-
-      // Users can delete their own payment methods
-      allow delete: if isAuthenticated() &&
-                      resource.data.userId == request.auth.uid;
-    }
-
-    // ========================================
     // Withdrawals Collection
     // ========================================
     match /withdrawals/{withdrawalId} {
@@ -374,31 +351,7 @@ service cloud.firestore {
     }
 
     // ========================================
-    // Safety Reports Collection (hyphenated path)
-    // ========================================
-    match /safety-reports/{reportId} {
-      // Reporter, reportee (person being reported), and admin can read reports
-      // This allows users to see reports about themselves for trust score display
-      allow read: if isAuthenticated() &&
-                    (request.auth.uid == resource.data.reporterId ||
-                     request.auth.uid == resource.data.reporteeId ||
-                     isAdmin());
-
-      // Authenticated users can create safety reports
-      allow create: if isAuthenticated() &&
-                      hasRequiredFields(['reporterId', 'reporteeId', 'type', 'description']) &&
-                      request.resource.data.reporterId == request.auth.uid &&
-                      request.resource.data.status == 'pending';
-
-      // Only admins can update safety reports
-      allow update: if isAdmin();
-
-      // Only admins can delete safety reports
-      allow delete: if isAdmin();
-    }
-
-    // ========================================
-    // Safety Reports Collection (camelCase path - legacy support)
+    // Safety Reports Collection
     // ========================================
     match /safetyReports/{reportId} {
       // Reporter, reportee (person being reported), and admin can read reports
@@ -442,26 +395,6 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ========================================
-    // Safety Check-Ins Collection (hyphenated - legacy support)
-    // ========================================
-    match /safety-checkins/{checkInId} {
-      // Users can read their own check-ins, admins can read all
-      allow read: if isAuthenticated() &&
-                    (request.auth.uid == resource.data.userId || isAdmin());
-
-      // Users can create check-ins for gigs they're involved in
-      allow create: if isAuthenticated() &&
-                      hasRequiredFields(['userId', 'gigId', 'type']) &&
-                      request.resource.data.userId == request.auth.uid &&
-                      exists(/databases/$(database)/documents/gigs/$(request.resource.data.gigId));
-
-      // Users cannot update check-ins (immutable record)
-      allow update: if false;
-
-      // Only admins can delete check-ins
-      allow delete: if isAdmin();
-    }
 
     // ========================================
     // Background Checks Collection
@@ -597,18 +530,6 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ========================================
-    // Location Safety Ratings Collection (hyphenated - legacy support)
-    // ========================================
-    match /location-safety-ratings/{ratingId} {
-      // Anyone authenticated can read location safety ratings
-      allow read: if isAuthenticated();
-
-      // Only system/admin can create or update ratings (aggregated data)
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
-    }
 
     // ========================================
     // Payment History Collection
@@ -777,23 +698,6 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // ========================================
-    // Verification Results Collection (hyphenated - legacy support)
-    // ========================================
-    match /verification-results/{resultId} {
-      // Users can read their own verification results, admins can read all
-      allow read: if isAuthenticated() &&
-                    (request.auth.uid == resource.data.userId || isAdmin());
-
-      // System/admin can create verification results
-      allow create: if isAdmin();
-
-      // System/admin can update verification results
-      allow update: if isAdmin();
-
-      // Only admins can delete verification results
-      allow delete: if isAdmin();
-    }
 
     // ========================================
     // Verification Documents Collection

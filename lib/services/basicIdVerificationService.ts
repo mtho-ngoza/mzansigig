@@ -371,7 +371,7 @@ export class BasicIdVerificationService {
       }
 
       // Save result
-      const resultDoc = doc(collection(db, 'verification-results'))
+      const resultDoc = doc(collection(db, 'verificationResults'))
       const finalResult: BasicVerificationResult = {
         ...result,
         id: resultDoc.id,
@@ -432,14 +432,14 @@ export class BasicIdVerificationService {
     notes?: string
   ): Promise<void> {
     try {
-      const result = await getDoc(doc(db, 'verification-results', verificationId))
+      const result = await getDoc(doc(db, 'verificationResults', verificationId))
       if (!result.exists()) {
         throw new Error('Verification result not found')
       }
 
       const data = result.data() as BasicVerificationResult
 
-      await updateDoc(doc(db, 'verification-results', verificationId), {
+      await updateDoc(doc(db, 'verificationResults', verificationId), {
         status: decision,
         notes: notes || data.notes,
         reviewedBy: reviewerId,
@@ -472,7 +472,7 @@ export class BasicIdVerificationService {
   static async getVerificationResult(documentId: string): Promise<BasicVerificationResult | null> {
     try {
       const q = query(
-        collection(db, 'verification-results'),
+        collection(db, 'verificationResults'),
         where('documentId', '==', documentId),
         orderBy('createdAt', 'desc'),
         limit(1)
@@ -499,7 +499,7 @@ export class BasicIdVerificationService {
   static async getDocumentsRequiringReview(): Promise<BasicVerificationResult[]> {
     try {
       const q = query(
-        collection(db, 'verification-results'),
+        collection(db, 'verificationResults'),
         where('status', '==', 'requires_manual_review'),
         orderBy('createdAt', 'desc')
       )

@@ -7,11 +7,44 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { usePayment } from '@/contexts/PaymentContext'
 import { useToast } from '@/contexts/ToastContext'
 import { useAuth } from '@/contexts/AuthContext'
-import { PaymentMethod, Payment } from '@/types/payment'
-import PaymentMethodList from './PaymentMethodList'
-import PaymentMethodForm from './PaymentMethodForm'
+import { Payment } from '@/types/payment'
 import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
-import { validatePaymentAmount, PAYMENT_LIMITS } from '@/lib/utils/paymentValidation'
+import { validatePaymentAmount, getPaymentLimits, PAYMENT_LIMITS, PaymentLimits } from '@/lib/utils/paymentValidation'
+
+// Available payment providers
+type PaymentProvider = 'payfast' | 'ozow' | 'yoco'
+
+interface ProviderOption {
+  id: PaymentProvider
+  name: string
+  description: string
+  icon: string
+  available: boolean
+}
+
+const PAYMENT_PROVIDERS: ProviderOption[] = [
+  {
+    id: 'payfast',
+    name: 'PayFast',
+    description: 'Credit/Debit Card, EFT, SnapScan',
+    icon: '💳',
+    available: true
+  },
+  {
+    id: 'ozow',
+    name: 'Ozow',
+    description: 'Instant EFT payments',
+    icon: '🏦',
+    available: false // Not yet implemented
+  },
+  {
+    id: 'yoco',
+    name: 'Yoco',
+    description: 'Card payments',
+    icon: '📱',
+    available: false // Not yet implemented
+  }
+]
 
 interface PaymentDialogProps {
   gigId: string
@@ -35,9 +68,6 @@ export default function PaymentDialog({
   isOpen
 }: PaymentDialogProps) {
   const {
-    paymentMethods,
-    createPaymentIntent,
-    processPayment,
     calculateFees,
     formatCurrency,
     isLoading
@@ -45,10 +75,10 @@ export default function PaymentDialog({
   const { success: showSuccess, error: showError } = useToast()
   const { user } = useAuth()
 
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
+  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>('payfast')
   const [customAmount, setCustomAmount] = useState(amount.toString())
   const [paymentType, setPaymentType] = useState<'fixed' | 'milestone' | 'bonus'>('fixed')
-  const [step, setStep] = useState<'amount' | 'method' | 'add-method' | 'confirm' | 'large-amount-confirm' | 'processing'>('amount')
+  const [step, setStep] = useState<'amount' | 'provider' | 'confirm' | 'large-amount-confirm' | 'processing'>('amount')
   const [fees, setFees] = useState<{
     platformFee: number
     processingFee: number
@@ -57,13 +87,20 @@ export default function PaymentDialog({
     netAmount: number
   } | null>(null)
   const [largeAmountConfirmed, setLargeAmountConfirmed] = useState(false)
+  const [paymentLimits, setPaymentLimits] = useState<PaymentLimits>(PAYMENT_LIMITS)
 
+  // Fetch payment limits from config on mount
   useEffect(() => {
-    if (paymentMethods.length > 0) {
-      const defaultMethod = paymentMethods.find(m => m.isDefault) || paymentMethods[0]
-      setSelectedMethod(defaultMethod)
+    const loadPaymentLimits = async () => {
+      try {
+        const limits = await getPaymentLimits()
+        setPaymentLimits(limits)
+      } catch (error) {
+        console.error('Failed to load payment limits:', error)
+      }
     }
-  }, [paymentMethods])
+    loadPaymentLimits()
+  }, [])
 
   useEffect(() => {
     setCustomAmount(amount.toString())
@@ -94,45 +131,43 @@ export default function PaymentDialog({
 
   const handleNext = () => {
     if (step === 'amount') {
-      const validation = validatePaymentAmount(finalAmount)
+      const validation = validatePaymentAmount(finalAmount, paymentLimits)
       if (!validation.isValid) {
         showError(validation.message || 'Invalid payment amount')
         return
       }
-      // Check if large amount confirmation is required
       if (validation.requiresConfirmation && !largeAmountConfirmed) {
         setStep('large-amount-confirm')
         return
       }
-      setStep('method')
-    } else if (step === 'method') {
-      if (!selectedMethod) {
-        showError('Please select a payment method')
+      setStep('provider')
+    } else if (step === 'provider') {
+      if (!selectedProvider) {
+        showError('Please select a payment provider')
         return
       }
       setStep('confirm')
     } else if (step === 'large-amount-confirm') {
       setLargeAmountConfirmed(true)
-      setStep('method')
+      setStep('provider')
     }
   }
 
   const handlePayment = async () => {
-    if (!selectedMethod) return
+    if (!selectedProvider) return
 
     try {
       setStep('processing')
 
-      // For PayFast provider, redirect to PayFast payment page
-      if (selectedMethod.provider === 'payfast') {
-        // Verify user is authenticated
-        if (!user) {
-          showError('Please sign in to continue with payment')
-          setStep('confirm')
-          return
-        }
+      // Verify user is authenticated
+      if (!user) {
+        showError('Please sign in to continue with payment')
+        setStep('confirm')
+        return
+      }
 
-        // Create PayFast payment
+      // For PayFast provider
+      if (selectedProvider === 'payfast') {
         const response = await fetch('/api/payments/payfast/create', {
           method: 'POST',
           headers: {
@@ -141,7 +176,7 @@ export default function PaymentDialog({
           },
           body: JSON.stringify({
             gigId,
-            amount: finalAmount,
+            amount: fees ? finalAmount + fees.totalFees : finalAmount,
             itemName: description || `Payment for gig work to ${workerName}`,
             itemDescription: `Funding gig ${gigId}`,
             customerEmail: user.email,
@@ -154,16 +189,14 @@ export default function PaymentDialog({
           throw new Error(error.message || 'Failed to create PayFast payment')
         }
 
-        // Get the HTML form that will redirect to PayFast
         const html = await response.text()
 
-        // Open payment in current window (user will be redirected to PayFast)
+        // Redirect to PayFast
         const paymentWindow = window.open('', '_self')
         if (paymentWindow) {
           paymentWindow.document.write(html)
           paymentWindow.document.close()
         } else {
-          // Fallback: write to current document
           document.write(html)
           document.close()
         }
@@ -171,26 +204,19 @@ export default function PaymentDialog({
         return
       }
 
-      // For other providers, use the old flow (will need backend API routes)
-      // Create payment intent
-      const intent = await createPaymentIntent(
-        gigId,
-        workerId,
-        finalAmount,
-        selectedMethod.id,
-        paymentType
-      )
+      // For other providers (Ozow, Yoco) - not yet implemented
+      showError(`${selectedProvider.toUpperCase()} payments are coming soon!`)
+      setStep('confirm')
 
-      // Process payment
-      const payment = await processPayment(intent.id)
-
-      showSuccess('Payment processed successfully!')
-      onSuccess?.(payment)
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Payment failed'
       showError(errorMessage)
       setStep('confirm')
     }
+  }
+
+  const getSelectedProviderDetails = () => {
+    return PAYMENT_PROVIDERS.find(p => p.id === selectedProvider)
   }
 
   const renderStepContent = () => {
@@ -214,11 +240,11 @@ export default function PaymentDialog({
                 value={customAmount}
                 onChange={(e) => setCustomAmount(e.target.value)}
                 placeholder="100.00"
-                min="100"
+                min={paymentLimits.MIN}
                 step="0.01"
               />
               <p className="mt-1 text-xs text-gray-500">
-                Minimum payment: R100
+                Minimum payment: R{paymentLimits.MIN}
               </p>
             </div>
 
@@ -257,31 +283,31 @@ export default function PaymentDialog({
                   <span>Payment Amount:</span>
                   <span>{formatCurrency(finalAmount)}</span>
                 </div>
-{fees ? (
-                <>
-                  <div className="flex justify-between text-gray-600">
-                    <span>Platform Fee:</span>
-                    <span>{formatCurrency(fees.platformFee)}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-600">
-                    <span>Processing Fee:</span>
-                    <span>{formatCurrency(fees.processingFee)}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-600">
-                    <span>Transaction Fee:</span>
-                    <span>{formatCurrency(fees.fixedFee)}</span>
-                  </div>
-                  <div className="border-t border-gray-300 pt-2">
-                    <div className="flex justify-between font-medium">
-                      <span>Total Cost:</span>
-                      <span>{formatCurrency(finalAmount + fees.totalFees)}</span>
+                {fees ? (
+                  <>
+                    <div className="flex justify-between text-gray-600">
+                      <span>Platform Fee:</span>
+                      <span>{formatCurrency(fees.platformFee)}</span>
                     </div>
-                    <div className="flex justify-between text-green-600 text-xs mt-1">
-                      <span>Worker Receives:</span>
-                      <span>{formatCurrency(fees.netAmount)}</span>
+                    <div className="flex justify-between text-gray-600">
+                      <span>Processing Fee:</span>
+                      <span>{formatCurrency(fees.processingFee)}</span>
                     </div>
-                  </div>
-                </>
+                    <div className="flex justify-between text-gray-600">
+                      <span>Transaction Fee:</span>
+                      <span>{formatCurrency(fees.fixedFee)}</span>
+                    </div>
+                    <div className="border-t border-gray-300 pt-2">
+                      <div className="flex justify-between font-medium">
+                        <span>Total Cost:</span>
+                        <span>{formatCurrency(finalAmount + fees.totalFees)}</span>
+                      </div>
+                      <div className="flex justify-between text-green-600 text-xs mt-1">
+                        <span>Worker Receives:</span>
+                        <span>{formatCurrency(fees.netAmount)}</span>
+                      </div>
+                    </div>
+                  </>
                 ) : (
                   <div className="animate-pulse space-y-2">
                     <div className="h-4 bg-gray-200 rounded"></div>
@@ -294,57 +320,69 @@ export default function PaymentDialog({
           </div>
         )
 
-      case 'method':
+      case 'provider':
         return (
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Select Payment Method
+                Select Payment Provider
               </h3>
               <p className="text-sm text-gray-600">
                 Choose how you&apos;d like to pay {fees ? formatCurrency(finalAmount + fees.totalFees) : '...'}
               </p>
             </div>
 
-            <PaymentMethodList
-              selectable
-              selectedMethodId={selectedMethod?.id}
-              onSelectMethod={setSelectedMethod}
-            />
-
-            {paymentMethods.length === 0 && (
-              <div className="text-center py-6">
-                <p className="text-gray-600 mb-4">
-                  You need to add a payment method first
-                </p>
-                <Button onClick={() => setStep('add-method')}>
-                  Add Payment Method
-                </Button>
-              </div>
-            )}
-          </div>
-        )
-
-      case 'add-method':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Add Payment Method
-              </h3>
-              <p className="text-sm text-gray-600">
-                Add a new payment method to continue with payment
-              </p>
+            <div className="space-y-3">
+              {PAYMENT_PROVIDERS.map((provider) => (
+                <button
+                  key={provider.id}
+                  type="button"
+                  onClick={() => provider.available && setSelectedProvider(provider.id)}
+                  disabled={!provider.available}
+                  className={`w-full p-4 rounded-lg border-2 text-left transition-colors ${
+                    selectedProvider === provider.id && provider.available
+                      ? 'border-secondary-500 bg-secondary-50'
+                      : provider.available
+                      ? 'border-gray-300 hover:border-gray-400'
+                      : 'border-gray-200 bg-gray-50 opacity-60 cursor-not-allowed'
+                  }`}
+                >
+                  <div className="flex items-center space-x-4">
+                    <div className="text-3xl">{provider.icon}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-gray-900">{provider.name}</span>
+                        {!provider.available && (
+                          <span className="text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded">
+                            Coming Soon
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">{provider.description}</p>
+                    </div>
+                    {selectedProvider === provider.id && provider.available && (
+                      <div className="text-secondary-500 text-xl">✓</div>
+                    )}
+                  </div>
+                </button>
+              ))}
             </div>
 
-            <PaymentMethodForm
-              onSuccess={(newMethod) => {
-                setSelectedMethod(newMethod)
-                setStep('confirm')
-                showSuccess('Payment method added successfully!')
-              }}
-              onCancel={() => setStep('method')}
-            />
+            {/* Trust Message */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <div className="flex">
+                <div className="text-blue-500 text-xl mr-3">🔐</div>
+                <div>
+                  <h4 className="text-sm font-medium text-blue-800">
+                    Secure Payment
+                  </h4>
+                  <p className="text-sm text-blue-700 mt-1">
+                    You&apos;ll be redirected to {getSelectedProviderDetails()?.name} to enter your payment details securely.
+                    We never store your card or bank details.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )
 
@@ -360,7 +398,7 @@ export default function PaymentDialog({
                   </h3>
                   <p className="text-orange-800 mb-4">
                     You are about to make a payment of <span className="font-bold">{formatCurrency(finalAmount)}</span>.
-                    This exceeds our large payment threshold of {formatCurrency(PAYMENT_LIMITS.LARGE_AMOUNT_THRESHOLD)}.
+                    This exceeds our large payment threshold of {formatCurrency(paymentLimits.LARGE_AMOUNT_THRESHOLD)}.
                   </p>
                   <div className="bg-white rounded p-4 mb-4">
                     <h4 className="font-medium text-gray-900 mb-2">Please verify:</h4>
@@ -423,26 +461,20 @@ export default function PaymentDialog({
               </div>
             </div>
 
-            {/* Selected Payment Method */}
-            {selectedMethod && (
+            {/* Selected Payment Provider */}
+            {selectedProvider && (
               <div className="bg-secondary-50 rounded-lg p-4">
-                <h4 className="font-medium text-secondary-900 mb-2">Payment Method</h4>
+                <h4 className="font-medium text-secondary-900 mb-2">Payment Provider</h4>
                 <div className="flex items-center space-x-3">
                   <div className="text-xl">
-                    {selectedMethod.type === 'card' ? '💳' :
-                     selectedMethod.type === 'bank' ? '🏦' :
-                     selectedMethod.type === 'mobile_money' ? '📱' : '💰'}
+                    {getSelectedProviderDetails()?.icon}
                   </div>
                   <div>
                     <p className="font-medium text-secondary-900">
-                      {selectedMethod.type === 'card'
-                        ? `${selectedMethod.cardBrand} ending in ${selectedMethod.cardLast4}`
-                        : selectedMethod.type === 'bank'
-                        ? `${selectedMethod.bankName} ending in ${selectedMethod.accountLast4}`
-                        : `${selectedMethod.mobileProvider} ${selectedMethod.mobileNumber}`}
+                      {getSelectedProviderDetails()?.name}
                     </p>
                     <p className="text-sm text-secondary-700">
-                      via {selectedMethod.provider?.toUpperCase()}
+                      {getSelectedProviderDetails()?.description}
                     </p>
                   </div>
                 </div>
@@ -472,10 +504,10 @@ export default function PaymentDialog({
           <div className="text-center py-8">
             <div className="text-6xl mb-4">⏳</div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Processing Payment
+              Redirecting to {getSelectedProviderDetails()?.name}
             </h3>
             <p className="text-gray-600">
-              Please wait while we process your payment...
+              Please wait while we redirect you to complete your payment...
             </p>
           </div>
         )
@@ -492,9 +524,9 @@ export default function PaymentDialog({
           <div className="flex items-center justify-between">
             <CardTitle>
               {step === 'amount' ? 'Payment Amount' :
-               step === 'method' ? 'Payment Method' :
-               step === 'add-method' ? 'Add Payment Method' :
+               step === 'provider' ? 'Payment Provider' :
                step === 'confirm' ? 'Confirm Payment' :
+               step === 'large-amount-confirm' ? 'Confirm Large Payment' :
                'Processing Payment'}
             </CardTitle>
             {step !== 'processing' && (
@@ -509,16 +541,16 @@ export default function PaymentDialog({
 
           {/* Progress Indicator */}
           <div className="flex space-x-2 mt-4">
-            {['amount', 'method', 'confirm'].map((s) => {
-              const stepOrder = ['amount', 'method', 'add-method', 'confirm']
-              const currentStepIndex = stepOrder.indexOf(step)
+            {['amount', 'provider', 'confirm'].map((s) => {
+              const stepOrder = ['amount', 'provider', 'confirm']
+              const currentStepIndex = stepOrder.indexOf(step === 'large-amount-confirm' ? 'amount' : step)
               const thisStepIndex = stepOrder.indexOf(s)
 
               return (
                 <div
                   key={s}
                   className={`h-2 flex-1 rounded-full ${
-                    s === step || (step === 'add-method' && s === 'method') ? 'bg-secondary-500' :
+                    s === step || (step === 'large-amount-confirm' && s === 'amount') ? 'bg-secondary-500' :
                     currentStepIndex > thisStepIndex ? 'bg-green-500' : 'bg-gray-200'
                   }`}
                 />
@@ -531,7 +563,7 @@ export default function PaymentDialog({
           {renderStepContent()}
 
           {/* Actions */}
-          {step !== 'processing' && step !== 'add-method' && (
+          {step !== 'processing' && (
             <div className="flex space-x-4 mt-6">
               {step === 'amount' ? (
                 <>
@@ -554,7 +586,7 @@ export default function PaymentDialog({
                     Confirm & Continue
                   </Button>
                 </>
-              ) : step === 'method' ? (
+              ) : step === 'provider' ? (
                 <>
                   <Button variant="outline" onClick={() => {
                     setLargeAmountConfirmed(false)
@@ -564,7 +596,7 @@ export default function PaymentDialog({
                   </Button>
                   <Button
                     onClick={handleNext}
-                    disabled={!selectedMethod}
+                    disabled={!selectedProvider}
                     className="flex-1"
                   >
                     Next
@@ -572,12 +604,12 @@ export default function PaymentDialog({
                 </>
               ) : step === 'confirm' ? (
                 <>
-                  <Button variant="outline" onClick={() => setStep('method')} className="flex-1">
+                  <Button variant="outline" onClick={() => setStep('provider')} className="flex-1">
                     Back
                   </Button>
                   <Button
                     onClick={handlePayment}
-                    disabled={isLoading}
+                    disabled={isLoading || !fees}
                     className="flex-1 bg-green-600 hover:bg-green-700"
                   >
                     {isLoading ? 'Processing...' : fees ? `Pay ${formatCurrency(finalAmount + fees.totalFees)}` : 'Calculating...'}

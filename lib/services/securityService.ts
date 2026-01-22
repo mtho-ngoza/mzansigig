@@ -231,7 +231,7 @@ export class SecurityService {
   // Safety Check-ins
   static async createSafetyCheckIn(checkIn: Omit<SafetyCheckIn, 'id' | 'createdAt'>): Promise<string> {
     try {
-      const checkInDoc = doc(collection(db, 'safety-checkins'))
+      const checkInDoc = doc(collection(db, 'safetyCheckins'))
       const newCheckIn: SafetyCheckIn = {
         ...checkIn,
         id: checkInDoc.id,
@@ -269,7 +269,7 @@ export class SecurityService {
   // Safety Reports
   static async submitSafetyReport(report: Omit<SafetyReport, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<string> {
     try {
-      const reportDoc = doc(collection(db, 'safety-reports'))
+      const reportDoc = doc(collection(db, 'safetyReports'))
       const newReport: SafetyReport = {
         ...report,
         id: reportDoc.id,
@@ -307,7 +307,7 @@ export class SecurityService {
   static async getSafetyReports(userId: string, daysBack?: number): Promise<SafetyReport[]> {
     try {
       let q = query(
-        collection(db, 'safety-reports'),
+        collection(db, 'safetyReports'),
         where('reporteeId', '==', userId),
         orderBy('createdAt', 'desc')
       )
@@ -330,7 +330,7 @@ export class SecurityService {
   static async getLocationSafetyRating(location: string): Promise<LocationSafetyRating | null> {
     try {
       const q = query(
-        collection(db, 'location-safety-ratings'),
+        collection(db, 'locationSafetyRatings'),
         where('location', '==', location),
         limit(1)
       )
@@ -355,7 +355,7 @@ export class SecurityService {
         const newTotal = existing.totalReports + 1
         const newRating = Math.max(1, existing.overallRating - (incident ? 0.1 : 0))
 
-        await updateDoc(doc(db, 'location-safety-ratings', existing.id), {
+        await updateDoc(doc(db, 'locationSafetyRatings', existing.id), {
           totalReports: newTotal,
           recentIncidents: newIncidents,
           overallRating: newRating,
@@ -364,7 +364,7 @@ export class SecurityService {
         })
       } else {
         // Create new rating
-        const ratingDoc = doc(collection(db, 'location-safety-ratings'))
+        const ratingDoc = doc(collection(db, 'locationSafetyRatings'))
         const newRating: LocationSafetyRating = {
           id: ratingDoc.id,
           location,

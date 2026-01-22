@@ -53,10 +53,12 @@ const DEFAULT_FEE_CONFIG = {
   // Worker commission (deducted from worker earnings)
   workerCommissionPercentage: 10, // 10% commission from worker earnings
 
-  // Minimum amounts
-  minimumGigAmount: 100, // R100 minimum gig value
+  // Payment amount limits
+  minimumGigAmount: 100, // R100 minimum gig/payment value
   minimumWithdrawal: 50, // R50 minimum withdrawal
   minimumMilestone: 50, // R50 minimum milestone
+  maximumPaymentAmount: 100000, // R100,000 max per transaction
+  largePaymentThreshold: 10000, // R10,000 requires confirmation
 
   // Escrow settings
   escrowReleaseDelayHours: 72, // 3 days default hold
@@ -138,10 +140,12 @@ async function seedFeeConfig() {
     console.log('   Worker Deductions:')
     console.log(`   - Commission: ${DEFAULT_FEE_CONFIG.workerCommissionPercentage}%`)
     console.log('')
-    console.log('   Minimum Amounts:')
-    console.log(`   - Gig Amount: R${DEFAULT_FEE_CONFIG.minimumGigAmount}`)
-    console.log(`   - Withdrawal: R${DEFAULT_FEE_CONFIG.minimumWithdrawal}`)
-    console.log(`   - Milestone: R${DEFAULT_FEE_CONFIG.minimumMilestone}`)
+    console.log('   Payment Limits:')
+    console.log(`   - Min Payment: R${DEFAULT_FEE_CONFIG.minimumGigAmount}`)
+    console.log(`   - Max Payment: R${DEFAULT_FEE_CONFIG.maximumPaymentAmount.toLocaleString()}`)
+    console.log(`   - Large Threshold: R${DEFAULT_FEE_CONFIG.largePaymentThreshold.toLocaleString()}`)
+    console.log(`   - Min Withdrawal: R${DEFAULT_FEE_CONFIG.minimumWithdrawal}`)
+    console.log(`   - Min Milestone: R${DEFAULT_FEE_CONFIG.minimumMilestone}`)
     console.log('')
     console.log('   Escrow Settings:')
     console.log(`   - Release Delay: ${DEFAULT_FEE_CONFIG.escrowReleaseDelayHours} hours`)
