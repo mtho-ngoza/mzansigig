@@ -29,65 +29,63 @@ MzansiGig requires a payment gateway for escrow payments between employers and w
 
 ### South African Payment Gateway Options
 
-#### Option A: PayFast (Recommended for MVP) ⭐
+#### Option A: Paystack (Recommended for MVP) ⭐
 
 **Pros**:
-- Most popular in South Africa
-- Simple integration, well-documented
-- Supports escrow/split payments
-- No setup fee, R99/month
+- Modern API, excellent documentation
+- Supports split payments and transfers
+- Backed by Stripe
+- No monthly fees, pay per transaction
 
 **Pricing**:
-- Monthly fee: R99
-- Transaction fee: 2.9% + R2 per transaction
-- No hidden fees
+- No monthly fee
+- Card transaction fee: 2.9% + R1 per transaction
+- EFT transaction fee: 2%
+- Transfer top-up fee: 1%
 
 **Setup Steps**:
 
-1. **Create PayFast Account**
-   - Go to https://www.payfast.co.za
+1. **Create Paystack Account**
+   - Go to https://paystack.com
    - Sign up for merchant account
-   - Choose "Business" account type
-   - **Documents needed**: ID, proof of address, bank statement
+   - Choose "South Africa" as your country
+   - **Documents needed**: ID, proof of address, business registration
 
-2. **Enable Test Mode**
-   - Log in to PayFast dashboard
-   - Go to Settings → Integration
-   - Note your **Merchant ID** and **Merchant Key**
-   - Copy **Passphrase** (you'll set this)
+2. **Get API Keys**
+   - Log in to Paystack dashboard
+   - Go to Settings → API Keys & Webhooks
+   - Note your **Public Key** and **Secret Key**
+   - Copy test keys for development
 
-3. **Configure Webhook/IPN**
-   - Set Notify URL: `https://yourdomain.com/api/payfast/notify`
-   - Set Return URL: `https://yourdomain.com/payment/success`
-   - Set Cancel URL: `https://yourdomain.com/payment/cancelled`
+3. **Configure Webhook**
+   - Set Webhook URL: `https://yourdomain.com/api/payments/paystack/webhook`
+   - Select events: `charge.success`, `charge.failed`
+   - Copy webhook secret for verification
 
 4. **Add to Environment Variables**
    ```bash
-   PAYFAST_MERCHANT_ID=your_merchant_id
-   PAYFAST_MERCHANT_KEY=your_merchant_key
-   PAYFAST_PASSPHRASE=your_secure_passphrase
-   PAYFAST_MODE=test  # Change to 'live' for production
+   PAYSTACK_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   PAYSTACK_PUBLIC_KEY=pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
    ```
 
 5. **Test Integration**
-   - Use test card: 4242 4242 4242 4242
+   - Use test card: 4084 0841 1111 1111 (CVV: 408, Expiry: any future date)
    - Test successful payment flow
    - Test failed payment flow
-   - Test refund flow
    - Verify webhook notifications
 
 6. **Go Live**
-   - Submit business verification documents
+   - Submit compliance documents
    - Wait for approval (2-5 business days)
-   - Change `PAYFAST_MODE=live`
+   - Switch to live keys (sk_live_*, pk_live_*)
    - Test with small real transaction
 
 **Integration Code Location**:
-- Payment API: `pages/api/payfast/*` (needs to be created)
-- Payment Service: Update `lib/services/paymentService.ts`
-- Frontend Component: `components/payment/PaymentDialog.tsx` (already exists)
+- Payment API: `app/api/payments/paystack/*`
+- Payment Service: `lib/services/paystackService.ts`
+- Frontend Component: `components/payment/PaymentDialog.tsx`
 
-**PayFast Documentation**: https://developers.payfast.co.za/docs
+**Paystack Documentation**: https://paystack.com/docs/
 
 ---
 
@@ -153,10 +151,10 @@ MzansiGig requires a payment gateway for escrow payments between employers and w
 
 ### Recommended Choice
 
-**For MVP/Launch**: PayFast
-- Easiest integration
-- Most documentation/community support
-- Predictable pricing
+**For MVP/Launch**: Paystack
+- Modern API with excellent documentation
+- Native split payments and transfers support
+- Backed by Stripe
 - Can switch later if needed
 
 ---
@@ -447,7 +445,7 @@ We respect your privacy and comply with POPIA...
 - Improve service
 
 ## 4. Data Sharing
-- Payment gateway (PayFast/Yoco)
+- Payment gateway (Paystack)
 - Government authorities (if required by law)
 - We NEVER sell your data
 
@@ -569,12 +567,10 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
 NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:abcdef123456
 
 # ------------------
-# Payment Gateway (PayFast)
+# Payment Gateway (Paystack)
 # ------------------
-PAYFAST_MERCHANT_ID=10000100
-PAYFAST_MERCHANT_KEY=46f0cd694581a
-PAYFAST_PASSPHRASE=your_secure_passphrase_here
-PAYFAST_MODE=live  # 'test' or 'live'
+PAYSTACK_SECRET_KEY=your_paystack_secret_key_here
+PAYSTACK_PUBLIC_KEY=your_paystack_public_key_here
 
 # ------------------
 # Google Cloud Vision API
@@ -736,7 +732,7 @@ NEXT_PUBLIC_ENABLE_LOCATION_SEARCH=false
 
 | Service | Cost (ZAR) | Notes |
 |---------|------------|-------|
-| **PayFast** | R99 + 2.9% + R2/tx | ~R300-500 for 50 transactions |
+| **Paystack** | 2.9% + R1/tx | ~R200-350 for 50 transactions |
 | **Firebase** | R300-800 | Based on 1000 active users |
 | **Google Cloud Vision** | R15-30 | ~500 ID verifications/month |
 | **Domain** | R150/year | .co.za domain |
@@ -756,18 +752,18 @@ NEXT_PUBLIC_ENABLE_LOCATION_SEARCH=false
 ## Support and Resources
 
 ### Documentation Links
-- **PayFast**: https://developers.payfast.co.za/docs
+- **Paystack**: https://paystack.com/docs/
 - **Firebase**: https://firebase.google.com/docs
 - **Google Cloud Vision**: https://cloud.google.com/vision/docs
 - **POPIA Compliance**: https://popia.co.za
 
 ### Support Contacts
-- PayFast Support: support@payfast.co.za
+- Paystack Support: support@paystack.com
 - Firebase Support: https://firebase.google.com/support
 - POPIA Info Officer: [Register at https://popia.co.za]
 
 ### Recommended Next Steps
-1. Create accounts (PayFast, Firebase production, Google Cloud)
+1. Create accounts (Paystack, Firebase production, Google Cloud)
 2. Set up test environments and verify integration
 3. Get legal documents reviewed
 4. Configure environment variables

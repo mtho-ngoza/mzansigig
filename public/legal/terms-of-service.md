@@ -122,7 +122,7 @@ Fees are automatically deducted before payment release.
 
 ### 6.3 Payment Processing
 
-- Payments processed through [PayFast/Yoco - TO BE SPECIFIED]
+- Payments processed through Paystack (https://paystack.com)
 - Standard payment gateway fees apply
 - Workers receive payment to their provided bank account
 - Payment processing may take 2-5 business days

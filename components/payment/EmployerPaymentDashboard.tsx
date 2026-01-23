@@ -348,7 +348,7 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
                       <li>• Fund escrow before work starts</li>
                       <li>• Review work before releasing payment</li>
                       <li>• Communicate clearly with workers</li>
-                      <li>• Pay via PayFast for secure transactions</li>
+                      <li>• Pay via Paystack for secure transactions</li>
                     </ul>
                   </div>
                 </div>

@@ -31,8 +31,8 @@ These are the standard fees for the South African market:
 - **Auto Release**: Enabled
 
 ### Payment Providers:
-- **Enabled**: PayFast, Ozow, Yoco
-- **Default**: PayFast
+- **Enabled**: Paystack, Ozow, Yoco
+- **Default**: Paystack
 
 ### Tax:
 - **VAT Included**: Yes
@@ -62,8 +62,8 @@ minimumWithdrawal              (number)    50
 minimumMilestone               (number)    50
 escrowReleaseDelayHours        (number)    72
 autoReleaseEnabled             (boolean)   true
-enabledProviders               (array)     ["payfast", "ozow", "yoco"]
-defaultProvider                (string)    "payfast"
+enabledProviders               (array)     ["paystack", "ozow", "yoco"]
+defaultProvider                (string)    "paystack"
 vatIncluded                    (boolean)   true
 vatPercentage                  (number)    15
 isActive                       (boolean)   true

@@ -130,7 +130,7 @@ We share limited information with other users:
 
 We share information with:
 
-**Payment Processors** (PayFast/Yoco):
+**Payment Processors** (Paystack):
 - Payment card details
 - Transaction amounts
 - Bank account details (for payouts)

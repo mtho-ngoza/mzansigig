@@ -56,12 +56,12 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
 
   const searchParams = useSearchParams()
 
-  // Handle payment return from PayFast
-  const verifyPayment = useCallback(async (gigId: string) => {
+  // Handle payment return from Paystack
+  const verifyPayment = useCallback(async (gigId: string, reference: string) => {
     if (!user || paymentVerified) return
 
     try {
-      const response = await fetch('/api/payments/payfast/verify', {
+      const response = await fetch('/api/payments/paystack/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -69,7 +69,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
         },
         body: JSON.stringify({
           gigId,
-          paymentSuccess: true
+          reference
         })
       })
 
@@ -92,9 +92,10 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
   useEffect(() => {
     const paymentStatus = searchParams.get('payment')
     const gigId = searchParams.get('gig')
+    const reference = searchParams.get('reference')
 
-    if (paymentStatus === 'success' && gigId && !paymentVerified) {
-      verifyPayment(gigId)
+    if (paymentStatus === 'success' && gigId && reference && !paymentVerified) {
+      verifyPayment(gigId, reference)
     } else if (paymentStatus === 'cancelled') {
       showError('Payment was cancelled')
       window.history.replaceState({}, '', '/dashboard/manage-applications')

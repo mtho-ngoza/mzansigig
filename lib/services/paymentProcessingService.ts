@@ -14,12 +14,14 @@ export interface ProcessPaymentParams {
   // Payment amounts
   amount: number           // Net amount (after fees)
   grossAmount?: number     // Gross amount (before fees)
-  fees?: number            // PayFast fees
+  fees?: number            // Payment gateway fees
   // Transaction identifiers
-  transactionId?: string   // PayFast transaction ID (pf_payment_id)
-  paymentId?: string       // Our payment ID (m_payment_id)
+  transactionId?: string   // Provider transaction ID
+  paymentId?: string       // Our payment reference
+  // Provider info
+  provider?: 'paystack' | 'payfast' | 'ozow' | 'yoco'
   // Metadata
-  verifiedVia: 'itn' | 'sandbox-fallback'
+  verifiedVia: 'webhook' | 'itn' | 'sandbox-fallback' | 'verify'
   itemName?: string
   merchantId?: string
 }
@@ -62,6 +64,7 @@ export async function processSuccessfulPayment(
     fees = 0,
     transactionId,
     paymentId,
+    provider = 'paystack',
     verifiedVia,
     itemName,
     merchantId
@@ -189,7 +192,7 @@ export async function processSuccessfulPayment(
       grossAmount: grossAmount,
       fees: fees,
       status: 'completed',
-      source: 'payfast',
+      source: provider,
       sourceTransactionId: transactionId || null,
       gigId,
       description: itemName || `Funded gig: ${gigData?.title || gigId}`,
@@ -212,7 +215,7 @@ export async function processSuccessfulPayment(
       currency: 'ZAR',
       type: gigData?.paymentType || 'fixed',
       status: 'completed',
-      provider: 'payfast',
+      provider: provider,
       providerTransactionId: transactionId || null,
       escrowStatus: 'funded',
       createdAt: admin.firestore.FieldValue.serverTimestamp(),

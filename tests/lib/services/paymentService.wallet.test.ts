@@ -74,7 +74,7 @@ describe('PaymentService - Wallet Integration', () => {
           workerId: mockWorkerId,
           amount: mockAmount,
           currency: 'ZAR',
-          paymentMethodId: 'payfast', // Provider name, not a document ID
+          paymentMethodId: 'paystack', // Provider name, not a document ID
           type: 'fixed',
           status: 'created'
         })
@@ -116,7 +116,7 @@ describe('PaymentService - Wallet Integration', () => {
           workerId: mockWorkerId,
           amount: mockAmount,
           currency: 'ZAR',
-          paymentMethodId: 'payfast', // Provider name
+          paymentMethodId: 'paystack', // Provider name
           type: 'fixed',
           status: 'created'
         })
@@ -255,7 +255,7 @@ describe('PaymentService - Wallet Integration', () => {
           workerId: mockWorkerId,
           amount: mockAmount,
           currency: 'ZAR',
-          paymentMethodId: 'payfast', // Provider name
+          paymentMethodId: 'paystack', // Provider name
           type: 'fixed',
           status: 'created'
         })
