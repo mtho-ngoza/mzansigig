@@ -12,7 +12,7 @@ import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
 import { validatePaymentAmount, getPaymentLimits, PAYMENT_LIMITS, PaymentLimits } from '@/lib/utils/paymentValidation'
 
 // Available payment providers
-type PaymentProvider = 'payfast' | 'ozow' | 'yoco'
+type PaymentProvider = 'paystack' | 'ozow' | 'yoco'
 
 interface ProviderOption {
   id: PaymentProvider
@@ -24,9 +24,9 @@ interface ProviderOption {
 
 const PAYMENT_PROVIDERS: ProviderOption[] = [
   {
-    id: 'payfast',
-    name: 'PayFast',
-    description: 'Credit/Debit Card, EFT, SnapScan',
+    id: 'paystack',
+    name: 'Paystack',
+    description: 'Credit/Debit Card, Bank Transfer, EFT',
     icon: '💳',
     available: true
   },
@@ -75,7 +75,7 @@ export default function PaymentDialog({
   const { success: _showSuccess, error: showError } = useToast()
   const { user } = useAuth()
 
-  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>('payfast')
+  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>('paystack')
   const [customAmount, setCustomAmount] = useState(amount.toString())
   const [paymentType, setPaymentType] = useState<'fixed' | 'milestone' | 'bonus'>('fixed')
   const [step, setStep] = useState<'amount' | 'provider' | 'confirm' | 'large-amount-confirm' | 'processing'>('amount')
@@ -166,9 +166,9 @@ export default function PaymentDialog({
         return
       }
 
-      // For PayFast provider
-      if (selectedProvider === 'payfast') {
-        const response = await fetch('/api/payments/payfast/create', {
+      // For Paystack provider
+      if (selectedProvider === 'paystack') {
+        const response = await fetch('/api/payments/paystack/initialize', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -186,21 +186,17 @@ export default function PaymentDialog({
 
         if (!response.ok) {
           const error = await response.json()
-          throw new Error(error.message || 'Failed to create PayFast payment')
+          throw new Error(error.message || 'Failed to initialize Paystack payment')
         }
 
-        const html = await response.text()
+        const data = await response.json()
 
-        // Redirect to PayFast
-        const paymentWindow = window.open('', '_self')
-        if (paymentWindow) {
-          paymentWindow.document.write(html)
-          paymentWindow.document.close()
-        } else {
-          document.write(html)
-          document.close()
+        if (!data.success || !data.authorizationUrl) {
+          throw new Error('Failed to get payment URL from Paystack')
         }
 
+        // Redirect to Paystack checkout
+        window.location.href = data.authorizationUrl
         return
       }
 

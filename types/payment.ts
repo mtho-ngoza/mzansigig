@@ -1,7 +1,7 @@
 export interface PaymentMethod {
   id: string
   type: 'card' | 'bank' | 'mobile_money' | 'eft'
-  provider: 'payfast' | 'ozow' | 'yoco' | 'stripe' | 'manual' | 'eft'
+  provider: 'paystack' | 'ozow' | 'yoco' | 'stripe' | 'manual' | 'eft'
 
   // Card details (for card type)
   cardLast4?: string
@@ -40,7 +40,7 @@ export interface Payment {
   type: 'milestone' | 'hourly' | 'fixed' | 'bonus'
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'disputed'
 
-  // Payment provider (payfast, ozow, yoco)
+  // Payment provider (paystack, ozow, yoco)
   provider?: string
   // Legacy fields for backward compatibility with existing data
   paymentMethodId?: string
@@ -245,9 +245,14 @@ export interface PaymentState {
   error: string | null
 }
 
-export type PaymentProvider = 'payfast' | 'ozow' | 'yoco' | 'stripe'
+export type PaymentProvider = 'paystack' | 'ozow' | 'yoco' | 'stripe'
 
 // South African payment provider specific types
+export interface PaystackConfig {
+  secretKey: string
+  publicKey: string
+}
+
 export interface PayFastConfig {
   merchantId: string
   merchantKey: string

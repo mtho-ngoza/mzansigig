@@ -644,6 +644,7 @@ describe('ManageApplications', () => {
     it('should call verify endpoint when payment=success in URL', async () => {
       mockSearchParams.set('payment', 'success')
       mockSearchParams.set('gig', 'gig-123')
+      mockSearchParams.set('reference', 'KSG_ABC123_XYZ')
 
       const mockFetch = jest.fn().mockResolvedValue({
         json: () => Promise.resolve({ success: true, status: 'funded' })
@@ -654,7 +655,7 @@ describe('ManageApplications', () => {
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
-          '/api/payments/payfast/verify',
+          '/api/payments/paystack/verify',
           expect.objectContaining({
             method: 'POST',
             headers: expect.objectContaining({
@@ -663,7 +664,7 @@ describe('ManageApplications', () => {
             }),
             body: JSON.stringify({
               gigId: 'gig-123',
-              paymentSuccess: true
+              reference: 'KSG_ABC123_XYZ'
             })
           })
         )
@@ -673,6 +674,7 @@ describe('ManageApplications', () => {
     it('should show success toast when verification succeeds', async () => {
       mockSearchParams.set('payment', 'success')
       mockSearchParams.set('gig', 'gig-123')
+      mockSearchParams.set('reference', 'KSG_ABC123_XYZ')
 
       global.fetch = jest.fn().mockResolvedValue({
         json: () => Promise.resolve({ success: true, status: 'funded' })
@@ -698,6 +700,7 @@ describe('ManageApplications', () => {
     it('should show error message when verification fails', async () => {
       mockSearchParams.set('payment', 'success')
       mockSearchParams.set('gig', 'gig-123')
+      mockSearchParams.set('reference', 'KSG_ABC123_XYZ')
 
       global.fetch = jest.fn().mockResolvedValue({
         json: () => Promise.resolve({ success: false, message: 'Verification pending' })
@@ -725,7 +728,7 @@ describe('ManageApplications', () => {
 
       // Verify endpoint should not be called without gigId
       expect(mockFetch).not.toHaveBeenCalledWith(
-        '/api/payments/payfast/verify',
+        '/api/payments/paystack/verify',
         expect.anything()
       )
     })
@@ -745,7 +748,7 @@ describe('ManageApplications', () => {
 
       // Verify endpoint should not be called without payment success
       expect(mockFetch).not.toHaveBeenCalledWith(
-        '/api/payments/payfast/verify',
+        '/api/payments/paystack/verify',
         expect.anything()
       )
     })

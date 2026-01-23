@@ -174,7 +174,7 @@ export function PaymentProvider({ children }: PaymentProviderProps) {
         user.id,
         workerId,
         amount,
-        provider, // Provider name (payfast, ozow, yoco) instead of payment method ID
+        provider, // Provider name (paystack, ozow, yoco) instead of payment method ID
         type
       )
       dispatch({ type: 'SET_ERROR', payload: null })

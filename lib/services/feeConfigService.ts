@@ -40,8 +40,8 @@ export const DEFAULT_FEE_CONFIG: Omit<PaymentConfig, 'id' | 'createdAt' | 'updat
   autoReleaseEnabled: true,
 
   // Payment providers
-  enabledProviders: ['payfast', 'ozow', 'yoco'],
-  defaultProvider: 'payfast',
+  enabledProviders: ['paystack', 'ozow', 'yoco'],
+  defaultProvider: 'paystack',
 
   // South African tax
   vatIncluded: true,

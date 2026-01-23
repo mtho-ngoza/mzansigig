@@ -2,7 +2,7 @@
  * PaymentDialog Component Tests
  *
  * Tests for the payment dialog including:
- * - PayFast integration (amount with fees)
+ * - Paystack integration (amount with fees)
  * - Fee calculation and display
  * - Payment provider selection
  * - Large amount confirmation flow
@@ -215,20 +215,19 @@ describe('PaymentDialog', () => {
     })
   })
 
-  describe('PayFast Payment - Amount with Fees (Critical Fix)', () => {
-    it('should send total amount including fees to PayFast API', async () => {
+  describe('Paystack Payment - Amount with Fees (Critical Fix)', () => {
+    it('should send total amount including fees to Paystack API', async () => {
       const calculateFees = jest.fn().mockResolvedValue(mockFees)
 
+      // Mock fetch to return success but we won't test the redirect
       mockFetch.mockResolvedValueOnce({
         ok: true,
-        text: () => Promise.resolve('<html>PayFast redirect form</html>')
-      })
-
-      mockWindowOpen.mockReturnValue({
-        document: {
-          write: mockDocumentWrite,
-          close: mockDocumentClose
-        }
+        json: () => Promise.resolve({
+          success: true,
+          authorizationUrl: 'https://checkout.paystack.com/test',
+          reference: 'KSG_TEST_123',
+          accessCode: 'test_access_code'
+        })
       })
 
       renderPaymentDialog({ amount: 500 }, { calculateFees })
@@ -247,7 +246,7 @@ describe('PaymentDialog', () => {
         expect(screen.getByText('Select Payment Provider')).toBeInTheDocument()
       }, { timeout: 3000 })
 
-      // PayFast should be selected by default, proceed to confirm
+      // Paystack should be selected by default, proceed to confirm
       await act(async () => {
         fireEvent.click(screen.getByText('Next'))
       })
@@ -256,7 +255,8 @@ describe('PaymentDialog', () => {
         expect(screen.getByText('Payment Summary')).toBeInTheDocument()
       }, { timeout: 3000 })
 
-      // Click pay button
+      // Click pay button - this will trigger the API call
+      // Note: The actual redirect (window.location.href) is not testable in jsdom
       const payButton = screen.getByRole('button', { name: /Pay R580\.00/i })
       await act(async () => {
         fireEvent.click(payButton)
@@ -264,7 +264,7 @@ describe('PaymentDialog', () => {
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
-          '/api/payments/payfast/create',
+          '/api/payments/paystack/initialize',
           expect.objectContaining({
             method: 'POST',
             headers: expect.objectContaining({
@@ -301,7 +301,7 @@ describe('PaymentDialog', () => {
       // The provider selection should be visible
       await waitFor(() => {
         expect(screen.getByText('Select Payment Provider')).toBeInTheDocument()
-        expect(screen.getByText('PayFast')).toBeInTheDocument()
+        expect(screen.getByText('Paystack')).toBeInTheDocument()
       }, { timeout: 3000 })
     })
   })
@@ -383,7 +383,7 @@ describe('PaymentDialog', () => {
       })
 
       await waitFor(() => {
-        expect(screen.getByText('PayFast')).toBeInTheDocument()
+        expect(screen.getByText('Paystack')).toBeInTheDocument()
         expect(screen.getByText('Ozow')).toBeInTheDocument()
         expect(screen.getByText('Yoco')).toBeInTheDocument()
       }, { timeout: 3000 })
@@ -407,7 +407,7 @@ describe('PaymentDialog', () => {
       }, { timeout: 3000 })
     })
 
-    it('should default to PayFast provider', async () => {
+    it('should default to Paystack provider', async () => {
       const calculateFees = jest.fn().mockResolvedValue(mockFees)
       renderPaymentDialog({}, { calculateFees })
 
@@ -420,7 +420,7 @@ describe('PaymentDialog', () => {
       })
 
       await waitFor(() => {
-        // PayFast should be selected (has checkmark)
+        // Paystack should be selected (has checkmark)
         expect(screen.getByText('✓')).toBeInTheDocument()
       }, { timeout: 3000 })
     })
@@ -446,8 +446,10 @@ describe('PaymentDialog', () => {
       })
 
       await waitFor(() => {
+        // In confirm step, shows "Payment Provider" header with selected provider details
         expect(screen.getByText('Payment Provider')).toBeInTheDocument()
-        expect(screen.getByText('Credit/Debit Card, EFT, SnapScan')).toBeInTheDocument()
+        expect(screen.getByText('Paystack')).toBeInTheDocument()
+        expect(screen.getByText('Credit/Debit Card, Bank Transfer, EFT')).toBeInTheDocument()
       }, { timeout: 3000 })
     })
 
@@ -558,7 +560,7 @@ describe('PaymentDialog', () => {
   })
 
   describe('Error Handling', () => {
-    it('should handle PayFast API error gracefully', async () => {
+    it('should handle Paystack API error gracefully', async () => {
       const calculateFees = jest.fn().mockResolvedValue(mockFees)
 
       mockFetch.mockResolvedValueOnce({
