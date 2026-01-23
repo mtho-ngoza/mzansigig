@@ -61,20 +61,26 @@ export async function POST(request: NextRequest) {
     // Initialize Paystack service
     const paystackService = new PaystackService()
 
-    // Get app URL from environment
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL
+    // Get app URL from environment and ensure no trailing slash
+    const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL
       || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
       || 'http://localhost:3000'
+    const appUrl = rawAppUrl.replace(/\/+$/, '') // Remove trailing slashes
 
     // Generate unique reference
     const reference = PaystackService.generateReference()
+
+    // Build callback URL - Paystack will redirect here after payment
+    const callbackUrl = `${appUrl}/dashboard/manage-applications?payment=success&gig=${gigId}&reference=${reference}`
+
+    console.log('Paystack callback URL:', callbackUrl)
 
     // Initialize transaction with Paystack
     const response = await paystackService.initializeTransaction({
       email: customerEmail,
       amount: amount,
       reference: reference,
-      callbackUrl: `${appUrl}/dashboard/manage-applications?payment=success&gig=${gigId}&reference=${reference}`,
+      callbackUrl,
       currency: 'ZAR',
       channels: ['card', 'bank_transfer', 'eft'],
       metadata: {
