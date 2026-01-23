@@ -154,10 +154,12 @@ describe('PaymentDialog', () => {
       expect(screen.queryByText('Payment Amount')).not.toBeInTheDocument()
     })
 
-    it('should display the initial amount', () => {
+    it('should display the fixed amount', () => {
       renderPaymentDialog({ amount: 500 })
-      const input = screen.getByDisplayValue('500')
-      expect(input).toBeInTheDocument()
+      // Amount is now displayed with "Agreed Amount" label
+      expect(screen.getByText('Agreed Amount')).toBeInTheDocument()
+      // Full payment message should be shown
+      expect(screen.getByText(/Full payment is required/)).toBeInTheDocument()
     })
 
     it('should display worker name in description', () => {
@@ -202,15 +204,17 @@ describe('PaymentDialog', () => {
       })
     })
 
-    it('should update fees when custom amount is entered', async () => {
+    it('should display fixed amount that cannot be edited', async () => {
       const calculateFees = jest.fn().mockResolvedValue(mockFees)
-      renderPaymentDialog({}, { calculateFees })
+      renderPaymentDialog({ amount: 500 }, { calculateFees })
 
-      const input = screen.getByDisplayValue('500')
-      fireEvent.change(input, { target: { value: '1000' } })
+      // Amount is fixed and displayed with label
+      expect(screen.getByText('Agreed Amount')).toBeInTheDocument()
+      expect(screen.getByText(/Full payment is required/)).toBeInTheDocument()
 
+      // Fees should be calculated based on the fixed amount
       await waitFor(() => {
-        expect(calculateFees).toHaveBeenCalledWith(1000)
+        expect(calculateFees).toHaveBeenCalledWith(500)
       })
     })
   })
@@ -541,23 +545,8 @@ describe('PaymentDialog', () => {
     })
   })
 
-  describe('Payment Type Selection', () => {
-    it('should allow selecting different payment types', async () => {
-      renderPaymentDialog()
-
-      const milestoneButton = screen.getByText('Milestone')
-      fireEvent.click(milestoneButton)
-
-      expect(milestoneButton.closest('button')).toHaveClass('border-secondary-500')
-    })
-
-    it('should default to fixed payment type', () => {
-      renderPaymentDialog()
-
-      const fixedButton = screen.getByText('Fixed Payment')
-      expect(fixedButton.closest('button')).toHaveClass('border-secondary-500')
-    })
-  })
+  // Payment Type Selection tests removed - payment type is now fixed to 'fixed'
+  // for MVP simplicity (full payment required to fund gig)
 
   describe('Error Handling', () => {
     it('should handle Paystack API error gracefully', async () => {
@@ -774,34 +763,24 @@ describe('PaymentDialog', () => {
     })
   })
 
-  describe('Custom Amount Input', () => {
-    it('should allow entering a custom amount', async () => {
+  describe('Fixed Amount (No Partial Payments)', () => {
+    it('should display the agreed amount as fixed', async () => {
       const calculateFees = jest.fn().mockResolvedValue(mockFees)
       renderPaymentDialog({ amount: 500 }, { calculateFees })
 
-      const input = screen.getByDisplayValue('500')
-      await act(async () => {
-        fireEvent.change(input, { target: { value: '750' } })
-      })
+      // Amount should be displayed with "Agreed Amount" label
+      expect(screen.getByText('Agreed Amount')).toBeInTheDocument()
 
-      expect(screen.getByDisplayValue('750')).toBeInTheDocument()
+      // Should show full payment message
+      expect(screen.getByText(/Full payment is required/)).toBeInTheDocument()
     })
 
-    it('should recalculate fees when amount changes', async () => {
+    it('should calculate fees based on the fixed amount', async () => {
       const calculateFees = jest.fn().mockResolvedValue(mockFees)
-      renderPaymentDialog({ amount: 500 }, { calculateFees })
+      renderPaymentDialog({ amount: 750 }, { calculateFees })
 
       await waitFor(() => {
-        expect(calculateFees).toHaveBeenCalledWith(500)
-      }, { timeout: 3000 })
-
-      const input = screen.getByDisplayValue('500')
-      await act(async () => {
-        fireEvent.change(input, { target: { value: '1000' } })
-      })
-
-      await waitFor(() => {
-        expect(calculateFees).toHaveBeenCalledWith(1000)
+        expect(calculateFees).toHaveBeenCalledWith(750)
       }, { timeout: 3000 })
     })
   })

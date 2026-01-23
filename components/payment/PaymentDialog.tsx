@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
-import { Input } from '@/components/ui/Input'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { usePayment } from '@/contexts/PaymentContext'
 import { useToast } from '@/contexts/ToastContext'
@@ -76,8 +75,8 @@ export default function PaymentDialog({
   const { user } = useAuth()
 
   const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>('paystack')
-  const [customAmount, setCustomAmount] = useState(amount.toString())
-  const [paymentType, setPaymentType] = useState<'fixed' | 'milestone' | 'bonus'>('fixed')
+  // Payment type is always 'fixed' for full payment
+  const paymentType = 'fixed'
   const [step, setStep] = useState<'amount' | 'provider' | 'confirm' | 'large-amount-confirm' | 'processing'>('amount')
   const [fees, setFees] = useState<{
     platformFee: number
@@ -102,16 +101,12 @@ export default function PaymentDialog({
     loadPaymentLimits()
   }, [])
 
-  useEffect(() => {
-    setCustomAmount(amount.toString())
-  }, [amount])
 
-  // Calculate fees when amount changes
+  // Calculate fees based on the fixed amount
   useEffect(() => {
     const loadFees = async () => {
       try {
-        const finalAmount = parseFloat(customAmount) || amount
-        const calculatedFees = await calculateFees(finalAmount)
+        const calculatedFees = await calculateFees(amount)
         setFees(calculatedFees)
       } catch (error) {
         console.error('Error calculating fees:', error)
@@ -119,19 +114,16 @@ export default function PaymentDialog({
       }
     }
 
-    const finalAmount = parseFloat(customAmount) || amount
-    if (finalAmount > 0) {
+    if (amount > 0) {
       loadFees()
     }
-  }, [customAmount, amount, calculateFees])
+  }, [amount, calculateFees])
 
   if (!isOpen) return null
 
-  const finalAmount = parseFloat(customAmount) || amount
-
   const handleNext = () => {
     if (step === 'amount') {
-      const validation = validatePaymentAmount(finalAmount, paymentLimits)
+      const validation = validatePaymentAmount(amount, paymentLimits)
       if (!validation.isValid) {
         showError(validation.message || 'Invalid payment amount')
         return
@@ -176,7 +168,7 @@ export default function PaymentDialog({
           },
           body: JSON.stringify({
             gigId,
-            amount: fees ? finalAmount + fees.totalFees : finalAmount,
+            amount: fees ? amount + fees.totalFees : amount,
             itemName: description || `Payment for gig work to ${workerName}`,
             itemDescription: `Funding gig ${gigId}`,
             customerEmail: user.email,
@@ -229,46 +221,18 @@ export default function PaymentDialog({
               </p>
             </div>
 
-            <div>
-              <Input
-                label="Amount (ZAR)"
-                type="number"
-                value={customAmount}
-                onChange={(e) => setCustomAmount(e.target.value)}
-                placeholder="100.00"
-                min={paymentLimits.MIN}
-                step="0.01"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                Minimum payment: R{paymentLimits.MIN}
-              </p>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Payment Type
-              </label>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { value: 'fixed', label: 'Fixed Payment', desc: 'One-time payment' },
-                  { value: 'milestone', label: 'Milestone', desc: 'Project milestone' },
-                  { value: 'bonus', label: 'Bonus', desc: 'Additional reward' }
-                ].map(option => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setPaymentType(option.value as 'fixed' | 'milestone' | 'bonus')}
-                    className={`p-3 rounded-lg border-2 text-left transition-colors ${
-                      paymentType === option.value
-                        ? 'border-secondary-500 bg-secondary-50'
-                        : 'border-gray-300 hover:border-gray-400'
-                    }`}
-                  >
-                    <div className="font-medium text-sm">{option.label}</div>
-                    <div className="text-xs text-gray-500 mt-1">{option.desc}</div>
-                  </button>
-                ))}
+            {/* Amount is fixed to the agreed gig rate - full payment required */}
+            <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-secondary-600">Agreed Amount</p>
+                  <p className="text-2xl font-bold text-secondary-900">{formatCurrency(amount)}</p>
+                </div>
+                <div className="text-secondary-500 text-3xl">💰</div>
               </div>
+              <p className="mt-2 text-xs text-secondary-600">
+                Full payment is required to fund the gig. The worker will receive this amount upon completion.
+              </p>
             </div>
 
             {/* Fee Breakdown */}
@@ -277,7 +241,7 @@ export default function PaymentDialog({
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span>Payment Amount:</span>
-                  <span>{formatCurrency(finalAmount)}</span>
+                  <span>{formatCurrency(amount)}</span>
                 </div>
                 {fees ? (
                   <>
@@ -296,7 +260,7 @@ export default function PaymentDialog({
                     <div className="border-t border-gray-300 pt-2">
                       <div className="flex justify-between font-medium">
                         <span>Total Cost:</span>
-                        <span>{formatCurrency(finalAmount + fees.totalFees)}</span>
+                        <span>{formatCurrency(amount + fees.totalFees)}</span>
                       </div>
                       <div className="flex justify-between text-green-600 text-xs mt-1">
                         <span>Worker Receives:</span>
@@ -324,7 +288,7 @@ export default function PaymentDialog({
                 Select Payment Provider
               </h3>
               <p className="text-sm text-gray-600">
-                Choose how you&apos;d like to pay {fees ? formatCurrency(finalAmount + fees.totalFees) : '...'}
+                Choose how you&apos;d like to pay {fees ? formatCurrency(amount + fees.totalFees) : '...'}
               </p>
             </div>
 
@@ -393,7 +357,7 @@ export default function PaymentDialog({
                     Large Payment Amount
                   </h3>
                   <p className="text-orange-800 mb-4">
-                    You are about to make a payment of <span className="font-bold">{formatCurrency(finalAmount)}</span>.
+                    You are about to make a payment of <span className="font-bold">{formatCurrency(amount)}</span>.
                     This exceeds our large payment threshold of {formatCurrency(paymentLimits.LARGE_AMOUNT_THRESHOLD)}.
                   </p>
                   <div className="bg-white rounded p-4 mb-4">
@@ -444,7 +408,7 @@ export default function PaymentDialog({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Amount:</span>
-                  <span className="font-medium">{formatCurrency(finalAmount)}</span>
+                  <span className="font-medium">{formatCurrency(amount)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Type:</span>
@@ -452,7 +416,7 @@ export default function PaymentDialog({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Cost:</span>
-                  <span className="font-medium text-lg">{fees ? formatCurrency(finalAmount + fees.totalFees) : '...'}</span>
+                  <span className="font-medium text-lg">{fees ? formatCurrency(amount + fees.totalFees) : '...'}</span>
                 </div>
               </div>
             </div>
@@ -608,7 +572,7 @@ export default function PaymentDialog({
                     disabled={isLoading || !fees}
                     className="flex-1 bg-green-600 hover:bg-green-700"
                   >
-                    {isLoading ? 'Processing...' : fees ? `Pay ${formatCurrency(finalAmount + fees.totalFees)}` : 'Calculating...'}
+                    {isLoading ? 'Processing...' : fees ? `Pay ${formatCurrency(amount + fees.totalFees)}` : 'Calculating...'}
                   </Button>
                 </>
               ) : null}
