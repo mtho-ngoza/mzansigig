@@ -238,6 +238,48 @@ export class WalletService {
   }
 
   /**
+   * Release escrow with commission deduction
+   * Removes gross amount from pending, adds net amount (after commission) to wallet
+   * This ensures platform takes its commission when escrow is released
+   */
+  static async releaseEscrowWithCommission(
+    userId: string,
+    grossAmount: number,
+    netAmount: number
+  ): Promise<void> {
+    const userRef = doc(db, 'users', userId)
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const userDoc = await transaction.get(userRef)
+
+        if (!userDoc.exists()) {
+          throw new Error('User not found')
+        }
+
+        const userData = userDoc.data()
+        const currentPending = userData.pendingBalance || 0
+
+        // Validate sufficient pending balance
+        if (currentPending < grossAmount) {
+          throw new Error(`Insufficient pending balance. Tried to release ${grossAmount} but only ${currentPending} available`)
+        }
+
+        // Remove gross from pending, add net to wallet
+        // The difference (grossAmount - netAmount) is the platform commission
+        transaction.update(userRef, {
+          pendingBalance: increment(-grossAmount),
+          walletBalance: increment(netAmount),
+          totalEarnings: increment(netAmount),
+          updatedAt: Timestamp.now()
+        })
+      })
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : 'Failed to release escrow with commission')
+    }
+  }
+
+  /**
    * Reset wallet balances to zero (FOR DEVELOPMENT/TESTING ONLY)
    * Use this to clear old test data from user wallet
    */

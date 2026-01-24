@@ -426,22 +426,33 @@ export class PaymentService {
       }
 
       const paymentData = paymentDoc.data()
-      const releaseAmount = amount || paymentData.amount
+      const grossAmount = amount || paymentData.amount
       const gigId = paymentData.gigId
 
-      // Update payment status
+      // Calculate fee breakdown to get net amount for worker
+      const feeConfig = await this.getActiveFeeConfig()
+      const feeBreakdown = FeeConfigService.calculateFeeBreakdown(grossAmount, feeConfig)
+      const netAmountToWorker = feeBreakdown.netAmountToWorker
+      const platformCommission = feeBreakdown.workerCommission
+
+      console.log(`Releasing escrow: gross=${grossAmount}, commission=${platformCommission}, net=${netAmountToWorker}`)
+
+      // Update payment status with fee details
       await updateDoc(doc(db, COLLECTIONS.PAYMENTS, paymentId), {
         escrowStatus: 'released',
         escrowReleaseDate: Timestamp.now(),
         status: 'completed',
-        completedAt: Timestamp.now()
+        completedAt: Timestamp.now(),
+        platformCommission,
+        netAmountToWorker
       })
 
       // Update escrow record
       try {
         await updateDoc(doc(db, COLLECTIONS.ESCROW_ACCOUNTS, gigId), {
           status: 'released',
-          releasedAmount: releaseAmount,
+          releasedAmount: netAmountToWorker,
+          platformCommission,
           releasedAt: Timestamp.now()
         })
       } catch {
@@ -449,7 +460,7 @@ export class PaymentService {
       }
 
       // Update existing payment history records from 'pending' to 'completed'
-      // This updates both employer and worker records that were created when escrow was funded
+      // Also update the worker's earnings record with the net amount
       const pendingHistoryQuery = query(
         collection(db, COLLECTIONS.PAYMENT_HISTORY),
         where('gigId', '==', gigId),
@@ -457,17 +468,33 @@ export class PaymentService {
       )
       const pendingHistorySnapshot = await getDocs(pendingHistoryQuery)
 
-      const updatePromises = pendingHistorySnapshot.docs.map(historyDoc =>
-        updateDoc(historyDoc.ref, {
+      const updatePromises = pendingHistorySnapshot.docs.map(historyDoc => {
+        const historyData = historyDoc.data()
+        // For worker earnings, update to net amount after commission
+        if (historyData.type === 'earnings') {
+          return updateDoc(historyDoc.ref, {
+            amount: netAmountToWorker,
+            status: 'completed',
+            completedAt: Timestamp.now(),
+            metadata: {
+              grossAmount,
+              platformCommission,
+              netAmount: netAmountToWorker
+            }
+          })
+        }
+        // For employer payments, just mark as completed
+        return updateDoc(historyDoc.ref, {
           status: 'completed',
           completedAt: Timestamp.now()
         })
-      )
+      })
       await Promise.all(updatePromises)
       console.log(`Updated ${pendingHistorySnapshot.size} payment history records to completed`)
 
-      // Move funds from pending to wallet for worker
-      await WalletService.movePendingToWallet(paymentData.workerId, releaseAmount)
+      // Move NET funds from pending to wallet for worker (after commission deduction)
+      // Note: Pending balance was set to gross amount, so we reduce by gross and credit net
+      await WalletService.releaseEscrowWithCommission(paymentData.workerId, grossAmount, netAmountToWorker)
     } catch (error) {
       console.debug('Error releasing escrow:', error)
       throw new Error(error instanceof Error ? error.message : 'Failed to release escrow')

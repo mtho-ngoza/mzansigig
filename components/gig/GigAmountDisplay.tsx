@@ -89,7 +89,7 @@ export default function GigAmountDisplay({
               <span>{formatCurrency(feeBreakdown.grossAmount)}</span>
             </div>
             <div className="flex justify-between text-red-600">
-              <span>Platform Commission ({Math.round((feeBreakdown.workerCommission / feeBreakdown.grossAmount) * 100)}%):</span>
+              <span>Service Fee ({Math.round((feeBreakdown.workerCommission / feeBreakdown.grossAmount) * 100)}%):</span>
               <span>-{formatCurrency(feeBreakdown.workerCommission)}</span>
             </div>
             <div className="border-t border-gray-300 pt-2 flex justify-between font-medium text-green-600">
@@ -127,7 +127,7 @@ export default function GigAmountDisplay({
             <span>{formatCurrency(feeBreakdown.grossAmount)}</span>
           </div>
           <div className="flex justify-between text-red-600">
-            <span>Platform Commission ({Math.round((feeBreakdown.workerCommission / feeBreakdown.grossAmount) * 100)}%):</span>
+            <span>Service Fee ({Math.round((feeBreakdown.workerCommission / feeBreakdown.grossAmount) * 100)}%):</span>
             <span>-{formatCurrency(feeBreakdown.workerCommission)}</span>
           </div>
           <div className="border-t border-gray-300 pt-2 flex justify-between font-medium text-green-600">

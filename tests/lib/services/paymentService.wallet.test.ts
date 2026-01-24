@@ -158,8 +158,8 @@ describe('PaymentService - Wallet Integration', () => {
       // Mock payment history query (for updating pending records to completed)
       const mockPendingHistorySnapshot = {
         docs: [
-          { ref: { id: 'history-1' } },
-          { ref: { id: 'history-2' } }
+          { ref: { id: 'history-1' }, data: () => ({ type: 'payments', userId: mockEmployerId }) },
+          { ref: { id: 'history-2' }, data: () => ({ type: 'earnings', userId: mockWorkerId }) }
         ]
       }
       ;(getDocs as jest.Mock).mockResolvedValue(mockPendingHistorySnapshot)
@@ -168,11 +168,12 @@ describe('PaymentService - Wallet Integration', () => {
       ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
       ;(addDoc as jest.Mock).mockResolvedValue({ id: 'history-123' })
       ;(GigService.getGigById as jest.Mock).mockResolvedValue({ id: mockGigId, title: 'Test Gig' })
-      ;(WalletService.movePendingToWallet as jest.Mock).mockResolvedValue(undefined)
+      ;(WalletService.releaseEscrowWithCommission as jest.Mock).mockResolvedValue(undefined)
 
       await PaymentService.releaseEscrow('payment-123')
 
-      expect(WalletService.movePendingToWallet).toHaveBeenCalledWith(mockWorkerId, mockAmount)
+      // Commission is 10%, so net = gross * 0.9 = 1000 * 0.9 = 900
+      expect(WalletService.releaseEscrowWithCommission).toHaveBeenCalledWith(mockWorkerId, mockAmount, mockAmount * 0.9)
     })
 
     it('should handle partial escrow release', async () => {
@@ -192,7 +193,7 @@ describe('PaymentService - Wallet Integration', () => {
       // Mock payment history query (for updating pending records to completed)
       const mockPendingHistorySnapshot = {
         docs: [
-          { ref: { id: 'history-1' } }
+          { ref: { id: 'history-1' }, data: () => ({ type: 'earnings', userId: mockWorkerId }) }
         ]
       }
       ;(getDocs as jest.Mock).mockResolvedValue(mockPendingHistorySnapshot)
@@ -201,11 +202,12 @@ describe('PaymentService - Wallet Integration', () => {
       ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
       ;(addDoc as jest.Mock).mockResolvedValue({ id: 'history-123' })
       ;(GigService.getGigById as jest.Mock).mockResolvedValue({ id: mockGigId, title: 'Test Gig' })
-      ;(WalletService.movePendingToWallet as jest.Mock).mockResolvedValue(undefined)
+      ;(WalletService.releaseEscrowWithCommission as jest.Mock).mockResolvedValue(undefined)
 
       await PaymentService.releaseEscrow('payment-123', releaseAmount)
 
-      expect(WalletService.movePendingToWallet).toHaveBeenCalledWith(mockWorkerId, releaseAmount)
+      // Commission is 10%, so net = gross * 0.9 = 500 * 0.9 = 450
+      expect(WalletService.releaseEscrowWithCommission).toHaveBeenCalledWith(mockWorkerId, releaseAmount, releaseAmount * 0.9)
     })
 
     it('should handle errors when payment not found', async () => {
@@ -238,7 +240,7 @@ describe('PaymentService - Wallet Integration', () => {
       ;(updateDoc as jest.Mock).mockResolvedValue(undefined)
       ;(addDoc as jest.Mock).mockResolvedValue({ id: 'history-123' })
       ;(GigService.getGigById as jest.Mock).mockResolvedValue({ id: mockGigId, title: 'Test Gig' })
-      ;(WalletService.movePendingToWallet as jest.Mock).mockRejectedValue(new Error('Wallet update failed'))
+      ;(WalletService.releaseEscrowWithCommission as jest.Mock).mockRejectedValue(new Error('Wallet update failed'))
 
       await expect(PaymentService.releaseEscrow('payment-123')).rejects.toThrow('Wallet update failed')
     })
@@ -296,7 +298,7 @@ describe('PaymentService - Wallet Integration', () => {
       expect(analyticsAfterPayment.pendingBalance).toBe(mockAmount)
       expect(analyticsAfterPayment.availableBalance).toBe(0)
 
-      // STEP 3: Release escrow (should move from pending to wallet)
+      // STEP 3: Release escrow (should move from pending to wallet with commission deducted)
       const mockPaymentDoc = {
         exists: () => true,
         data: () => ({
@@ -309,25 +311,34 @@ describe('PaymentService - Wallet Integration', () => {
         })
       }
 
+      // Mock payment history for release
+      const mockPendingHistorySnapshot = {
+        docs: [
+          { ref: { id: 'history-1' }, data: () => ({ type: 'earnings', userId: mockWorkerId }) }
+        ]
+      }
+      ;(getDocs as jest.Mock).mockResolvedValue(mockPendingHistorySnapshot)
       ;(getDoc as jest.Mock).mockResolvedValue(mockPaymentDoc)
-      ;(WalletService.movePendingToWallet as jest.Mock).mockResolvedValue(undefined)
+      ;(WalletService.releaseEscrowWithCommission as jest.Mock).mockResolvedValue(undefined)
 
       await PaymentService.releaseEscrow('payment-123')
 
-      expect(WalletService.movePendingToWallet).toHaveBeenCalledWith(mockWorkerId, mockAmount)
+      // Commission is 10%, so net = gross * 0.9 = 1000 * 0.9 = 900
+      const netAmount = mockAmount * 0.9
+      expect(WalletService.releaseEscrowWithCommission).toHaveBeenCalledWith(mockWorkerId, mockAmount, netAmount)
 
       // STEP 4: Verify analytics shows correct balances after escrow release
       ;(WalletService.getWalletBalance as jest.Mock).mockResolvedValue({
-        walletBalance: mockAmount,
+        walletBalance: netAmount,
         pendingBalance: 0,
-        totalEarnings: mockAmount,
+        totalEarnings: netAmount,
         totalWithdrawn: 0
       })
 
       const analyticsAfterRelease = await PaymentService.getUserPaymentAnalytics(mockWorkerId)
-      expect(analyticsAfterRelease.availableBalance).toBe(mockAmount)
+      expect(analyticsAfterRelease.availableBalance).toBe(netAmount)
       expect(analyticsAfterRelease.pendingBalance).toBe(0)
-      expect(analyticsAfterRelease.totalEarnings).toBe(mockAmount)
+      expect(analyticsAfterRelease.totalEarnings).toBe(netAmount)
     })
   })
 
