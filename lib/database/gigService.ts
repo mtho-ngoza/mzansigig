@@ -445,16 +445,16 @@ export class GigService {
       rateHistory: [{
         amount: applicationData.proposedRate,
         by: 'worker' as const,
-        at: new Date(),
-        note: applicationData.message || undefined
+        at: new Date()
       }]
     };
 
-    // Only include message field if provided (Firestore rejects undefined)
+    // Only include optional fields if provided (Firestore rejects undefined)
     if (applicationData.message) {
-      sanitizedData.message = sanitizeApplicationMessage(applicationData.message, APPLICATION_TEXT_LIMITS.MESSAGE_MAX);
-    } else {
-      delete sanitizedData.message;
+      const cleanMessage = sanitizeApplicationMessage(applicationData.message, APPLICATION_TEXT_LIMITS.MESSAGE_MAX);
+      sanitizedData.message = cleanMessage;
+      // Also include note in initial rate history entry only when message exists
+      (sanitizedData.rateHistory as Array<Record<string, unknown>>)[0].note = cleanMessage;
     }
 
     const applicationId = await FirestoreService.create('applications', sanitizedData);
@@ -474,16 +474,18 @@ export class GigService {
   }
 
   static async getApplicationsByGig(gigId: string): Promise<GigApplication[]> {
-    return await FirestoreService.getWhere<GigApplication>('applications', 'gigId', '==', gigId, 'createdAt');
+    const results = await FirestoreService.getWhere<GigApplication>('applications', 'gigId', '==', gigId, 'createdAt');
+    return Array.isArray(results) ? results : [];
   }
 
   static async getApplicationCountByGig(gigId: string): Promise<number> {
     const applications = await FirestoreService.getWhere<GigApplication>('applications', 'gigId', '==', gigId);
-    return applications.length;
+    return Array.isArray(applications) ? applications.length : 0;
   }
 
   static async getApplicationsByApplicant(applicantId: string): Promise<GigApplication[]> {
-    return await FirestoreService.getWhere<GigApplication>('applications', 'applicantId', '==', applicantId, 'createdAt');
+    const results = await FirestoreService.getWhere<GigApplication>('applications', 'applicantId', '==', applicantId, 'createdAt');
+    return Array.isArray(results) ? results : [];
   }
 
   /**
