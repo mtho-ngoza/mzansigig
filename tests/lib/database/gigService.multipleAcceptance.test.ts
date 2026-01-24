@@ -23,6 +23,8 @@ describe('GigService - Multiple Acceptance Prevention', () => {
     applicantName: 'Worker One',
     proposedRate: 1000,
     status: 'pending',
+    rateStatus: 'agreed', // Rate must be agreed before acceptance
+    agreedRate: 1000,
     createdAt: new Date()
   }
 
@@ -33,6 +35,8 @@ describe('GigService - Multiple Acceptance Prevention', () => {
     applicantName: 'Worker Two',
     proposedRate: 1100,
     status: 'pending',
+    rateStatus: 'agreed', // Rate must be agreed before acceptance
+    agreedRate: 1100,
     createdAt: new Date()
   }
 
@@ -43,6 +47,8 @@ describe('GigService - Multiple Acceptance Prevention', () => {
     applicantName: 'Worker Three',
     proposedRate: 1200,
     status: 'pending',
+    rateStatus: 'agreed', // Rate must be agreed before acceptance
+    agreedRate: 1200,
     createdAt: new Date()
   }
 

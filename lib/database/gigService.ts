@@ -1,5 +1,5 @@
 import { FirestoreService } from './firestore';
-import { Gig, GigApplication, Review } from '@/types/gig';
+import { Gig, GigApplication, Review, RateHistoryEntry } from '@/types/gig';
 import { Coordinates, LocationSearchOptions } from '@/types/location';
 import {
   calculateDistance,
@@ -436,8 +436,17 @@ export class GigService {
     // Note: Firestore doesn't allow undefined values, so we omit the field if no message
     const sanitizedData: Record<string, unknown> = {
       ...applicationData,
+      gigBudget: gig.budget, // Store original budget for reference
       createdAt: new Date(),
-      status: 'pending' as const
+      status: 'pending' as const,
+      // Rate negotiation: initial state is 'proposed' by worker
+      rateStatus: 'proposed' as const,
+      rateHistory: [{
+        amount: applicationData.proposedRate,
+        by: 'worker' as const,
+        at: new Date(),
+        note: applicationData.message || undefined
+      }]
     };
 
     // Only include message field if provided (Firestore rejects undefined)
@@ -505,6 +514,11 @@ export class GigService {
       const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
       if (!application) {
         throw new Error('Application not found');
+      }
+
+      // Check that rate has been agreed upon before accepting
+      if (application.rateStatus !== 'agreed') {
+        throw new Error('Cannot accept application until rate is agreed. Please confirm the rate first.');
       }
 
       // Check for existing accepted/funded applications for this gig
@@ -585,6 +599,191 @@ export class GigService {
     }
 
     await FirestoreService.update('applications', applicationId, { status: 'withdrawn' });
+  }
+
+  // ==========================================
+  // Rate Negotiation Methods
+  // ==========================================
+
+  /**
+   * Update the proposed rate on an application.
+   * Either party can propose a new rate during negotiation.
+   * @param applicationId - The application ID
+   * @param newRate - The new proposed rate
+   * @param updatedBy - Who is making this update ('worker' or 'employer')
+   * @param userId - The user ID (for authorization)
+   * @param note - Optional note explaining the rate change
+   */
+  static async updateApplicationRate(
+    applicationId: string,
+    newRate: number,
+    updatedBy: 'worker' | 'employer',
+    userId: string,
+    note?: string
+  ): Promise<void> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    // Authorization check
+    if (updatedBy === 'worker' && application.applicantId !== userId) {
+      throw new Error('Unauthorized: Only the applicant can update rate as worker');
+    }
+    if (updatedBy === 'employer' && application.employerId !== userId) {
+      throw new Error('Unauthorized: Only the employer can update rate as employer');
+    }
+
+    // Cannot update rate after application is funded or completed
+    if (['funded', 'completed', 'rejected', 'withdrawn'].includes(application.status)) {
+      throw new Error(`Cannot update rate on application with status: ${application.status}`);
+    }
+
+    // Validate rate
+    if (newRate <= 0) {
+      throw new Error('Rate must be greater than 0');
+    }
+    if (newRate > 100000) {
+      throw new Error('Rate cannot exceed R100,000');
+    }
+
+    // Get current rate history or initialize
+    const rateHistory = application.rateHistory || [];
+
+    // Add new entry to history
+    const historyEntry = {
+      amount: newRate,
+      by: updatedBy,
+      at: new Date(),
+      note: note || undefined
+    };
+    rateHistory.push(historyEntry);
+
+    // Update application
+    const updateData: Partial<GigApplication> = {
+      rateStatus: 'countered' as const,
+      lastRateUpdate: historyEntry,
+      rateHistory,
+      // Clear agreedRate since we're in negotiation
+      agreedRate: undefined
+    };
+
+    // If the rate matches the original proposed rate and worker is confirming, keep as proposed
+    if (updatedBy === 'worker' && newRate === application.proposedRate && !application.lastRateUpdate) {
+      updateData.rateStatus = 'proposed';
+    }
+
+    await FirestoreService.update('applications', applicationId, updateData);
+  }
+
+  /**
+   * Confirm/accept the current proposed rate.
+   * The other party (not the one who last proposed) must confirm.
+   * Once confirmed, rate is agreed and application can proceed to acceptance.
+   * @param applicationId - The application ID
+   * @param confirmedBy - Who is confirming ('worker' or 'employer')
+   * @param userId - The user ID (for authorization)
+   */
+  static async confirmApplicationRate(
+    applicationId: string,
+    confirmedBy: 'worker' | 'employer',
+    userId: string
+  ): Promise<void> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    // Authorization check
+    if (confirmedBy === 'worker' && application.applicantId !== userId) {
+      throw new Error('Unauthorized: Only the applicant can confirm as worker');
+    }
+    if (confirmedBy === 'employer' && application.employerId !== userId) {
+      throw new Error('Unauthorized: Only the employer can confirm as employer');
+    }
+
+    // Cannot confirm on certain statuses
+    if (['funded', 'completed', 'rejected', 'withdrawn'].includes(application.status)) {
+      throw new Error(`Cannot confirm rate on application with status: ${application.status}`);
+    }
+
+    // Already agreed
+    if (application.rateStatus === 'agreed') {
+      throw new Error('Rate is already agreed');
+    }
+
+    // Get the current rate (last proposed or original)
+    const currentRate = application.lastRateUpdate?.amount || application.proposedRate;
+
+    // Check who last proposed - the OTHER party must confirm
+    const lastProposedBy = application.lastRateUpdate?.by || 'worker'; // Default to worker (initial proposal)
+
+    if (lastProposedBy === confirmedBy) {
+      throw new Error('You cannot confirm your own rate proposal. Wait for the other party to respond.');
+    }
+
+    // Get rate history and add confirmation entry
+    const rateHistory = application.rateHistory || [];
+    rateHistory.push({
+      amount: currentRate,
+      by: confirmedBy,
+      at: new Date(),
+      note: 'Rate confirmed'
+    });
+
+    // Update to agreed status
+    await FirestoreService.update('applications', applicationId, {
+      rateStatus: 'agreed' as const,
+      agreedRate: currentRate,
+      rateHistory
+    });
+  }
+
+  /**
+   * Get the rate negotiation history for an application.
+   * @param applicationId - The application ID
+   * @returns The rate history entries
+   */
+  static async getRateHistory(applicationId: string): Promise<GigApplication['rateHistory']> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    return application.rateHistory || [];
+  }
+
+  /**
+   * Quick accept: Employer accepts worker's proposed rate directly.
+   * This is a convenience method that confirms the rate and accepts in one step.
+   * @param applicationId - The application ID
+   * @param employerId - The employer's user ID
+   */
+  static async acceptApplicationWithRate(
+    applicationId: string,
+    employerId: string
+  ): Promise<void> {
+    const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+
+    if (!application) {
+      throw new Error('Application not found');
+    }
+
+    // Authorization check
+    if (application.employerId !== employerId) {
+      throw new Error('Unauthorized: Only the employer can accept this application');
+    }
+
+    // If rate is not yet agreed, confirm it first (only works if worker proposed last)
+    if (application.rateStatus !== 'agreed') {
+      await this.confirmApplicationRate(applicationId, 'employer', employerId);
+    }
+
+    // Now accept the application
+    await this.updateApplicationStatus(applicationId, 'accepted');
   }
 
   // Worker completion request operations

@@ -23,18 +23,42 @@ export interface Gig {
   maxApplicants?: number // Maximum number of applicants employer wants to review
 }
 
+// Rate negotiation history entry
+export interface RateHistoryEntry {
+  amount: number
+  by: 'worker' | 'employer'
+  at: Date
+  note?: string // Optional message explaining the rate change
+}
+
 export interface GigApplication {
   id: string
   gigId: string
   applicantId: string
   applicantName: string
   message?: string // Optional brief message from applicant
-  proposedRate: number
+  proposedRate: number // Initial rate proposed by worker
+  gigBudget?: number // Original gig budget (denormalized for easy access)
   employerId?: string // ID of the gig employer (for efficient queries)
+
+  // Rate negotiation fields
+  agreedRate?: number // Final agreed rate (set when both parties confirm)
+  rateStatus: 'proposed' | 'countered' | 'agreed' // Track negotiation state
+  lastRateUpdate?: {
+    amount: number
+    by: 'worker' | 'employer'
+    at: Date
+    note?: string
+  }
+  rateHistory?: RateHistoryEntry[] // Full history of rate changes
+
   // Structured application fields (for physical work)
   experience?: string // Years of experience (e.g., "1-3", "5-10")
   availability?: string // When they can start (e.g., "immediately", "within-week")
   equipment?: string // Equipment ownership (e.g., "fully-equipped", "no-equipment")
+
+  // Application status: pending (new), accepted (rate agreed), rejected (declined),
+  // funded (escrow paid), completed (work done), withdrawn (worker withdrew)
   status: 'pending' | 'accepted' | 'rejected' | 'funded' | 'completed' | 'withdrawn'
   paymentStatus?: 'unpaid' | 'paid' | 'in_escrow' | 'released' | 'disputed'
   paymentId?: string // Reference to the payment record
