@@ -11,6 +11,9 @@ import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
 import { useToast } from '@/contexts/ToastContext'
 import PaymentDialog from '@/components/payment/PaymentDialog'
 import JobSeekerProfileDialog from '@/components/application/JobSeekerProfileDialog'
+import UpdateRateModal from '@/components/application/UpdateRateModal'
+import RateNegotiationBanner, { RateStatusBadge } from '@/components/application/RateNegotiationBanner'
+import RateNegotiationQuickMessages from '@/components/application/RateNegotiationQuickMessages'
 import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
 import { DISPUTE_TEXT_LIMITS, validateDisputeReason } from '@/lib/utils/disputeValidation'
 
@@ -53,6 +56,15 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
   const [disputeReason, setDisputeReason] = useState('')
   const [processingCompletion, setProcessingCompletion] = useState(false)
   const [paymentVerified, setPaymentVerified] = useState(false)
+  const [showUpdateRateModal, setShowUpdateRateModal] = useState<{
+    isOpen: boolean
+    application?: ApplicationWithGig
+  }>({ isOpen: false })
+  const [showQuickMessages, setShowQuickMessages] = useState<{
+    isOpen: boolean
+    application?: ApplicationWithGig
+  }>({ isOpen: false })
+  const [processingRateAction, setProcessingRateAction] = useState<Set<string>>(new Set())
 
   const searchParams = useSearchParams()
 
@@ -177,6 +189,131 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
 
     } catch {
       showError('Failed to update application status. Please try again.')
+    } finally {
+      setProcessingApplications(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(applicationId)
+        return newSet
+      })
+    }
+  }
+
+  const handleUpdateRate = async (applicationId: string, newRate: number, note?: string) => {
+    if (!user) return
+
+    try {
+      setProcessingRateAction(prev => new Set(prev).add(applicationId))
+      await GigService.updateApplicationRate(applicationId, newRate, 'employer', user.id, note)
+
+      // Update local state
+      setApplications(prev =>
+        prev.map(app =>
+          app.id === applicationId
+            ? {
+                ...app,
+                rateStatus: 'countered' as const,
+                lastRateUpdate: {
+                  amount: newRate,
+                  by: 'employer' as const,
+                  at: new Date(),
+                  note
+                }
+              }
+            : app
+        )
+      )
+
+      setShowUpdateRateModal({ isOpen: false })
+      success('Counter offer sent')
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to update rate')
+      throw err
+    } finally {
+      setProcessingRateAction(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(applicationId)
+        return newSet
+      })
+    }
+  }
+
+  const handleConfirmRate = async (applicationId: string) => {
+    if (!user) return
+
+    const application = applications.find(app => app.id === applicationId)
+    if (!application) return
+
+    try {
+      setProcessingRateAction(prev => new Set(prev).add(applicationId))
+      await GigService.confirmApplicationRate(applicationId, 'employer', user.id)
+
+      // Get the current rate
+      const currentRate = application.lastRateUpdate?.amount || application.proposedRate
+
+      // Update local state
+      setApplications(prev =>
+        prev.map(app =>
+          app.id === applicationId
+            ? {
+                ...app,
+                rateStatus: 'agreed' as const,
+                agreedRate: currentRate
+              }
+            : app
+        )
+      )
+
+      success('Rate agreed! You can now accept this application')
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to confirm rate')
+    } finally {
+      setProcessingRateAction(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(applicationId)
+        return newSet
+      })
+    }
+  }
+
+  const handleAcceptWithRate = async (applicationId: string) => {
+    if (!user) return
+
+    try {
+      setProcessingApplications(prev => new Set(prev).add(applicationId))
+      await GigService.acceptApplicationWithRate(applicationId, user.id)
+
+      // Get the application for the agreed rate
+      const application = applications.find(app => app.id === applicationId)
+      const agreedRate = application?.agreedRate || application?.lastRateUpdate?.amount || application?.proposedRate
+
+      // Update local state
+      setApplications(prev =>
+        prev.map(app =>
+          app.id === applicationId
+            ? { ...app, status: 'accepted' as const, rateStatus: 'agreed' as const, agreedRate }
+            : app
+        )
+      )
+
+      success('Sharp! Application accepted')
+
+      // Prompt for payment
+      const acceptedApp = applications.find(app => app.id === applicationId)
+      if (acceptedApp) {
+        setTimeout(() => {
+          setShowPaymentDialog({
+            isOpen: true,
+            application: {
+              ...acceptedApp,
+              status: 'accepted' as const,
+              agreedRate,
+              proposedRate: agreedRate || acceptedApp.proposedRate
+            }
+          })
+        }, 500)
+      }
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to accept application')
     } finally {
       setProcessingApplications(prev => {
         const newSet = new Set(prev)
@@ -377,7 +514,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
             const acceptedUnfunded = applications.filter(
               app => app.status === 'accepted' && (!app.paymentStatus || app.paymentStatus === 'unpaid')
             )
-            const totalOwed = acceptedUnfunded.reduce((sum, app) => sum + app.proposedRate, 0)
+            const totalOwed = acceptedUnfunded.reduce((sum, app) => sum + (app.agreedRate || app.proposedRate), 0)
 
             return acceptedUnfunded.length > 0 && (
               <Card className="mb-6 border-2 border-orange-300 bg-orange-50">
@@ -563,9 +700,14 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                         </Button>
                       </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusBadgeClass(application.status)}`}>
-                      {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
-                    </span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusBadgeClass(application.status)}`}>
+                        {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
+                      </span>
+                      {application.status === 'pending' && application.rateStatus && (
+                        <RateStatusBadge rateStatus={application.rateStatus} agreedRate={application.agreedRate} />
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
 
@@ -576,8 +718,12 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                       <div className="font-medium">{formatDate(application.createdAt)}</div>
                     </div>
                     <div>
-                      <span className="text-sm text-gray-500">Proposed Rate:</span>
-                      <div className="font-medium">{formatCurrency(application.proposedRate)}</div>
+                      <span className="text-sm text-gray-500">
+                        {application.agreedRate ? 'Agreed Rate:' : 'Proposed Rate:'}
+                      </span>
+                      <div className="font-medium">
+                        {formatCurrency(application.agreedRate || application.proposedRate)}
+                      </div>
                     </div>
                     {application.gigBudget && (
                       <div>
@@ -599,34 +745,58 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                   )}
 
                   {application.status === 'pending' && (
-                    <div className="flex flex-wrap gap-3">
-                      <QuickMessageButton
-                        recipientId={application.applicantId}
-                        recipientName={application.applicantName}
-                        recipientType="job-seeker"
-                        gigId={application.gigId}
-                        gigTitle={application.gigTitle}
-                        size="sm"
-                        variant="outline"
-                        onConversationStart={onMessageConversationStart}
+                    <>
+                      {/* Rate Negotiation Banner */}
+                      <RateNegotiationBanner
+                        application={application}
+                        viewerRole="employer"
+                        onUpdateRate={() => setShowUpdateRateModal({ isOpen: true, application })}
+                        onConfirmRate={() => handleConfirmRate(application.id)}
+                        onMessage={() => setShowQuickMessages({ isOpen: true, application })}
+                        isProcessing={processingRateAction.has(application.id)}
                       />
-                      <Button
-                        onClick={() => handleApplicationAction(application.id, 'accepted')}
-                        disabled={processingApplications.has(application.id)}
-                        isLoading={processingApplications.has(application.id)}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        Accept Application
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => handleApplicationAction(application.id, 'rejected')}
-                        disabled={processingApplications.has(application.id)}
-                        className="border-red-300 text-red-600 hover:bg-red-50"
-                      >
-                        Reject Application
-                      </Button>
-                    </div>
+
+                      <div className="flex flex-wrap gap-3">
+                        <QuickMessageButton
+                          recipientId={application.applicantId}
+                          recipientName={application.applicantName}
+                          recipientType="job-seeker"
+                          gigId={application.gigId}
+                          gigTitle={application.gigTitle}
+                          size="sm"
+                          variant="outline"
+                          onConversationStart={onMessageConversationStart}
+                        />
+                        {application.rateStatus === 'agreed' ? (
+                          <Button
+                            onClick={() => handleApplicationAction(application.id, 'accepted')}
+                            disabled={processingApplications.has(application.id)}
+                            isLoading={processingApplications.has(application.id)}
+                            className="bg-green-600 hover:bg-green-700"
+                          >
+                            Accept Application
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() => handleAcceptWithRate(application.id)}
+                            disabled={processingApplications.has(application.id) || processingRateAction.has(application.id)}
+                            isLoading={processingApplications.has(application.id)}
+                            className="bg-green-600 hover:bg-green-700"
+                            title="Accept and agree to the proposed rate"
+                          >
+                            Accept & Agree Rate
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          onClick={() => handleApplicationAction(application.id, 'rejected')}
+                          disabled={processingApplications.has(application.id)}
+                          className="border-red-300 text-red-600 hover:bg-red-50"
+                        >
+                          Decline
+                        </Button>
+                      </div>
+                    </>
                   )}
 
                   {(application.status === 'accepted' || application.status === 'funded') && (
@@ -658,7 +828,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                                   onClick={() => setShowPaymentDialog({ isOpen: true, application })}
                                   className="bg-orange-600 hover:bg-orange-700 font-semibold"
                                 >
-                                  💳 Fund Payment Now ({formatCurrency(application.proposedRate)})
+                                  💳 Fund Payment Now ({formatCurrency(application.agreedRate || application.proposedRate)})
                                 </Button>
                               </div>
                             </div>
@@ -860,7 +1030,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
             gigId={showPaymentDialog.application.gigId}
             workerId={showPaymentDialog.application.applicantId}
             workerName={showPaymentDialog.application.applicantName}
-            amount={showPaymentDialog.application.proposedRate}
+            amount={showPaymentDialog.application.agreedRate || showPaymentDialog.application.proposedRate}
             description={`Payment for "${showPaymentDialog.application.gigTitle}"`}
             onSuccess={async (payment) => {
               setShowPaymentDialog({ isOpen: false })
@@ -1004,6 +1174,44 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                     {processingCompletion ? 'Disputing...' : 'Submit Dispute'}
                   </Button>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Update Rate Modal */}
+        {showUpdateRateModal.isOpen && showUpdateRateModal.application && (
+          <UpdateRateModal
+            isOpen={showUpdateRateModal.isOpen}
+            currentRate={showUpdateRateModal.application.lastRateUpdate?.amount || showUpdateRateModal.application.proposedRate}
+            gigBudget={showUpdateRateModal.application.gigBudget}
+            updatedBy="employer"
+            onSubmit={async (newRate, note) => {
+              await handleUpdateRate(showUpdateRateModal.application!.id, newRate, note)
+            }}
+            onCancel={() => setShowUpdateRateModal({ isOpen: false })}
+          />
+        )}
+
+        {/* Quick Messages Modal for Rate Discussion */}
+        {showQuickMessages.isOpen && showQuickMessages.application && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <Card className="max-w-md w-full">
+              <CardHeader>
+                <CardTitle className="text-lg">Message about Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RateNegotiationQuickMessages
+                  recipientId={showQuickMessages.application.applicantId}
+                  recipientName={showQuickMessages.application.applicantName}
+                  recipientType="job-seeker"
+                  gigId={showQuickMessages.application.gigId}
+                  gigTitle={showQuickMessages.application.gigTitle || 'Gig'}
+                  currentRate={showQuickMessages.application.lastRateUpdate?.amount || showQuickMessages.application.proposedRate}
+                  viewerRole="employer"
+                  onConversationStart={onMessageConversationStart}
+                  onClose={() => setShowQuickMessages({ isOpen: false })}
+                />
               </CardContent>
             </Card>
           </div>

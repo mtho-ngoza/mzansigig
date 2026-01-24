@@ -1115,7 +1115,7 @@ export default function PublicGigBrowser({
                     <Card>
                       <CardHeader>
                         <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                      </CardHeader>
+                        </CardHeader>
                       <CardContent>
                         <div className="space-y-3">
                           <div className="h-3 bg-gray-200 rounded"></div>

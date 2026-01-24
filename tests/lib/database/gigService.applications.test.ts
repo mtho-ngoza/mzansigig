@@ -108,6 +108,8 @@ describe('GigService - Application Management', () => {
         message: 'I am interested',
         proposedRate: 5000,
         status: 'pending',
+        rateStatus: 'agreed', // Rate must be agreed before acceptance
+        agreedRate: 5000,
         createdAt: new Date()
       };
 
@@ -133,6 +135,8 @@ describe('GigService - Application Management', () => {
         message: 'I am interested',
         proposedRate: 5000,
         status: 'pending',
+        rateStatus: 'agreed', // Rate must be agreed before acceptance
+        agreedRate: 5000,
         createdAt: new Date()
       };
 
@@ -167,6 +171,8 @@ describe('GigService - Application Management', () => {
         message: 'I am interested',
         proposedRate: 5000,
         status: 'pending',
+        rateStatus: 'agreed', // Rate must be agreed before acceptance
+        agreedRate: 5000,
         createdAt: new Date()
       };
 
@@ -178,6 +184,7 @@ describe('GigService - Application Management', () => {
         message: 'I want this job',
         proposedRate: 4500,
         status: 'pending',
+        rateStatus: 'proposed',
         createdAt: new Date()
       };
 

@@ -40,6 +40,8 @@ describe('GigService - Gig Status Auto-Update', () => {
     applicantName: 'Test Worker',
     proposedRate: 1000,
     status: 'pending',
+    rateStatus: 'agreed', // Rate must be agreed before acceptance
+    agreedRate: 1000,
     createdAt: new Date()
   }
 
