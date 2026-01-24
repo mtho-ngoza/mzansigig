@@ -1,5 +1,5 @@
 import { FirestoreService } from './firestore';
-import { Gig, GigApplication, Review, RateHistoryEntry } from '@/types/gig';
+import { Gig, GigApplication, Review } from '@/types/gig';
 import { Coordinates, LocationSearchOptions } from '@/types/location';
 import {
   calculateDistance,

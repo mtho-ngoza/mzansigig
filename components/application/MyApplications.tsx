@@ -547,11 +547,15 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                       </div>
                     )}
 
-                    {/* Your Proposed Rate */}
+                    {/* Rate Display */}
                     <div className="pt-3 border-t border-gray-200">
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-600">Your Proposed Rate:</span>
-                        <span className="font-semibold text-lg text-primary-600">{formatCurrency(application.proposedRate)}</span>
+                        <span className="text-sm text-gray-600">
+                          {application.agreedRate ? 'Agreed Rate:' : 'Your Proposed Rate:'}
+                        </span>
+                        <span className="font-semibold text-lg text-primary-600">
+                          {formatCurrency(application.agreedRate || application.proposedRate)}
+                        </span>
                       </div>
                     </div>
                   </div>

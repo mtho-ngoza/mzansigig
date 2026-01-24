@@ -509,7 +509,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
             const acceptedUnfunded = applications.filter(
               app => app.status === 'accepted' && (!app.paymentStatus || app.paymentStatus === 'unpaid')
             )
-            const totalOwed = acceptedUnfunded.reduce((sum, app) => sum + app.proposedRate, 0)
+            const totalOwed = acceptedUnfunded.reduce((sum, app) => sum + (app.agreedRate || app.proposedRate), 0)
 
             return acceptedUnfunded.length > 0 && (
               <Card className="mb-6 border-2 border-orange-300 bg-orange-50">
@@ -713,8 +713,12 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                       <div className="font-medium">{formatDate(application.createdAt)}</div>
                     </div>
                     <div>
-                      <span className="text-sm text-gray-500">Proposed Rate:</span>
-                      <div className="font-medium">{formatCurrency(application.proposedRate)}</div>
+                      <span className="text-sm text-gray-500">
+                        {application.agreedRate ? 'Agreed Rate:' : 'Proposed Rate:'}
+                      </span>
+                      <div className="font-medium">
+                        {formatCurrency(application.agreedRate || application.proposedRate)}
+                      </div>
                     </div>
                     {application.gigBudget && (
                       <div>
@@ -822,7 +826,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                                   onClick={() => setShowPaymentDialog({ isOpen: true, application })}
                                   className="bg-orange-600 hover:bg-orange-700 font-semibold"
                                 >
-                                  💳 Fund Payment Now ({formatCurrency(application.proposedRate)})
+                                  💳 Fund Payment Now ({formatCurrency(application.agreedRate || application.proposedRate)})
                                 </Button>
                               </div>
                             </div>
@@ -1024,7 +1028,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
             gigId={showPaymentDialog.application.gigId}
             workerId={showPaymentDialog.application.applicantId}
             workerName={showPaymentDialog.application.applicantName}
-            amount={showPaymentDialog.application.proposedRate}
+            amount={showPaymentDialog.application.agreedRate || showPaymentDialog.application.proposedRate}
             description={`Payment for "${showPaymentDialog.application.gigTitle}"`}
             onSuccess={async (payment) => {
               setShowPaymentDialog({ isOpen: false })
