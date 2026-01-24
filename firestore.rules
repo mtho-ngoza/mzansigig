@@ -145,6 +145,7 @@ service cloud.firestore {
       // Applicant can update their own application (before accepted)
       // Employer can update application status
       // Both can update rate negotiation fields
+      // Worker can request completion on funded applications
       allow update: if isAuthenticated() &&
                       (
                         // Applicant updating their own pending application (including withdrawal and rate negotiation)
@@ -163,6 +164,12 @@ service cloud.firestore {
                         (request.auth.uid == resource.data.applicantId &&
                          resource.data.status == 'accepted' &&
                          request.resource.data.status == 'accepted' &&
+                         request.resource.data.gigId == resource.data.gigId &&
+                         request.resource.data.applicantId == resource.data.applicantId) ||
+                        // Worker requesting completion on funded application
+                        (request.auth.uid == resource.data.applicantId &&
+                         resource.data.status == 'funded' &&
+                         request.resource.data.status == 'funded' &&
                          request.resource.data.gigId == resource.data.gigId &&
                          request.resource.data.applicantId == resource.data.applicantId)
                       );
