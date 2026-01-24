@@ -4,7 +4,7 @@
  */
 
 import { FirestoreService } from './firestore'
-import { Notification, NotificationType } from '@/types/notification'
+import { Notification } from '@/types/notification'
 
 const NOTIFICATION_COLLECTION = 'notifications'
 
