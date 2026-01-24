@@ -23,8 +23,8 @@ describe('/api/cron/auto-release Logic', () => {
     })
 
     it('should reject requests with invalid authorization header', () => {
-      const authHeader = 'Bearer wrong-secret'
-      const cronSecret = 'test-secret'
+      const authHeader: string = 'Bearer wrong-secret'
+      const cronSecret: string = 'test-secret'
 
       const isAuthorized = authHeader === `Bearer ${cronSecret}`
 
