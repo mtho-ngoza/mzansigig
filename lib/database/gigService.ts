@@ -517,7 +517,8 @@ export class GigService {
       }
 
       // Check that rate has been agreed upon before accepting
-      if (application.rateStatus !== 'agreed') {
+      // For backward compatibility: allow if rateStatus is undefined (older applications) or 'agreed'
+      if (application.rateStatus && application.rateStatus !== 'agreed') {
         throw new Error('Cannot accept application until rate is agreed. Please confirm the rate first.');
       }
 

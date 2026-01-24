@@ -55,6 +55,15 @@ jest.mock('@/components/payment/PaymentDialog', () => ({
   __esModule: true,
   default: () => <div>Payment Dialog</div>
 }))
+jest.mock('@/components/application/UpdateRateModal', () => ({
+  __esModule: true,
+  default: () => <div>Update Rate Modal</div>
+}))
+jest.mock('@/components/application/RateNegotiationBanner', () => ({
+  __esModule: true,
+  default: () => <div data-testid="rate-negotiation-banner">Rate Negotiation Banner</div>,
+  RateStatusBadge: () => <span data-testid="rate-status-badge">Rate Status</span>
+}))
 jest.mock('@/components/application/JobSeekerProfileDialog', () => ({
   __esModule: true,
   default: ({ isOpen, onClose, userId }: { isOpen: boolean, onClose: () => void, userId: string }) =>
@@ -565,6 +574,7 @@ describe('ManageApplications', () => {
       beforeEach(() => {
         jest.useFakeTimers()
         ;(GigService.updateApplicationStatus as jest.Mock).mockResolvedValue(undefined)
+        ;(GigService.acceptApplicationWithRate as jest.Mock).mockResolvedValue(undefined)
       })
 
       afterEach(() => {
@@ -577,14 +587,14 @@ describe('ManageApplications', () => {
         render(<ManageApplications />)
 
         await waitFor(() => {
-          expect(screen.getByText('Accept Application')).toBeInTheDocument()
+          expect(screen.getByText('Accept & Agree Rate')).toBeInTheDocument()
         })
 
-        const acceptButton = screen.getByText('Accept Application')
+        const acceptButton = screen.getByText('Accept & Agree Rate')
         fireEvent.click(acceptButton)
 
         await waitFor(() => {
-          expect(GigService.updateApplicationStatus).toHaveBeenCalledWith('app-1', 'accepted')
+          expect(GigService.acceptApplicationWithRate).toHaveBeenCalledWith('app-1', 'employer-123')
         })
 
         // Fast-forward the setTimeout with act()
@@ -603,10 +613,10 @@ describe('ManageApplications', () => {
         render(<ManageApplications />)
 
         await waitFor(() => {
-          expect(screen.getByText('Reject Application')).toBeInTheDocument()
+          expect(screen.getByText('Decline')).toBeInTheDocument()
         })
 
-        const rejectButton = screen.getByText('Reject Application')
+        const rejectButton = screen.getByText('Decline')
         fireEvent.click(rejectButton)
 
         await waitFor(() => {

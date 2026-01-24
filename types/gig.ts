@@ -43,7 +43,7 @@ export interface GigApplication {
 
   // Rate negotiation fields
   agreedRate?: number // Final agreed rate (set when both parties confirm)
-  rateStatus: 'proposed' | 'countered' | 'agreed' // Track negotiation state
+  rateStatus?: 'proposed' | 'countered' | 'agreed' // Track negotiation state (defaults to 'proposed' if not set)
   lastRateUpdate?: {
     amount: number
     by: 'worker' | 'employer'

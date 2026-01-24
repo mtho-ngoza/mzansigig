@@ -9,6 +9,8 @@ import { useToast } from '@/contexts/ToastContext'
 import { GigApplication } from '@/types/gig'
 import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
+import UpdateRateModal from '@/components/application/UpdateRateModal'
+import RateNegotiationBanner, { RateStatusBadge } from '@/components/application/RateNegotiationBanner'
 import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
 
 interface MyApplicationsProps {
@@ -44,6 +46,11 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
   })
   const [requestingCompletion, setRequestingCompletion] = useState(false)
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set())
+  const [showUpdateRateModal, setShowUpdateRateModal] = useState<{
+    isOpen: boolean
+    application?: ApplicationWithGig
+  }>({ isOpen: false })
+  const [processingRateAction, setProcessingRateAction] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const loadApplications = async () => {
@@ -222,6 +229,83 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
 
   const handleRequestCompletionCancel = () => {
     setCompletionRequestDialog({ isOpen: false, applicationId: '', gigTitle: '' })
+  }
+
+  const handleUpdateRate = async (applicationId: string, newRate: number, note?: string) => {
+    if (!user) return
+
+    try {
+      setProcessingRateAction(prev => new Set(prev).add(applicationId))
+      await GigService.updateApplicationRate(applicationId, newRate, 'worker', user.id, note)
+
+      // Update local state
+      setApplications(prev =>
+        prev.map(app =>
+          app.id === applicationId
+            ? {
+                ...app,
+                rateStatus: 'countered' as const,
+                lastRateUpdate: {
+                  amount: newRate,
+                  by: 'worker' as const,
+                  at: new Date(),
+                  note
+                }
+              }
+            : app
+        )
+      )
+
+      setShowUpdateRateModal({ isOpen: false })
+      success('Rate updated')
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to update rate')
+      throw err
+    } finally {
+      setProcessingRateAction(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(applicationId)
+        return newSet
+      })
+    }
+  }
+
+  const handleConfirmRate = async (applicationId: string) => {
+    if (!user) return
+
+    const application = applications.find(app => app.id === applicationId)
+    if (!application) return
+
+    try {
+      setProcessingRateAction(prev => new Set(prev).add(applicationId))
+      await GigService.confirmApplicationRate(applicationId, 'worker', user.id)
+
+      // Get the current rate
+      const currentRate = application.lastRateUpdate?.amount || application.proposedRate
+
+      // Update local state
+      setApplications(prev =>
+        prev.map(app =>
+          app.id === applicationId
+            ? {
+                ...app,
+                rateStatus: 'agreed' as const,
+                agreedRate: currentRate
+              }
+            : app
+        )
+      )
+
+      success('Rate agreed! Waiting for employer to accept your application')
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Failed to confirm rate')
+    } finally {
+      setProcessingRateAction(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(applicationId)
+        return newSet
+      })
+    }
   }
 
   const calculateDaysUntilAutoRelease = (autoReleaseDate: Date | undefined): number => {
@@ -430,9 +514,14 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                       <CardTitle className="text-lg">{application.gigTitle}</CardTitle>
                       <p className="text-gray-600">by {application.gigEmployer}</p>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusBadgeClass(application.status)}`}>
-                      {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
-                    </span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusBadgeClass(application.status)}`}>
+                        {application.status.charAt(0).toUpperCase() + application.status.slice(1)}
+                      </span>
+                      {application.status === 'pending' && application.rateStatus && (
+                        <RateStatusBadge rateStatus={application.rateStatus} agreedRate={application.agreedRate} />
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
 
@@ -483,6 +572,22 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                           </button>
                         )}
                       </div>
+                    </div>
+                  )}
+
+                  {/* Rate Negotiation Banner - Only for pending applications */}
+                  {application.status === 'pending' && application.rateStatus && (
+                    <div className="mb-4">
+                      <RateNegotiationBanner
+                        application={application}
+                        viewerRole="worker"
+                        onUpdateRate={() => setShowUpdateRateModal({ isOpen: true, application })}
+                        onConfirmRate={() => handleConfirmRate(application.id)}
+                        onMessage={() => {
+                          // Handled by QuickMessageButton below
+                        }}
+                        isProcessing={processingRateAction.has(application.id)}
+                      />
                     </div>
                   )}
 
@@ -743,6 +848,20 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
               ))
             )}
           </div>
+        )}
+
+        {/* Update Rate Modal */}
+        {showUpdateRateModal.isOpen && showUpdateRateModal.application && (
+          <UpdateRateModal
+            isOpen={showUpdateRateModal.isOpen}
+            currentRate={showUpdateRateModal.application.lastRateUpdate?.amount || showUpdateRateModal.application.proposedRate}
+            gigBudget={showUpdateRateModal.application.gigBudget}
+            updatedBy="worker"
+            onSubmit={async (newRate, note) => {
+              await handleUpdateRate(showUpdateRateModal.application!.id, newRate, note)
+            }}
+            onCancel={() => setShowUpdateRateModal({ isOpen: false })}
+          />
         )}
 
         {/* Withdrawal Confirmation Dialog */}
