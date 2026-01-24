@@ -11,6 +11,7 @@ import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
 import UpdateRateModal from '@/components/application/UpdateRateModal'
 import RateNegotiationBanner, { RateStatusBadge } from '@/components/application/RateNegotiationBanner'
+import RateNegotiationQuickMessages from '@/components/application/RateNegotiationQuickMessages'
 import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
 
 interface MyApplicationsProps {
@@ -47,6 +48,10 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
   const [requestingCompletion, setRequestingCompletion] = useState(false)
   const [expandedMessages, setExpandedMessages] = useState<Set<string>>(new Set())
   const [showUpdateRateModal, setShowUpdateRateModal] = useState<{
+    isOpen: boolean
+    application?: ApplicationWithGig
+  }>({ isOpen: false })
+  const [showQuickMessages, setShowQuickMessages] = useState<{
     isOpen: boolean
     application?: ApplicationWithGig
   }>({ isOpen: false })
@@ -587,9 +592,7 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                         viewerRole="worker"
                         onUpdateRate={() => setShowUpdateRateModal({ isOpen: true, application })}
                         onConfirmRate={() => handleConfirmRate(application.id)}
-                        onMessage={() => {
-                          // Handled by QuickMessageButton below
-                        }}
+                        onMessage={() => setShowQuickMessages({ isOpen: true, application })}
                         isProcessing={processingRateAction.has(application.id)}
                       />
                     </div>
@@ -866,6 +869,30 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
             }}
             onCancel={() => setShowUpdateRateModal({ isOpen: false })}
           />
+        )}
+
+        {/* Quick Messages Modal for Rate Discussion */}
+        {showQuickMessages.isOpen && showQuickMessages.application && showQuickMessages.application.gigEmployerId && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <Card className="max-w-md w-full">
+              <CardHeader>
+                <CardTitle className="text-lg">Message about Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <RateNegotiationQuickMessages
+                  recipientId={showQuickMessages.application.gigEmployerId}
+                  recipientName={showQuickMessages.application.gigEmployer || 'Employer'}
+                  recipientType="employer"
+                  gigId={showQuickMessages.application.gigId}
+                  gigTitle={showQuickMessages.application.gigTitle || 'Gig'}
+                  currentRate={showQuickMessages.application.lastRateUpdate?.amount || showQuickMessages.application.proposedRate}
+                  viewerRole="worker"
+                  onConversationStart={onMessageConversationStart}
+                  onClose={() => setShowQuickMessages({ isOpen: false })}
+                />
+              </CardContent>
+            </Card>
+          </div>
         )}
 
         {/* Withdrawal Confirmation Dialog */}

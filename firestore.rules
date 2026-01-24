@@ -144,17 +144,27 @@ service cloud.firestore {
 
       // Applicant can update their own application (before accepted)
       // Employer can update application status
+      // Both can update rate negotiation fields
       allow update: if isAuthenticated() &&
                       (
-                        // Applicant updating their own pending application (including withdrawal)
+                        // Applicant updating their own pending application (including withdrawal and rate negotiation)
                         (request.auth.uid == resource.data.applicantId &&
                          resource.data.status == 'pending' &&
-                         (request.resource.data.status == 'pending' || request.resource.data.status == 'withdrawn')) ||
-                        // Employer updating application status (check gig ownership)
+                         (request.resource.data.status == 'pending' || request.resource.data.status == 'withdrawn') &&
+                         // Cannot change immutable fields
+                         request.resource.data.gigId == resource.data.gigId &&
+                         request.resource.data.applicantId == resource.data.applicantId) ||
+                        // Employer updating application status or rate (check gig ownership)
                         (exists(/databases/$(database)/documents/gigs/$(resource.data.gigId)) &&
                          request.auth.uid == get(/databases/$(database)/documents/gigs/$(resource.data.gigId)).data.employerId &&
                          request.resource.data.applicantId == resource.data.applicantId &&
-                         request.resource.data.gigId == resource.data.gigId)
+                         request.resource.data.gigId == resource.data.gigId) ||
+                        // Rate negotiation: applicant can update rate fields on accepted applications
+                        (request.auth.uid == resource.data.applicantId &&
+                         resource.data.status == 'accepted' &&
+                         request.resource.data.status == 'accepted' &&
+                         request.resource.data.gigId == resource.data.gigId &&
+                         request.resource.data.applicantId == resource.data.applicantId)
                       );
 
       // Only applicant or admin can delete

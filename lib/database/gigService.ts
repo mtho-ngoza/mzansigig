@@ -1,4 +1,5 @@
 import { FirestoreService } from './firestore';
+import { MessagingService } from './messagingService';
 import { Gig, GigApplication, Review } from '@/types/gig';
 import { Coordinates, LocationSearchOptions } from '@/types/location';
 import {
@@ -676,6 +677,48 @@ export class GigService {
     }
 
     await FirestoreService.update('applications', applicationId, updateData);
+
+    // Send auto-message to notify the other party about the rate update
+    try {
+      const gig = await FirestoreService.getById<Gig>('gigs', application.gigId);
+      const otherPartyId = updatedBy === 'worker' ? application.employerId : application.applicantId;
+
+      if (otherPartyId && gig) {
+        const formatCurrency = (amount: number) =>
+          new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+
+        const messageContent = `📋 **Rate Update**\n\nI've updated the proposed rate to ${formatCurrency(newRate)} for "${gig.title}".\n\n${note ? `Note: "${note}"\n\n` : ''}Please review and respond with your decision.`;
+
+        // Determine names and types based on who is sending
+        const senderName = updatedBy === 'worker' ? application.applicantName : gig.employerName;
+        const senderType: 'job-seeker' | 'employer' = updatedBy === 'worker' ? 'job-seeker' : 'employer';
+        const otherPartyName = updatedBy === 'worker' ? gig.employerName : application.applicantName;
+        const otherPartyType: 'job-seeker' | 'employer' = updatedBy === 'worker' ? 'employer' : 'job-seeker';
+
+        // Get or create conversation and send message
+        const conversationId = await MessagingService.getOrCreateConversation(
+          userId,
+          otherPartyId,
+          otherPartyName,
+          otherPartyType,
+          application.gigId,
+          gig.title,
+          senderName,
+          senderType
+        );
+
+        await MessagingService.sendMessage(
+          conversationId,
+          userId,
+          senderName,
+          senderType,
+          { content: messageContent, type: 'text' }
+        );
+      }
+    } catch (msgError) {
+      // Don't fail the rate update if messaging fails
+      console.error('Failed to send rate update message:', msgError);
+    }
   }
 
   /**
@@ -740,6 +783,49 @@ export class GigService {
       agreedRate: currentRate,
       rateHistory
     });
+
+    // Send auto-message to notify the other party about rate confirmation
+    try {
+      const gig = await FirestoreService.getById<Gig>('gigs', application.gigId);
+      const otherPartyId = confirmedBy === 'worker' ? application.employerId : application.applicantId;
+
+      if (otherPartyId && gig) {
+        const formatCurrency = (amount: number) =>
+          new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
+
+        const roleLabel = confirmedBy === 'worker' ? 'Worker' : 'Employer';
+        const messageContent = `✅ **Rate Agreed!**\n\n${roleLabel} has accepted the rate of ${formatCurrency(currentRate)} for "${gig.title}".\n\n${confirmedBy === 'employer' ? 'You can now fund the escrow to begin work.' : 'Waiting for employer to fund the escrow.'}`;
+
+        // Determine names and types based on who is confirming
+        const senderName = confirmedBy === 'worker' ? application.applicantName : gig.employerName;
+        const senderType: 'job-seeker' | 'employer' = confirmedBy === 'worker' ? 'job-seeker' : 'employer';
+        const otherPartyName = confirmedBy === 'worker' ? gig.employerName : application.applicantName;
+        const otherPartyType: 'job-seeker' | 'employer' = confirmedBy === 'worker' ? 'employer' : 'job-seeker';
+
+        // Get or create conversation and send message
+        const conversationId = await MessagingService.getOrCreateConversation(
+          userId,
+          otherPartyId,
+          otherPartyName,
+          otherPartyType,
+          application.gigId,
+          gig.title,
+          senderName,
+          senderType
+        );
+
+        await MessagingService.sendMessage(
+          conversationId,
+          userId,
+          senderName,
+          senderType,
+          { content: messageContent, type: 'text' }
+        );
+      }
+    } catch (msgError) {
+      // Don't fail the rate confirmation if messaging fails
+      console.error('Failed to send rate confirmation message:', msgError);
+    }
   }
 
   /**

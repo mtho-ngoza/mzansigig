@@ -110,7 +110,8 @@ export async function processSuccessfulPayment(
   const applicationDoc = applicationsQuery.docs[0]
   const applicationData = applicationDoc.data()
   const workerId = applicationData.applicantId
-  const paidAmount = applicationData.proposedRate || amount
+  // Use agreed rate (from negotiation) if available, otherwise fall back to proposed rate
+  const paidAmount = applicationData.agreedRate || applicationData.proposedRate || amount
 
   console.log(`[PaymentProcessing] Found application ${applicationDoc.id} for worker ${workerId}`)
   console.log(`[PaymentProcessing] Paid amount: R${paidAmount}`)
