@@ -12,17 +12,24 @@ jest.mock('@/lib/database/configService')
 const mockGig: Gig = {
   id: 'gig-1',
   title: 'Test Gig',
+  description: 'A mock gig for testing',
   employerId: 'emp-1',
   employerName: 'Emp',
   category: 'Construction',
+  location: 'Cape Town',
+  coordinates: undefined,
   budget: 1200,
   duration: '1 week',
-  location: 'Cape Town',
+  skillsRequired: [],
   status: 'open',
   applicants: [],
+  assignedTo: undefined,
   createdAt: new Date(),
   updatedAt: new Date(),
-  skillsRequired: [],
+  deadline: undefined,
+  workType: 'physical',
+  maxTravelDistance: undefined,
+  maxApplicants: undefined,
 }
 
 describe('GigService.createApplication - sanitization', () => {
@@ -52,19 +59,31 @@ describe('GigService.createApplication - sanitization', () => {
 
     await GigService.createApplication(data as any)
 
-    expect(FirestoreService.create).toHaveBeenCalledWith(
-      'applications',
-      expect.not.objectContaining({ message: expect.anything() })
-    )
+    expect(FirestoreService.create).toHaveBeenCalled()
 
     // Ensure initial rate history entry has no note field when message omitted
     const payload = (jest.mocked(FirestoreService.create).mock.calls[0][1]) as any
+
+    // Assert the "message" key is not present at all
+    expect(Object.prototype.hasOwnProperty.call(payload, 'message')).toBe(false)
+
     expect(payload.rateHistory).toBeDefined()
     expect(Array.isArray(payload.rateHistory)).toBe(true)
     expect(payload.rateHistory[0].note).toBeUndefined()
     // Still contains required negotiation fields
     expect(payload.rateStatus).toBe('proposed')
     expect(payload.gigBudget).toBe(1200)
+
+    // Defensive: recursively ensure no undefined values are present anywhere in payload
+    const hasUndefined = (obj: any): boolean => {
+      if (obj === undefined) return true
+      if (obj && typeof obj === 'object') {
+        if (Array.isArray(obj)) return obj.some(hasUndefined)
+        return Object.values(obj).some(hasUndefined)
+      }
+      return false
+    }
+    expect(hasUndefined(payload)).toBe(false)
   })
 
   it('includes sanitized message and sets rateHistory[0].note when message provided', async () => {

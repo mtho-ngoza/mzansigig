@@ -435,8 +435,11 @@ export class GigService {
 
     // Sanitize message to prevent XSS
     // Note: Firestore doesn't allow undefined values, so we omit the field if no message
+    // Exclude potentially undefined "message" from the spread to avoid sending message: undefined
+    const { message: rawMessage, ...restAppData } = applicationData as Record<string, unknown>;
+
     const sanitizedData: Record<string, unknown> = {
-      ...applicationData,
+      ...restAppData,
       gigBudget: gig.budget, // Store original budget for reference
       createdAt: new Date(),
       status: 'pending' as const,
@@ -450,8 +453,8 @@ export class GigService {
     };
 
     // Only include optional fields if provided (Firestore rejects undefined)
-    if (applicationData.message) {
-      const cleanMessage = sanitizeApplicationMessage(applicationData.message, APPLICATION_TEXT_LIMITS.MESSAGE_MAX);
+    if (typeof rawMessage === 'string' && rawMessage.trim()) {
+      const cleanMessage = sanitizeApplicationMessage(rawMessage as string, APPLICATION_TEXT_LIMITS.MESSAGE_MAX);
       sanitizedData.message = cleanMessage;
       // Also include note in initial rate history entry only when message exists
       (sanitizedData.rateHistory as Array<Record<string, unknown>>)[0].note = cleanMessage;
