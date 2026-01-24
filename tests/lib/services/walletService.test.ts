@@ -621,6 +621,129 @@ describe('WalletService', () => {
     })
   })
 
+  describe('releaseEscrowWithCommission', () => {
+    const { runTransaction } = require('firebase/firestore')
+
+    it('should deduct gross from pending and credit net to wallet', async () => {
+      const grossAmount = 1000
+      const netAmount = 900 // After 10% commission
+      const mockUserData = {
+        id: mockUserId,
+        email: 'test@example.com',
+        walletBalance: 500,
+        pendingBalance: 1000,
+        totalEarnings: 500,
+        totalWithdrawn: 0
+      }
+
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => mockUserData
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
+      })
+
+      await WalletService.releaseEscrowWithCommission(mockUserId, grossAmount, netAmount)
+
+      expect(mockTransaction.update).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          pendingBalance: -grossAmount,
+          walletBalance: netAmount,
+          totalEarnings: netAmount
+        })
+      )
+    })
+
+    it('should throw error if insufficient pending balance', async () => {
+      const grossAmount = 1000
+      const netAmount = 900
+      const mockUserData = {
+        id: mockUserId,
+        email: 'test@example.com',
+        walletBalance: 500,
+        pendingBalance: 500, // Less than grossAmount
+        totalEarnings: 500,
+        totalWithdrawn: 0
+      }
+
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => mockUserData
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
+      })
+
+      await expect(
+        WalletService.releaseEscrowWithCommission(mockUserId, grossAmount, netAmount)
+      ).rejects.toThrow('Insufficient pending balance')
+    })
+
+    it('should throw error if user not found', async () => {
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => false
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
+      })
+
+      await expect(
+        WalletService.releaseEscrowWithCommission(mockUserId, 1000, 900)
+      ).rejects.toThrow('User not found')
+    })
+
+    it('should handle commission correctly - platform keeps the difference', async () => {
+      const grossAmount = 294
+      const netAmount = 288.12 // After 2% commission (5.88)
+      const mockUserData = {
+        id: mockUserId,
+        email: 'test@example.com',
+        walletBalance: 0,
+        pendingBalance: 294,
+        totalEarnings: 0,
+        totalWithdrawn: 0
+      }
+
+      const mockTransaction = {
+        get: jest.fn().mockResolvedValue({
+          exists: () => true,
+          data: () => mockUserData
+        }),
+        update: jest.fn()
+      }
+
+      ;(runTransaction as jest.Mock).mockImplementation(async (db, callback) => {
+        return await callback(mockTransaction)
+      })
+
+      await WalletService.releaseEscrowWithCommission(mockUserId, grossAmount, netAmount)
+
+      // Verify gross removed from pending, net added to wallet
+      expect(mockTransaction.update).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          pendingBalance: -grossAmount,
+          walletBalance: netAmount,
+          totalEarnings: netAmount
+        })
+      )
+    })
+  })
+
   describe('getWalletBalance', () => {
     let consoleSpy: jest.SpyInstance;
 
