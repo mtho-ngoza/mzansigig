@@ -4,6 +4,12 @@
   "installCommand": "npm install",
   "framework": "nextjs",
   "regions": ["cpt1"],
+  "crons": [
+    {
+      "path": "/api/cron/auto-release",
+      "schedule": "0 */6 * * *"
+    }
+  ],
   "env": {
     "NEXT_PUBLIC_USE_EMULATOR": "false"
   },

@@ -1036,6 +1036,51 @@ export class GigService {
     return false;
   }
 
+  // Get all applications eligible for auto-release (completion requested, not disputed, past release date)
+  static async getApplicationsEligibleForAutoRelease(): Promise<GigApplication[]> {
+    const allApplications = await FirestoreService.getAll<GigApplication>('applications');
+    const now = new Date();
+
+    return allApplications.filter(app =>
+      app.status === 'funded' &&
+      app.completionRequestedAt &&
+      app.completionAutoReleaseAt &&
+      !app.completionDisputedAt &&
+      new Date(app.completionAutoReleaseAt) <= now
+    );
+  }
+
+  // Process all eligible auto-releases (for scheduled job)
+  static async processAllAutoReleases(): Promise<{
+    processed: number;
+    succeeded: number;
+    failed: number;
+    results: Array<{ applicationId: string; success: boolean; error?: string }>;
+  }> {
+    const eligibleApplications = await this.getApplicationsEligibleForAutoRelease();
+    const results: Array<{ applicationId: string; success: boolean; error?: string }> = [];
+
+    for (const application of eligibleApplications) {
+      try {
+        const success = await this.checkAndProcessAutoRelease(application.id);
+        results.push({ applicationId: application.id, success });
+      } catch (error) {
+        results.push({
+          applicationId: application.id,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+
+    return {
+      processed: results.length,
+      succeeded: results.filter(r => r.success).length,
+      failed: results.filter(r => !r.success).length,
+      results
+    };
+  }
+
   // Admin dispute resolution operations
   static async getAllDisputedApplications(): Promise<GigApplication[]> {
     const allApplications = await FirestoreService.getAll<GigApplication>('applications');
