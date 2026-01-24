@@ -39,6 +39,7 @@ export class NotificationService {
         '==',
         userId,
         'createdAt',
+        'desc',
         limit
       )
     }
@@ -51,6 +52,7 @@ export class NotificationService {
         { field: 'read', operator: '==', value: false }
       ],
       'createdAt',
+      'desc',
       limit
     )
   }
