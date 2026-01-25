@@ -1,4 +1,5 @@
 import { FirestoreService } from './firestore';
+import { deleteField } from 'firebase/firestore';
 import { MessagingService } from './messagingService';
 import { Gig, GigApplication, Review } from '@/types/gig';
 import { Coordinates, LocationSearchOptions } from '@/types/location';
@@ -658,23 +659,32 @@ export class GigService {
     // Get current rate history or initialize
     const rateHistory = application.rateHistory || [];
 
-    // Add new entry to history
-    const historyEntry = {
+    // Add new entry to history (omit note when blank)
+    const trimmedNote = typeof note === 'string' ? note.trim() : '';
+    const cleanNote = trimmedNote
+      ? sanitizeApplicationMessage(trimmedNote, APPLICATION_TEXT_LIMITS.MESSAGE_MAX)
+      : '';
+
+    const historyEntry: any = {
       amount: newRate,
       by: updatedBy,
-      at: new Date(),
-      note: note || undefined
+      at: new Date()
     };
+    if (cleanNote) {
+      historyEntry.note = cleanNote;
+    }
+
     rateHistory.push(historyEntry);
 
-    // Update application
-    const updateData: Partial<GigApplication> = {
+    // Update application (do not send undefined; delete agreedRate if present)
+    const updateData: Partial<GigApplication> & Record<string, any> = {
       rateStatus: 'countered' as const,
       lastRateUpdate: historyEntry,
-      rateHistory,
-      // Clear agreedRate since we're in negotiation
-      agreedRate: undefined
+      rateHistory
     };
+
+    // Clear agreedRate since we're in negotiation
+    updateData.agreedRate = deleteField();
 
     // If the rate matches the original proposed rate and worker is confirming, keep as proposed
     if (updatedBy === 'worker' && newRate === application.proposedRate && !application.lastRateUpdate) {

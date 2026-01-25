@@ -42,6 +42,15 @@ describe('GigService - Rate Negotiation', () => {
   })
 
   describe('updateApplicationRate', () => {
+    function hasUndefinedDeep(obj: any): boolean {
+      if (obj === undefined) return true;
+      if (obj === null) return false;
+      if (Array.isArray(obj)) return obj.some(hasUndefinedDeep);
+      if (typeof obj === 'object') {
+        return Object.values(obj).some(hasUndefinedDeep);
+      }
+      return false;
+    }
     it('should allow worker to update their proposed rate', async () => {
       jest.mocked(FirestoreService.getById).mockResolvedValue(mockApplication)
       jest.mocked(FirestoreService.update).mockResolvedValue()
@@ -167,6 +176,32 @@ describe('GigService - Rate Negotiation', () => {
       await expect(
         GigService.updateApplicationRate(mockApplicationId, 1100, 'worker', mockWorkerId)
       ).rejects.toThrow('Cannot update rate on application with status: withdrawn')
+    })
+
+    it('omits lastRateUpdate.note and avoids undefineds when note is missing', async () => {
+      jest.mocked(FirestoreService.getById).mockResolvedValue(mockApplication)
+      jest.mocked(FirestoreService.update).mockResolvedValue()
+
+      await GigService.updateApplicationRate(mockApplicationId, 1150, 'worker', mockWorkerId)
+
+      expect(FirestoreService.update).toHaveBeenCalled()
+      const call = (FirestoreService.update as jest.Mock).mock.calls[0]
+      const payload = call[2]
+      expect(payload.lastRateUpdate).not.toHaveProperty('note')
+      expect(hasUndefinedDeep(payload)).toBe(false)
+    })
+
+    it('omits lastRateUpdate.note and avoids undefineds when note is whitespace', async () => {
+      jest.mocked(FirestoreService.getById).mockResolvedValue(mockApplication)
+      jest.mocked(FirestoreService.update).mockResolvedValue()
+
+      await GigService.updateApplicationRate(mockApplicationId, 1200, 'worker', mockWorkerId, '   ')
+
+      expect(FirestoreService.update).toHaveBeenCalled()
+      const call = (FirestoreService.update as jest.Mock).mock.calls[0]
+      const payload = call[2]
+      expect(payload.lastRateUpdate).not.toHaveProperty('note')
+      expect(hasUndefinedDeep(payload)).toBe(false)
     })
   })
 
