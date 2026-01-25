@@ -1,5 +1,4 @@
 import { FirestoreService } from './firestore';
-import { deleteField } from 'firebase/firestore';
 import { MessagingService } from './messagingService';
 import { Gig, GigApplication, Review } from '@/types/gig';
 import { Coordinates, LocationSearchOptions } from '@/types/location';
@@ -673,7 +672,7 @@ export class GigService {
     };
 
     type WithDeletedField<T, K extends keyof T> = Omit<T, K> & {
-      [P in K]?: ReturnType<typeof deleteField>;
+      [P in K]?: ReturnType<typeof FirestoreService.getDeleteFieldSentinel>;
     };
 
     const historyEntry: RateHistoryEntry = {
@@ -698,7 +697,7 @@ export class GigService {
     };
 
     // Clear agreedRate since we're in negotiation
-    updateData.agreedRate = deleteField();
+    updateData.agreedRate = FirestoreService.getDeleteFieldSentinel();
 
     // If the rate matches the original proposed rate and worker is confirming, keep as proposed
     if (updatedBy === 'worker' && newRate === application.proposedRate && !application.lastRateUpdate) {

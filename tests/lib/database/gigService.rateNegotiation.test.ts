@@ -39,6 +39,8 @@ describe('GigService - Rate Negotiation', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    // Provide a stable delete sentinel so code under test can clear fields without Firebase SDK
+    jest.spyOn(FirestoreService, 'getDeleteFieldSentinel').mockReturnValue({ __delete: true } as any)
   })
 
   describe('updateApplicationRate', () => {

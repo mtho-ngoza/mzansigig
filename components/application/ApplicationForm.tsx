@@ -59,36 +59,66 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
 
   // Calculate worker's net earnings and prefill proposed rate once (unless user edits)
   useEffect(() => {
+    let canceled = false
+    const currentGigId = gig.id
     const loadWorkerEarnings = async () => {
       try {
         const breakdown = await calculateGigFees(gig.budget)
+        // If this effect is stale (gig changed or unmounted), ignore result
+        if (canceled || currentGigId !== gig.id) return
+
         setWorkerEarnings(breakdown.netAmountToWorker)
         // Prefill only once per gig load and do not override if user has edited
         if (!initialRatePrefilled.current && !userHasEditedRate.current) {
-          setFormData(prev => ({
-            ...prev,
-            proposedRate: breakdown.netAmountToWorker.toString()
-          }))
-          initialRatePrefilled.current = true
+          const net = Number(breakdown?.netAmountToWorker)
+          if (Number.isFinite(net) && net > 0) {
+            setFormData(prev => ({
+              ...prev,
+              proposedRate: net.toString()
+            }))
+            initialRatePrefilled.current = true
+          }
         }
       } catch (error) {
         console.error('Error calculating worker earnings:', error)
       }
     }
     loadWorkerEarnings()
-  }, [gig.budget, calculateGigFees])
+    return () => {
+      canceled = true
+    }
+  }, [gig.id, gig.budget, calculateGigFees])
 
   // Pre-fill experience, availability, and equipment from user profile
+  // Guarded to avoid infinite update loops when `user` reference changes frequently.
+  // - Depend only on stable primitives from `user` (id and specific fields)
+  // - Inside, only update state if values actually change; otherwise return prev to bail out.
   useEffect(() => {
-    if (user) {
-      setFormData(prev => ({
+    if (!user) return;
+
+    setFormData(prev => {
+      // Use nullish coalescing for numbers so 0 is preserved; for strings, ignore empty strings
+      const nextExperience = user.experienceYears ?? prev.experience;
+      const nextAvailability = user.availability || prev.availability;
+      const nextEquipment = user.equipmentOwnership || prev.equipment;
+
+      const noChange =
+        nextExperience === prev.experience &&
+        nextAvailability === prev.availability &&
+        nextEquipment === prev.equipment;
+
+      if (noChange) {
+        return prev;
+      }
+
+      return {
         ...prev,
-        experience: user.experienceYears || prev.experience,
-        availability: user.availability || prev.availability,
-        equipment: user.equipmentOwnership || prev.equipment
-      }))
-    }
-  }, [user])
+        experience: nextExperience,
+        availability: nextAvailability,
+        equipment: nextEquipment
+      };
+    });
+  }, [user?.id, user?.experienceYears, user?.availability, user?.equipmentOwnership])
 
   // Determine if this is a physical/informal work category
   const isPhysicalWork = ['Construction', 'Transportation', 'Cleaning', 'Healthcare'].includes(gig.category)
