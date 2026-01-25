@@ -665,7 +665,18 @@ export class GigService {
       ? sanitizeApplicationMessage(trimmedNote, APPLICATION_TEXT_LIMITS.MESSAGE_MAX)
       : '';
 
-    const historyEntry: any = {
+    type RateHistoryEntry = {
+      amount: number;
+      by: 'worker' | 'employer';
+      at: Date;
+      note?: string;
+    };
+
+    type WithDeletedField<T, K extends keyof T> = Omit<T, K> & {
+      [P in K]?: ReturnType<typeof deleteField>;
+    };
+
+    const historyEntry: RateHistoryEntry = {
       amount: newRate,
       by: updatedBy,
       at: new Date()
@@ -674,13 +685,16 @@ export class GigService {
       historyEntry.note = cleanNote;
     }
 
-    rateHistory.push(historyEntry);
+    rateHistory.push(historyEntry as RateHistoryEntry);
 
     // Update application (do not send undefined; delete agreedRate if present)
-    const updateData: Partial<GigApplication> & Record<string, any> = {
+    const updateData: Partial<WithDeletedField<GigApplication, 'agreedRate'>> & {
+      lastRateUpdate: RateHistoryEntry;
+      rateHistory: RateHistoryEntry[];
+    } = {
       rateStatus: 'countered' as const,
       lastRateUpdate: historyEntry,
-      rateHistory
+      rateHistory: rateHistory as RateHistoryEntry[]
     };
 
     // Clear agreedRate since we're in negotiation
