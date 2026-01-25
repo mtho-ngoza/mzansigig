@@ -548,4 +548,167 @@ describe('GigService - Completion Workflows', () => {
       expect(PaymentService.releaseEscrow).not.toHaveBeenCalled()
     })
   })
+
+  describe('getApplicationsEligibleForAutoRelease', () => {
+    it('should return applications that are eligible for auto-release', async () => {
+      const now = new Date()
+      const pastDate = new Date(now.getTime() - 24 * 60 * 60 * 1000) // 1 day ago
+      const futureDate = new Date(now.getTime() + 24 * 60 * 60 * 1000) // 1 day from now
+
+      const eligibleApp: GigApplication = {
+        ...mockApplication,
+        id: 'eligible-1',
+        status: 'funded',
+        completionRequestedAt: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000),
+        completionRequestedBy: 'worker',
+        completionAutoReleaseAt: pastDate
+      }
+
+      const notEligibleFuture: GigApplication = {
+        ...mockApplication,
+        id: 'not-eligible-future',
+        status: 'funded',
+        completionRequestedAt: new Date(),
+        completionRequestedBy: 'worker',
+        completionAutoReleaseAt: futureDate
+      }
+
+      const notEligibleDisputed: GigApplication = {
+        ...mockApplication,
+        id: 'not-eligible-disputed',
+        status: 'funded',
+        completionRequestedAt: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000),
+        completionRequestedBy: 'worker',
+        completionAutoReleaseAt: pastDate,
+        completionDisputedAt: new Date()
+      }
+
+      const notEligibleStatus: GigApplication = {
+        ...mockApplication,
+        id: 'not-eligible-status',
+        status: 'completed',
+        completionRequestedAt: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000),
+        completionRequestedBy: 'worker',
+        completionAutoReleaseAt: pastDate
+      }
+
+      jest.mocked(FirestoreService.getAll).mockResolvedValue([
+        eligibleApp,
+        notEligibleFuture,
+        notEligibleDisputed,
+        notEligibleStatus
+      ])
+
+      const result = await GigService.getApplicationsEligibleForAutoRelease()
+
+      expect(result).toHaveLength(1)
+      expect(result[0].id).toBe('eligible-1')
+    })
+
+    it('should return empty array when no applications are eligible', async () => {
+      jest.mocked(FirestoreService.getAll).mockResolvedValue([])
+
+      const result = await GigService.getApplicationsEligibleForAutoRelease()
+
+      expect(result).toHaveLength(0)
+    })
+  })
+
+  describe('processAllAutoReleases', () => {
+    it('should process all eligible applications and return results', async () => {
+      const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000)
+
+      const eligibleApp1: GigApplication = {
+        ...mockApplication,
+        id: 'eligible-1',
+        gigId: 'gig-1',
+        status: 'funded',
+        completionRequestedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+        completionRequestedBy: 'worker',
+        completionAutoReleaseAt: pastDate,
+        paymentId: 'payment-1'
+      }
+
+      const eligibleApp2: GigApplication = {
+        ...mockApplication,
+        id: 'eligible-2',
+        gigId: 'gig-2',
+        status: 'funded',
+        completionRequestedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+        completionRequestedBy: 'worker',
+        completionAutoReleaseAt: pastDate,
+        paymentId: 'payment-2'
+      }
+
+      // Mock getAll for getApplicationsEligibleForAutoRelease
+      jest.mocked(FirestoreService.getAll).mockResolvedValue([eligibleApp1, eligibleApp2])
+
+      // Mock getById for checkAndProcessAutoRelease calls
+      jest.mocked(FirestoreService.getById)
+        .mockResolvedValueOnce(eligibleApp1)
+        .mockResolvedValueOnce(eligibleApp2)
+
+      jest.mocked(FirestoreService.update).mockResolvedValue()
+      jest.mocked(PaymentService.releaseEscrow).mockResolvedValue()
+
+      const result = await GigService.processAllAutoReleases()
+
+      expect(result.processed).toBe(2)
+      expect(result.succeeded).toBe(2)
+      expect(result.failed).toBe(0)
+      expect(result.results).toHaveLength(2)
+      expect(result.results[0]).toEqual({ applicationId: 'eligible-1', success: true })
+      expect(result.results[1]).toEqual({ applicationId: 'eligible-2', success: true })
+    })
+
+    it('should handle failures gracefully and continue processing', async () => {
+      const pastDate = new Date(Date.now() - 24 * 60 * 60 * 1000)
+
+      const eligibleApp1: GigApplication = {
+        ...mockApplication,
+        id: 'eligible-1',
+        status: 'funded',
+        completionRequestedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+        completionRequestedBy: 'worker',
+        completionAutoReleaseAt: pastDate
+      }
+
+      const eligibleApp2: GigApplication = {
+        ...mockApplication,
+        id: 'eligible-2',
+        status: 'funded',
+        completionRequestedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+        completionRequestedBy: 'worker',
+        completionAutoReleaseAt: pastDate,
+        paymentId: 'payment-2'
+      }
+
+      jest.mocked(FirestoreService.getAll).mockResolvedValue([eligibleApp1, eligibleApp2])
+
+      // First app returns null (failure case)
+      jest.mocked(FirestoreService.getById)
+        .mockResolvedValueOnce(null) // Will return false, not throw
+        .mockResolvedValueOnce(eligibleApp2)
+
+      jest.mocked(FirestoreService.update).mockResolvedValue()
+      jest.mocked(PaymentService.releaseEscrow).mockResolvedValue()
+
+      const result = await GigService.processAllAutoReleases()
+
+      expect(result.processed).toBe(2)
+      expect(result.succeeded).toBe(1) // Only second succeeded
+      expect(result.failed).toBe(1) // First returned false
+    })
+
+    it('should return empty results when no applications are eligible', async () => {
+      jest.mocked(FirestoreService.getAll).mockResolvedValue([])
+
+      const result = await GigService.processAllAutoReleases()
+
+      expect(result.processed).toBe(0)
+      expect(result.succeeded).toBe(0)
+      expect(result.failed).toBe(0)
+      expect(result.results).toHaveLength(0)
+    })
+  })
 })

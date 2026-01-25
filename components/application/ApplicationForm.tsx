@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
@@ -42,36 +42,83 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
     availability: '',
     equipment: ''
   })
+  // Track user interaction with proposedRate and prevent unwanted resets
+  const userHasEditedRate = useRef(false)
+  const initialRatePrefilled = useRef(false)
 
-  // Calculate worker's net earnings on mount
+  // Reset prefill guards when gig changes and set a sensible default before fees load
   useEffect(() => {
+    userHasEditedRate.current = false
+    initialRatePrefilled.current = false
+    setFormData(prev => ({
+      ...prev,
+      proposedRate: gig.budget.toString()
+    }))
+    setWorkerEarnings(gig.budget)
+  }, [gig.id, gig.budget])
+
+  // Calculate worker's net earnings and prefill proposed rate once (unless user edits)
+  useEffect(() => {
+    let canceled = false
+    const currentGigId = gig.id
     const loadWorkerEarnings = async () => {
       try {
         const breakdown = await calculateGigFees(gig.budget)
+        // If this effect is stale (gig changed or unmounted), ignore result
+        if (canceled || currentGigId !== gig.id) return
+
         setWorkerEarnings(breakdown.netAmountToWorker)
-        // Update default proposed rate to worker's net amount
-        setFormData(prev => ({
-          ...prev,
-          proposedRate: breakdown.netAmountToWorker.toString()
-        }))
+        // Prefill only once per gig load and do not override if user has edited
+        if (!initialRatePrefilled.current && !userHasEditedRate.current) {
+          const net = Number(breakdown?.netAmountToWorker)
+          if (Number.isFinite(net) && net > 0) {
+            setFormData(prev => ({
+              ...prev,
+              proposedRate: net.toString()
+            }))
+            initialRatePrefilled.current = true
+          }
+        }
       } catch (error) {
         console.error('Error calculating worker earnings:', error)
       }
     }
     loadWorkerEarnings()
-  }, [gig.budget, calculateGigFees])
+    return () => {
+      canceled = true
+    }
+  }, [gig.id, gig.budget, calculateGigFees])
 
   // Pre-fill experience, availability, and equipment from user profile
+  // Guarded to avoid infinite update loops when `user` reference changes frequently.
+  // - Depend only on stable primitives from `user` (id and specific fields)
+  // - Inside, only update state if values actually change; otherwise return prev to bail out.
   useEffect(() => {
-    if (user) {
-      setFormData(prev => ({
+    if (!user) return;
+
+    setFormData(prev => {
+      // Use nullish coalescing for numbers so 0 is preserved; for strings, ignore empty strings
+      const nextExperience = user.experienceYears ?? prev.experience;
+      const nextAvailability = user.availability || prev.availability;
+      const nextEquipment = user.equipmentOwnership || prev.equipment;
+
+      const noChange =
+        nextExperience === prev.experience &&
+        nextAvailability === prev.availability &&
+        nextEquipment === prev.equipment;
+
+      if (noChange) {
+        return prev;
+      }
+
+      return {
         ...prev,
-        experience: user.experienceYears || prev.experience,
-        availability: user.availability || prev.availability,
-        equipment: user.equipmentOwnership || prev.equipment
-      }))
-    }
-  }, [user])
+        experience: nextExperience,
+        availability: nextAvailability,
+        equipment: nextEquipment
+      };
+    });
+  }, [user?.id, user?.experienceYears, user?.availability, user?.equipmentOwnership])
 
   // Determine if this is a physical/informal work category
   const isPhysicalWork = ['Construction', 'Transportation', 'Cleaning', 'Healthcare'].includes(gig.category)
@@ -100,6 +147,10 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
   const fieldConfig = getFieldConfig()
 
   const handleInputChange = (field: keyof ApplicationFormData, value: string) => {
+    // Mark that user has edited the proposed rate to prevent future auto-prefill overrides
+    if (field === 'proposedRate') {
+      userHasEditedRate.current = true
+    }
     setFormData(prev => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))

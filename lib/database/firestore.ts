@@ -15,7 +15,8 @@ import {
   DocumentData,
   DocumentSnapshot,
   QueryConstraint,
-  WhereFilterOp
+  WhereFilterOp,
+  deleteField
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import { User } from '@/types/auth';
@@ -280,5 +281,10 @@ export class FirestoreService {
     } catch (error: unknown) {
       throw new Error(`Error searching users: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  // Expose Firestore delete sentinel for safe updates (easy to mock in tests)
+  static getDeleteFieldSentinel(): ReturnType<typeof deleteField> {
+    return deleteField();
   }
 }

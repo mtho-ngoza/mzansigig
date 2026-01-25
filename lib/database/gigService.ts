@@ -435,8 +435,11 @@ export class GigService {
 
     // Sanitize message to prevent XSS
     // Note: Firestore doesn't allow undefined values, so we omit the field if no message
+    // Exclude potentially undefined "message" from the spread to avoid sending message: undefined
+    const { message: rawMessage, ...restAppData } = applicationData as Record<string, unknown>;
+
     const sanitizedData: Record<string, unknown> = {
-      ...applicationData,
+      ...restAppData,
       gigBudget: gig.budget, // Store original budget for reference
       createdAt: new Date(),
       status: 'pending' as const,
@@ -445,16 +448,16 @@ export class GigService {
       rateHistory: [{
         amount: applicationData.proposedRate,
         by: 'worker' as const,
-        at: new Date(),
-        note: applicationData.message || undefined
+        at: new Date()
       }]
     };
 
-    // Only include message field if provided (Firestore rejects undefined)
-    if (applicationData.message) {
-      sanitizedData.message = sanitizeApplicationMessage(applicationData.message, APPLICATION_TEXT_LIMITS.MESSAGE_MAX);
-    } else {
-      delete sanitizedData.message;
+    // Only include optional fields if provided (Firestore rejects undefined)
+    if (typeof rawMessage === 'string' && rawMessage.trim()) {
+      const cleanMessage = sanitizeApplicationMessage(rawMessage as string, APPLICATION_TEXT_LIMITS.MESSAGE_MAX);
+      sanitizedData.message = cleanMessage;
+      // Also include note in initial rate history entry only when message exists
+      (sanitizedData.rateHistory as Array<Record<string, unknown>>)[0].note = cleanMessage;
     }
 
     const applicationId = await FirestoreService.create('applications', sanitizedData);
@@ -474,16 +477,18 @@ export class GigService {
   }
 
   static async getApplicationsByGig(gigId: string): Promise<GigApplication[]> {
-    return await FirestoreService.getWhere<GigApplication>('applications', 'gigId', '==', gigId, 'createdAt');
+    const results = await FirestoreService.getWhere<GigApplication>('applications', 'gigId', '==', gigId, 'createdAt');
+    return Array.isArray(results) ? results : [];
   }
 
   static async getApplicationCountByGig(gigId: string): Promise<number> {
     const applications = await FirestoreService.getWhere<GigApplication>('applications', 'gigId', '==', gigId);
-    return applications.length;
+    return Array.isArray(applications) ? applications.length : 0;
   }
 
   static async getApplicationsByApplicant(applicantId: string): Promise<GigApplication[]> {
-    return await FirestoreService.getWhere<GigApplication>('applications', 'applicantId', '==', applicantId, 'createdAt');
+    const results = await FirestoreService.getWhere<GigApplication>('applications', 'applicantId', '==', applicantId, 'createdAt');
+    return Array.isArray(results) ? results : [];
   }
 
   /**
@@ -653,23 +658,46 @@ export class GigService {
     // Get current rate history or initialize
     const rateHistory = application.rateHistory || [];
 
-    // Add new entry to history
-    const historyEntry = {
+    // Add new entry to history (omit note when blank)
+    const trimmedNote = typeof note === 'string' ? note.trim() : '';
+    const cleanNote = trimmedNote
+      ? sanitizeApplicationMessage(trimmedNote, APPLICATION_TEXT_LIMITS.MESSAGE_MAX)
+      : '';
+
+    type RateHistoryEntry = {
+      amount: number;
+      by: 'worker' | 'employer';
+      at: Date;
+      note?: string;
+    };
+
+    type WithDeletedField<T, K extends keyof T> = Omit<T, K> & {
+      [P in K]?: ReturnType<typeof FirestoreService.getDeleteFieldSentinel>;
+    };
+
+    const historyEntry: RateHistoryEntry = {
       amount: newRate,
       by: updatedBy,
-      at: new Date(),
-      note: note || undefined
+      at: new Date()
     };
-    rateHistory.push(historyEntry);
+    if (cleanNote) {
+      historyEntry.note = cleanNote;
+    }
 
-    // Update application
-    const updateData: Partial<GigApplication> = {
+    rateHistory.push(historyEntry as RateHistoryEntry);
+
+    // Update application (do not send undefined; delete agreedRate if present)
+    const updateData: Partial<WithDeletedField<GigApplication, 'agreedRate'>> & {
+      lastRateUpdate: RateHistoryEntry;
+      rateHistory: RateHistoryEntry[];
+    } = {
       rateStatus: 'countered' as const,
       lastRateUpdate: historyEntry,
-      rateHistory,
-      // Clear agreedRate since we're in negotiation
-      agreedRate: undefined
+      rateHistory: rateHistory as RateHistoryEntry[]
     };
+
+    // Clear agreedRate since we're in negotiation
+    updateData.agreedRate = FirestoreService.getDeleteFieldSentinel();
 
     // If the rate matches the original proposed rate and worker is confirming, keep as proposed
     if (updatedBy === 'worker' && newRate === application.proposedRate && !application.lastRateUpdate) {
@@ -1034,6 +1062,51 @@ export class GigService {
     }
 
     return false;
+  }
+
+  // Get all applications eligible for auto-release (completion requested, not disputed, past release date)
+  static async getApplicationsEligibleForAutoRelease(): Promise<GigApplication[]> {
+    const allApplications = await FirestoreService.getAll<GigApplication>('applications');
+    const now = new Date();
+
+    return allApplications.filter(app =>
+      app.status === 'funded' &&
+      app.completionRequestedAt &&
+      app.completionAutoReleaseAt &&
+      !app.completionDisputedAt &&
+      new Date(app.completionAutoReleaseAt) <= now
+    );
+  }
+
+  // Process all eligible auto-releases (for scheduled job)
+  static async processAllAutoReleases(): Promise<{
+    processed: number;
+    succeeded: number;
+    failed: number;
+    results: Array<{ applicationId: string; success: boolean; error?: string }>;
+  }> {
+    const eligibleApplications = await this.getApplicationsEligibleForAutoRelease();
+    const results: Array<{ applicationId: string; success: boolean; error?: string }> = [];
+
+    for (const application of eligibleApplications) {
+      try {
+        const success = await this.checkAndProcessAutoRelease(application.id);
+        results.push({ applicationId: application.id, success });
+      } catch (error) {
+        results.push({
+          applicationId: application.id,
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+
+    return {
+      processed: results.length,
+      succeeded: results.filter(r => r.success).length,
+      failed: results.filter(r => !r.success).length,
+      results
+    };
   }
 
   // Admin dispute resolution operations
