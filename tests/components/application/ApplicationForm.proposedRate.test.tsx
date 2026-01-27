@@ -142,59 +142,60 @@ describe('ApplicationForm - Proposed Rate stability', () => {
     expect(input.value).toBe('1600')
   })
 
-  // it('resets prefill guards on gig change and still respects subsequent user edits', async () => {
-  //   const { rerender } = render(<ApplicationForm gig={makeGig({ id: 'gig-a', budget: 1000 })} />)
-  //
-  //   const input = screen.getByLabelText(/Your Proposed Rate/i) as HTMLInputElement
-  //
-  //   // First render default to budget
-  //   expect(input.value).toBe('1000')
-  //
-  //   // Fee calc returns 800 net and should prefill once (no user edit yet)
-  //   mockCalculateGigFees.mockResolvedValueOnce({ netAmountToWorker: 800 })
-  //   await act(async () => {
-  //     jest.runOnlyPendingTimers()
-  //     await Promise.resolve()
-  //   })
-  //
-  //   // After first calculation, form may set to net 800
-  //   // Note: The prefill is conditional and may or may not have happened before this await depending on effect timing,
-  //   // assert one of the acceptable defaults
-  //   expect(['1000', '800']).toContain(input.value)
-  //
-  //   // Now user edits to 900
-  //   fireEvent.change(input, { target: { value: '900' } })
-  //   expect(input.value).toBe('900')
-  //
-  //   // Trigger another calculation (new gig)
-  //   const newGig = makeGig({ id: 'gig-b', budget: 2000 })
-  //   mockCalculateGigFees.mockResolvedValueOnce({ netAmountToWorker: 1800 })
-  //   rerender(<ApplicationForm gig={newGig} />)
-  //
-  //   // On gig change, input immediately resets to new budget
-  //   expect(input.value).toBe('2000')
-  //
-  //   // Let async calc resolve; since user hasn't edited after gig change, it may prefill once to net 1800
-  //   await act(async () => {
-  //     jest.runOnlyPendingTimers()
-  //     await Promise.resolve()
-  //   })
-  //
-  //   expect(['2000', '1800']).toContain(input.value)
-  //
-  //   // After this, simulate another late calc and ensure it does not override after user edits
-  //   // User edits again
-  //   fireEvent.change(input, { target: { value: '1900' } })
-  //   expect(input.value).toBe('1900')
-  //
-  //   // Another calculation resolves later
-  //   mockCalculateGigFees.mockResolvedValueOnce({ netAmountToWorker: 1700 })
-  //   await act(async () => {
-  //     jest.runOnlyPendingTimers()
-  //     await Promise.resolve()
-  //   })
-  //
-  //   // Value should remain user's last edit
-  //   expect(input.value).toBe('1900')
-  // })
+  it('resets prefill guards on gig change and still respects subsequent user edits', async () => {
+    // Set up mock BEFORE initial render so the effect captures it
+    mockCalculateGigFees.mockResolvedValueOnce({ netAmountToWorker: 800 })
+
+    const { rerender } = render(<ApplicationForm gig={makeGig({ id: 'gig-a', budget: 1000 })} />)
+
+    const input = screen.getByLabelText(/Your Proposed Rate/i) as HTMLInputElement
+
+    // First render defaults to budget before fee calc resolves
+    expect(input.value).toBe('1000')
+
+    // Let the async fee calculation settle
+    await act(async () => {
+      jest.runOnlyPendingTimers()
+      await Promise.resolve()
+    })
+
+    // After first calculation, form should prefill to net 800 (user hasn't edited yet)
+    expect(input.value).toBe('800')
+
+    // Now user edits to 900
+    fireEvent.change(input, { target: { value: '900' } })
+    expect(input.value).toBe('900')
+
+    // Set up mock for the new gig BEFORE rerender
+    mockCalculateGigFees.mockResolvedValueOnce({ netAmountToWorker: 1800 })
+
+    // Trigger another calculation (new gig)
+    const newGig = makeGig({ id: 'gig-b', budget: 2000 })
+    rerender(<ApplicationForm gig={newGig} />)
+
+    // On gig change, input immediately resets to new budget (effect resets refs)
+    expect(input.value).toBe('2000')
+
+    // Let async calc resolve; since user hasn't edited after gig change, it should prefill to net 1800
+    await act(async () => {
+      jest.runOnlyPendingTimers()
+      await Promise.resolve()
+    })
+
+    expect(input.value).toBe('1800')
+
+    // User edits after the prefill
+    fireEvent.change(input, { target: { value: '1900' } })
+    expect(input.value).toBe('1900')
+
+    // Another calculation resolves later (shouldn't happen in normal use, but tests race condition protection)
+    mockCalculateGigFees.mockResolvedValueOnce({ netAmountToWorker: 1700 })
+    await act(async () => {
+      jest.runOnlyPendingTimers()
+      await Promise.resolve()
+    })
+
+    // Value should remain user's last edit, not overwritten by late fee calc
+    expect(input.value).toBe('1900')
+  })
 })
