@@ -74,6 +74,37 @@ jest.mock('@/components/application/JobSeekerProfileDialog', () => ({
       </div>
     ) : null
 }))
+jest.mock('@/components/review/ReviewPrompt', () => ({
+  __esModule: true,
+  default: ({
+    gigId,
+    gigTitle,
+    revieweeId,
+    revieweeName,
+    reviewType,
+    onClose,
+    onReviewSubmitted
+  }: {
+    gigId: string
+    gigTitle: string
+    revieweeId: string
+    revieweeName: string
+    reviewType: string
+    reviewDeadline: Date
+    onClose?: () => void
+    onReviewSubmitted?: () => void
+  }) => (
+    <div data-testid="review-prompt-dialog">
+      <div data-testid="review-gig-id">{gigId}</div>
+      <div data-testid="review-gig-title">{gigTitle}</div>
+      <div data-testid="review-reviewee-id">{revieweeId}</div>
+      <div data-testid="review-reviewee-name">{revieweeName}</div>
+      <div data-testid="review-type">{reviewType}</div>
+      <button onClick={onClose} data-testid="review-close-btn">Maybe Later</button>
+      <button onClick={onReviewSubmitted} data-testid="review-submit-btn">Submit Review</button>
+    </div>
+  )
+}))
 
 describe('ManageApplications', () => {
   const mockUser = {
@@ -761,6 +792,561 @@ describe('ManageApplications', () => {
         '/api/payments/paystack/verify',
         expect.anything()
       )
+    })
+  })
+
+  describe('Completion Flow', () => {
+    const fundedAppWithCompletionRequest = {
+      id: 'app-funded-completion',
+      gigId: 'gig-1',
+      applicantId: 'applicant-1',
+      applicantName: 'Jane Smith',
+      message: 'I completed the work',
+      proposedRate: 5000,
+      status: 'funded' as const,
+      paymentStatus: 'in_escrow' as const,
+      paymentId: 'payment-123',
+      createdAt: new Date('2024-01-15'),
+      gigTitle: 'Web Developer Needed',
+      gigBudget: 10000,
+      completionRequestedAt: new Date('2024-01-20'),
+      completionRequestedBy: 'worker' as const,
+      completionAutoReleaseAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000) // 5 days from now
+    }
+
+    beforeEach(() => {
+      ;(GigService.approveCompletion as jest.Mock).mockResolvedValue(undefined)
+      ;(GigService.disputeCompletion as jest.Mock).mockResolvedValue(undefined)
+    })
+
+    describe('Completion Request Display', () => {
+      it('should display completion request banner for funded applications with completion request', async () => {
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('Worker Requested Completion - Action Required')).toBeInTheDocument()
+        })
+
+        expect(screen.getByText(/has marked this gig as completed/i)).toBeInTheDocument()
+      })
+
+      it('should display auto-release countdown correctly', async () => {
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          // Should show days, not NaN
+          expect(screen.getByText(/Auto-Release in \d+ days/i)).toBeInTheDocument()
+        })
+
+        // Verify it doesn't show NaN
+        expect(screen.queryByText(/NaN/i)).not.toBeInTheDocument()
+      })
+
+      it('should handle Firestore Timestamp format for auto-release date', async () => {
+        const appWithFirestoreTimestamp = {
+          ...fundedAppWithCompletionRequest,
+          completionAutoReleaseAt: {
+            toDate: () => new Date(Date.now() + 3 * 24 * 60 * 60 * 1000)
+          }
+        }
+
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([appWithFirestoreTimestamp])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          // Should show days, not NaN
+          expect(screen.getByText(/Auto-Release in \d+ days/i)).toBeInTheDocument()
+        })
+
+        expect(screen.queryByText(/NaN/i)).not.toBeInTheDocument()
+      })
+
+      it('should show 0 days when auto-release date is missing', async () => {
+        const appWithoutAutoRelease = {
+          ...fundedAppWithCompletionRequest,
+          completionAutoReleaseAt: undefined
+        }
+
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([appWithoutAutoRelease])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText(/Auto-Release in 0 days/i)).toBeInTheDocument()
+        })
+      })
+
+      it('should display Approve & Release button', async () => {
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('✓ Approve & Release')).toBeInTheDocument()
+        })
+      })
+
+      it('should display Dispute button', async () => {
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('Dispute')).toBeInTheDocument()
+        })
+      })
+    })
+
+    describe('Approve Completion', () => {
+      it('should open approval confirmation dialog when Approve button is clicked', async () => {
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('✓ Approve & Release')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('✓ Approve & Release'))
+
+        await waitFor(() => {
+          expect(screen.getByText('Approve Completion')).toBeInTheDocument()
+          expect(screen.getByText(/Are you ready to approve completion/i)).toBeInTheDocument()
+        })
+      })
+
+      it('should call GigService.approveCompletion when confirmed', async () => {
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('✓ Approve & Release')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('✓ Approve & Release'))
+
+        await waitFor(() => {
+          expect(screen.getByText('Approve & Release')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('Approve & Release'))
+
+        await waitFor(() => {
+          expect(GigService.approveCompletion).toHaveBeenCalledWith('app-funded-completion', 'employer-123')
+        })
+      })
+
+      it('should update local state to completed and released after approval', async () => {
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('✓ Approve & Release')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('✓ Approve & Release'))
+
+        await waitFor(() => {
+          expect(screen.getByText('Approve & Release')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('Approve & Release'))
+
+        await waitFor(() => {
+          expect(mockSuccess).toHaveBeenCalledWith('Lekker! Payment released to the worker')
+        })
+      })
+
+      it('should show error toast when approval fails', async () => {
+        ;(GigService.approveCompletion as jest.Mock).mockRejectedValue(new Error('Approval failed'))
+
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('✓ Approve & Release')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('✓ Approve & Release'))
+
+        await waitFor(() => {
+          expect(screen.getByText('Approve & Release')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('Approve & Release'))
+
+        await waitFor(() => {
+          expect(mockShowError).toHaveBeenCalledWith('Approval failed')
+        })
+      })
+    })
+
+    describe('Dispute Completion', () => {
+      it('should open dispute dialog when Dispute button is clicked', async () => {
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('Dispute')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('Dispute'))
+
+        await waitFor(() => {
+          expect(screen.getByText('Dispute Completion')).toBeInTheDocument()
+          expect(screen.getByText(/Please explain why you're disputing/i)).toBeInTheDocument()
+        })
+      })
+
+      it('should require minimum dispute reason length', async () => {
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('Dispute')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('Dispute'))
+
+        await waitFor(() => {
+          expect(screen.getByText('Submit Dispute')).toBeInTheDocument()
+        })
+
+        // Submit button should be disabled with short reason
+        const submitButton = screen.getByText('Submit Dispute')
+        expect(submitButton).toBeDisabled()
+
+        // Enter reason that's too short
+        const textarea = screen.getByPlaceholderText(/Please explain what issues/i)
+        fireEvent.change(textarea, { target: { value: 'Short' } })
+
+        expect(submitButton).toBeDisabled()
+      })
+
+      it('should call GigService.disputeCompletion when submitted with valid reason', async () => {
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('Dispute')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('Dispute'))
+
+        await waitFor(() => {
+          expect(screen.getByText('Submit Dispute')).toBeInTheDocument()
+        })
+
+        const textarea = screen.getByPlaceholderText(/Please explain what issues/i)
+        fireEvent.change(textarea, { target: { value: 'The work is incomplete and does not meet the requirements specified in the gig description.' } })
+
+        const submitButton = screen.getByText('Submit Dispute')
+        expect(submitButton).not.toBeDisabled()
+
+        fireEvent.click(submitButton)
+
+        await waitFor(() => {
+          expect(GigService.disputeCompletion).toHaveBeenCalledWith(
+            'app-funded-completion',
+            'employer-123',
+            'The work is incomplete and does not meet the requirements specified in the gig description.'
+          )
+        })
+      })
+    })
+
+    describe('Disputed Completion Display', () => {
+      it('should display disputed banner when completion is disputed', async () => {
+        const disputedApp = {
+          ...fundedAppWithCompletionRequest,
+          completionDisputedAt: new Date(),
+          completionDisputeReason: 'Work was not completed as specified'
+        }
+
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([disputedApp])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('Completion Disputed - Resolution Needed')).toBeInTheDocument()
+        })
+
+        expect(screen.getByText('Work was not completed as specified')).toBeInTheDocument()
+      })
+
+      it('should show Issues Resolved button in disputed state', async () => {
+        const disputedApp = {
+          ...fundedAppWithCompletionRequest,
+          completionDisputedAt: new Date(),
+          completionDisputeReason: 'Work incomplete'
+        }
+
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([disputedApp])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('✓ Issues Resolved - Approve Now')).toBeInTheDocument()
+        })
+      })
+    })
+
+    describe('Review Prompt After Completion Approval', () => {
+      it('should open review dialog after successful completion approval', async () => {
+        jest.useFakeTimers()
+
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('✓ Approve & Release')).toBeInTheDocument()
+        })
+
+        // Click approve button
+        fireEvent.click(screen.getByText('✓ Approve & Release'))
+
+        await waitFor(() => {
+          expect(screen.getByText('Approve & Release')).toBeInTheDocument()
+        })
+
+        // Confirm approval
+        fireEvent.click(screen.getByText('Approve & Release'))
+
+        await waitFor(() => {
+          expect(GigService.approveCompletion).toHaveBeenCalled()
+        })
+
+        // Advance timers to trigger the review dialog (500ms delay)
+        jest.advanceTimersByTime(600)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('review-prompt-dialog')).toBeInTheDocument()
+        })
+
+        jest.useRealTimers()
+      })
+
+      it('should display correct review details in the review dialog', async () => {
+        jest.useFakeTimers()
+
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('✓ Approve & Release')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('✓ Approve & Release'))
+
+        await waitFor(() => {
+          expect(screen.getByText('Approve & Release')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('Approve & Release'))
+
+        await waitFor(() => {
+          expect(GigService.approveCompletion).toHaveBeenCalled()
+        })
+
+        jest.advanceTimersByTime(600)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('review-prompt-dialog')).toBeInTheDocument()
+        })
+
+        // Verify review dialog has correct props
+        expect(screen.getByTestId('review-gig-id')).toHaveTextContent('gig-1')
+        expect(screen.getByTestId('review-gig-title')).toHaveTextContent('Web Developer Needed')
+        expect(screen.getByTestId('review-reviewee-id')).toHaveTextContent('applicant-1')
+        expect(screen.getByTestId('review-reviewee-name')).toHaveTextContent('Jane Smith')
+        expect(screen.getByTestId('review-type')).toHaveTextContent('employer-to-worker')
+
+        jest.useRealTimers()
+      })
+
+      it('should close review dialog when Maybe Later is clicked', async () => {
+        jest.useFakeTimers()
+
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('✓ Approve & Release')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('✓ Approve & Release'))
+
+        await waitFor(() => {
+          expect(screen.getByText('Approve & Release')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('Approve & Release'))
+
+        await waitFor(() => {
+          expect(GigService.approveCompletion).toHaveBeenCalled()
+        })
+
+        jest.advanceTimersByTime(600)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('review-prompt-dialog')).toBeInTheDocument()
+        })
+
+        // Click Maybe Later to close
+        fireEvent.click(screen.getByTestId('review-close-btn'))
+
+        await waitFor(() => {
+          expect(screen.queryByTestId('review-prompt-dialog')).not.toBeInTheDocument()
+        })
+
+        jest.useRealTimers()
+      })
+
+      it('should show success message and close dialog when review is submitted', async () => {
+        jest.useFakeTimers()
+
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('✓ Approve & Release')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('✓ Approve & Release'))
+
+        await waitFor(() => {
+          expect(screen.getByText('Approve & Release')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('Approve & Release'))
+
+        await waitFor(() => {
+          expect(GigService.approveCompletion).toHaveBeenCalled()
+        })
+
+        jest.advanceTimersByTime(600)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('review-prompt-dialog')).toBeInTheDocument()
+        })
+
+        // Submit review
+        fireEvent.click(screen.getByTestId('review-submit-btn'))
+
+        await waitFor(() => {
+          expect(mockSuccess).toHaveBeenCalledWith('Thanks for your review!')
+          expect(screen.queryByTestId('review-prompt-dialog')).not.toBeInTheDocument()
+        })
+
+        jest.useRealTimers()
+      })
+
+      it('should not open review dialog when completion approval fails', async () => {
+        jest.useFakeTimers()
+        ;(GigService.approveCompletion as jest.Mock).mockRejectedValue(new Error('Approval failed'))
+
+        ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
+          if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
+          return Promise.resolve([])
+        })
+
+        render(<ManageApplications />)
+
+        await waitFor(() => {
+          expect(screen.getByText('✓ Approve & Release')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('✓ Approve & Release'))
+
+        await waitFor(() => {
+          expect(screen.getByText('Approve & Release')).toBeInTheDocument()
+        })
+
+        fireEvent.click(screen.getByText('Approve & Release'))
+
+        await waitFor(() => {
+          expect(mockShowError).toHaveBeenCalledWith('Approval failed')
+        })
+
+        jest.advanceTimersByTime(600)
+
+        // Review dialog should not appear on failure
+        expect(screen.queryByTestId('review-prompt-dialog')).not.toBeInTheDocument()
+
+        jest.useRealTimers()
+      })
     })
   })
 })

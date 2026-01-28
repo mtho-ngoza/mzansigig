@@ -13,6 +13,7 @@ import UpdateRateModal from '@/components/application/UpdateRateModal'
 import RateNegotiationBanner, { RateStatusBadge } from '@/components/application/RateNegotiationBanner'
 import RateNegotiationQuickMessages from '@/components/application/RateNegotiationQuickMessages'
 import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
+import ReviewPrompt from '@/components/review/ReviewPrompt'
 
 interface MyApplicationsProps {
   onBack?: () => void
@@ -56,6 +57,10 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
     application?: ApplicationWithGig
   }>({ isOpen: false })
   const [processingRateAction, setProcessingRateAction] = useState<Set<string>>(new Set())
+  const [reviewDialog, setReviewDialog] = useState<{
+    isOpen: boolean
+    application?: ApplicationWithGig
+  }>({ isOpen: false })
 
   useEffect(() => {
     const loadApplications = async () => {
@@ -313,12 +318,29 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
     }
   }
 
-  const calculateDaysUntilAutoRelease = (autoReleaseDate: Date | undefined): number => {
+  const calculateDaysUntilAutoRelease = (autoReleaseDate: Date | unknown): number => {
     if (!autoReleaseDate) return 0
 
-    const date = autoReleaseDate instanceof Date ? autoReleaseDate : new Date(autoReleaseDate)
+    let dateObj: Date
+
+    // Handle Firestore Timestamp objects
+    if (autoReleaseDate && typeof autoReleaseDate === 'object' && 'toDate' in autoReleaseDate && typeof (autoReleaseDate as { toDate: () => Date }).toDate === 'function') {
+      dateObj = (autoReleaseDate as { toDate: () => Date }).toDate()
+    } else if (autoReleaseDate instanceof Date) {
+      dateObj = autoReleaseDate
+    } else if (typeof autoReleaseDate === 'string' || typeof autoReleaseDate === 'number') {
+      dateObj = new Date(autoReleaseDate)
+    } else {
+      return 0
+    }
+
+    // Validate the date
+    if (isNaN(dateObj.getTime())) {
+      return 0
+    }
+
     const now = new Date()
-    const diffMs = date.getTime() - now.getTime()
+    const diffMs = dateObj.getTime() - now.getTime()
     const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
     return Math.max(0, diffDays)
   }
@@ -819,6 +841,50 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                     </>
                   )}
 
+                  {application.status === 'completed' && (
+                    <div className="bg-green-50 border-2 border-green-400 rounded-lg p-4">
+                      <div className="flex items-start">
+                        <div className="flex-shrink-0">
+                          <svg className="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                        <div className="ml-3 flex-1">
+                          <h3 className="text-base font-bold text-green-900">
+                            Gig Completed - Payment Released
+                          </h3>
+                          <p className="mt-2 text-sm text-green-800">
+                            Congratulations! This gig has been marked as completed and the payment has been released to your wallet.
+                          </p>
+                          <div className="mt-3 bg-green-100 rounded p-3 border border-green-300">
+                            <div className="flex items-center text-sm text-green-900">
+                              <span className="font-medium">Payment Status:</span>
+                              <span className="ml-2 px-2 py-1 bg-green-200 rounded font-semibold">
+                                RELEASED
+                              </span>
+                            </div>
+                          </div>
+                          <p className="mt-3 text-xs text-green-700">
+                            The funds are now available in your wallet for withdrawal.
+                          </p>
+                          {/* Leave Review Button */}
+                          {application.gigEmployerId && (
+                            <div className="mt-4">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setReviewDialog({ isOpen: true, application })}
+                                className="bg-white hover:bg-green-100 border-green-400 text-green-700"
+                              >
+                                ⭐ Leave Review for Employer
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {application.status === 'rejected' && (
                     <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                       <div className="flex items-center">
@@ -978,6 +1044,27 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                 </div>
               </CardContent>
             </Card>
+          </div>
+        )}
+
+        {/* Review Dialog - For completed gigs */}
+        {reviewDialog.isOpen && reviewDialog.application && reviewDialog.application.gigEmployerId && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+            <div className="my-8">
+              <ReviewPrompt
+                gigId={reviewDialog.application.gigId}
+                gigTitle={reviewDialog.application.gigTitle || 'Gig'}
+                revieweeId={reviewDialog.application.gigEmployerId}
+                revieweeName={reviewDialog.application.gigEmployer || 'Employer'}
+                reviewType="worker-to-employer"
+                reviewDeadline={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
+                onClose={() => setReviewDialog({ isOpen: false })}
+                onReviewSubmitted={() => {
+                  setReviewDialog({ isOpen: false })
+                  success('Thanks for your review!')
+                }}
+              />
+            </div>
           </div>
         )}
       </div>
