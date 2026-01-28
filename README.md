@@ -261,6 +261,7 @@ Employer pays via Paystack → Paystack settles to platform bank account (T+2)
 - [ ] **Enhanced Verification** - Background checks and address verification (UI ready! +25 trust score, builds trust fast)
 - [ ] **Emergency SMS Integration** - Safety notifications via Twilio/African SMS gateway (safety critical in SA context)
 - [ ] **Paystack Transfers API** - Automated worker payouts (currently manual EFT, upgrade when volume justifies transfer fees)
+- [ ] **Completion Proof Upload** - Allow workers to attach photos/files when requesting completion (strengthens dispute resolution)
 
 ### 📈 Priority 3: Growth & Engagement (Month 3-6)
 **Builds long-term value and stickiness**
