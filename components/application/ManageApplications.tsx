@@ -16,6 +16,7 @@ import RateNegotiationBanner, { RateStatusBadge } from '@/components/application
 import RateNegotiationQuickMessages from '@/components/application/RateNegotiationQuickMessages'
 import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
 import { DISPUTE_TEXT_LIMITS, validateDisputeReason } from '@/lib/utils/disputeValidation'
+import ReviewPrompt from '@/components/review/ReviewPrompt'
 
 interface ManageApplicationsProps {
   onBack?: () => void
@@ -65,6 +66,10 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
     application?: ApplicationWithGig
   }>({ isOpen: false })
   const [processingRateAction, setProcessingRateAction] = useState<Set<string>>(new Set())
+  const [reviewDialog, setReviewDialog] = useState<{
+    isOpen: boolean
+    application?: ApplicationWithGig
+  }>({ isOpen: false })
 
   const searchParams = useSearchParams()
 
@@ -386,17 +391,31 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
       setProcessingCompletion(true)
       await GigService.approveCompletion(approveCompletionDialog.applicationId, user.id)
 
-      // Update local state to mark as completed
+      // Get the application details before updating state
+      const completedApplication = applications.find(app => app.id === approveCompletionDialog.applicationId)
+
+      // Update local state to mark as completed and payment as released
       setApplications(prevApps =>
         prevApps.map(app =>
           app.id === approveCompletionDialog.applicationId
-            ? { ...app, status: 'completed' as const }
+            ? {
+                ...app,
+                status: 'completed' as const,
+                paymentStatus: 'released' as const
+              }
             : app
         )
       )
 
       setApproveCompletionDialog({ isOpen: false, applicationId: '', gigTitle: '' })
       success('Lekker! Payment released to the worker')
+
+      // Trigger review dialog after successful completion
+      if (completedApplication) {
+        setTimeout(() => {
+          setReviewDialog({ isOpen: true, application: { ...completedApplication, status: 'completed' as const } })
+        }, 500)
+      }
     } catch (error) {
       console.error('Error approving completion:', error)
       showError(error instanceof Error ? error.message : 'Failed to approve completion. Please try again.')
@@ -452,12 +471,29 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
     }
   }
 
-  const calculateDaysUntilAutoRelease = (autoReleaseDate: Date | undefined): number => {
+  const calculateDaysUntilAutoRelease = (autoReleaseDate: Date | unknown): number => {
     if (!autoReleaseDate) return 0
 
-    const date = autoReleaseDate instanceof Date ? autoReleaseDate : new Date(autoReleaseDate)
+    let dateObj: Date
+
+    // Handle Firestore Timestamp objects
+    if (autoReleaseDate && typeof autoReleaseDate === 'object' && 'toDate' in autoReleaseDate && typeof (autoReleaseDate as { toDate: () => Date }).toDate === 'function') {
+      dateObj = (autoReleaseDate as { toDate: () => Date }).toDate()
+    } else if (autoReleaseDate instanceof Date) {
+      dateObj = autoReleaseDate
+    } else if (typeof autoReleaseDate === 'string' || typeof autoReleaseDate === 'number') {
+      dateObj = new Date(autoReleaseDate)
+    } else {
+      return 0
+    }
+
+    // Validate the date
+    if (isNaN(dateObj.getTime())) {
+      return 0
+    }
+
     const now = new Date()
-    const diffMs = date.getTime() - now.getTime()
+    const diffMs = dateObj.getTime() - now.getTime()
     const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24))
     return Math.max(0, diffDays)
   }
@@ -931,22 +967,22 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                                       {formatDate(application.completionRequestedAt)}
                                     </span>
                                   </div>
-                                  <div className="mt-4 flex space-x-3">
+                                  <div className="mt-4 flex flex-wrap gap-2">
                                     <Button
                                       variant="primary"
                                       size="sm"
                                       onClick={() => handleApproveCompletionClick(application.id, application.gigTitle || 'this gig')}
-                                      className="bg-green-600 hover:bg-green-700"
+                                      className="bg-green-600 hover:bg-green-700 whitespace-nowrap"
                                     >
-                                      ✓ Approve & Release Payment
+                                      ✓ Approve & Release
                                     </Button>
                                     <Button
                                       variant="outline"
                                       size="sm"
                                       onClick={() => handleDisputeCompletionClick(application.id, application.gigTitle || 'this gig')}
-                                      className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300"
+                                      className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-300 whitespace-nowrap"
                                     >
-                                      Dispute Completion
+                                      Dispute
                                     </Button>
                                   </div>
                                 </div>
@@ -1100,7 +1136,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                     <li>Enable you to leave a review</li>
                   </ul>
                 </div>
-                <div className="flex justify-end space-x-3">
+                <div className="flex flex-wrap justify-end gap-2">
                   <Button
                     variant="outline"
                     onClick={() => setApproveCompletionDialog({ isOpen: false, applicationId: '', gigTitle: '' })}
@@ -1112,9 +1148,9 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                     variant="primary"
                     onClick={handleApproveCompletionConfirm}
                     disabled={processingCompletion}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 whitespace-nowrap"
                   >
-                    {processingCompletion ? 'Approving...' : 'Yes, Approve & Release Payment'}
+                    {processingCompletion ? 'Approving...' : 'Approve & Release'}
                   </Button>
                 </div>
               </CardContent>
@@ -1214,6 +1250,27 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                 />
               </CardContent>
             </Card>
+          </div>
+        )}
+
+        {/* Review Dialog - Triggered after completion approval */}
+        {reviewDialog.isOpen && reviewDialog.application && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+            <div className="my-8">
+              <ReviewPrompt
+                gigId={reviewDialog.application.gigId}
+                gigTitle={reviewDialog.application.gigTitle || 'Gig'}
+                revieweeId={reviewDialog.application.applicantId}
+                revieweeName={reviewDialog.application.applicantName}
+                reviewType="employer-to-worker"
+                reviewDeadline={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
+                onClose={() => setReviewDialog({ isOpen: false })}
+                onReviewSubmitted={() => {
+                  setReviewDialog({ isOpen: false })
+                  success('Thanks for your review!')
+                }}
+              />
+            </div>
           </div>
         )}
       </div>
