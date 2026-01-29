@@ -150,13 +150,9 @@ export async function processSuccessfulPayment(
     })
     console.log(`[PaymentProcessing] Updated gig ${gigId} to funded`)
 
-    // 4. Update application status to funded
-    transaction.update(applicationDoc.ref, {
-      status: 'funded',
-      paymentStatus: 'in_escrow',
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    })
-    console.log(`[PaymentProcessing] Updated application ${applicationDoc.id} to funded`)
+    // 4. Update application status to funded (paymentId added later in step 8)
+    // Note: paymentId will be set after payment record is created
+    console.log(`[PaymentProcessing] Will update application ${applicationDoc.id} to funded`)
 
     // 5. Create escrow record
     const escrowRef = db.collection('escrowAccounts').doc(gigId)
@@ -230,6 +226,15 @@ export async function processSuccessfulPayment(
       }
     })
     console.log(`[PaymentProcessing] Created payment record ${paymentRef.id}`)
+
+    // 8b. Now update application with paymentId (needs payment record ID)
+    transaction.update(applicationDoc.ref, {
+      status: 'funded',
+      paymentStatus: 'in_escrow',
+      paymentId: paymentRef.id,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    })
+    console.log(`[PaymentProcessing] Updated application ${applicationDoc.id} with paymentId ${paymentRef.id}`)
 
     // 9. Create payment history for employer (shows payment in escrow)
     const employerHistoryRef = db.collection('paymentHistory').doc()

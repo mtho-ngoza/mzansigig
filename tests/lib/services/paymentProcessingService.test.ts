@@ -267,6 +267,52 @@ describe('PaymentProcessingService', () => {
       expect(mockTransaction.update.mock.calls.length).toBeGreaterThanOrEqual(3)
     })
 
+    it('should save paymentId to application when funding', async () => {
+      mockGet
+        .mockResolvedValueOnce({ empty: false, docs: [mockApplicationDoc], size: 1 })
+        .mockResolvedValueOnce(mockGigDoc)
+
+      mockTransaction.get.mockResolvedValue(mockGigDoc)
+
+      await processSuccessfulPayment(defaultParams)
+
+      // Find the application update call
+      const applicationUpdateCall = mockTransaction.update.mock.calls.find(
+        (call: unknown[]) => call[0] === mockApplicationDoc.ref
+      )
+
+      expect(applicationUpdateCall).toBeDefined()
+      const updateData = applicationUpdateCall![1]
+      expect(updateData).toHaveProperty('status', 'funded')
+      expect(updateData).toHaveProperty('paymentStatus', 'in_escrow')
+      expect(updateData).toHaveProperty('paymentId')
+      expect(updateData.paymentId).toBeDefined()
+      expect(typeof updateData.paymentId).toBe('string')
+    })
+
+    it('should link application paymentId to payment record', async () => {
+      mockGet
+        .mockResolvedValueOnce({ empty: false, docs: [mockApplicationDoc], size: 1 })
+        .mockResolvedValueOnce(mockGigDoc)
+
+      mockTransaction.get.mockResolvedValue(mockGigDoc)
+
+      const result = await processSuccessfulPayment(defaultParams)
+
+      // Verify paymentRecordId is returned
+      expect(result.paymentRecordId).toBeDefined()
+
+      // Find application update and verify paymentId matches
+      const applicationUpdateCall = mockTransaction.update.mock.calls.find(
+        (call: unknown[]) => call[0] === mockApplicationDoc.ref
+      )
+
+      expect(applicationUpdateCall).toBeDefined()
+      const updateData = applicationUpdateCall![1]
+      // The paymentId on application should be the payment record ID
+      expect(updateData.paymentId).toBe(result.paymentRecordId)
+    })
+
     it('should use correct camelCase collection names', async () => {
       const collectionCalls: string[] = []
       mockCollection.mockImplementation((collectionName: string) => {
