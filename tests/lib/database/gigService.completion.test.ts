@@ -262,6 +262,53 @@ describe('GigService - Completion Workflows', () => {
       // But should not attempt to release escrow
       expect(PaymentService.releaseEscrow).not.toHaveBeenCalled()
     })
+
+    it('should call releaseEscrow with correct paymentId when application has paymentId', async () => {
+      // This test documents the CRITICAL requirement: paymentId must be saved to application
+      // during funding for escrow to be released on completion
+      const appWithPaymentId: GigApplication = {
+        ...applicationWithCompletion,
+        paymentId: 'specific-payment-id-123'
+      }
+
+      jest.mocked(FirestoreService.getById)
+        .mockResolvedValueOnce(appWithPaymentId)
+        .mockResolvedValueOnce(mockGig)
+      jest.mocked(FirestoreService.update).mockResolvedValue()
+      jest.mocked(PaymentService.releaseEscrow).mockResolvedValue()
+
+      await GigService.approveCompletion(mockApplicationId, mockEmployerId)
+
+      // Verify escrow is released with the exact paymentId from the application
+      expect(PaymentService.releaseEscrow).toHaveBeenCalledWith('specific-payment-id-123')
+      expect(PaymentService.releaseEscrow).toHaveBeenCalledTimes(1)
+    })
+
+    it('should NOT release escrow when paymentId is missing (unfunded/legacy applications)', async () => {
+      // This documents expected behavior for applications without paymentId
+      // These might be legacy apps or apps where funding failed
+      const appWithoutPaymentId: GigApplication = {
+        ...applicationWithCompletion,
+        paymentId: undefined
+      }
+
+      jest.mocked(FirestoreService.getById)
+        .mockResolvedValueOnce(appWithoutPaymentId)
+        .mockResolvedValueOnce(mockGig)
+      jest.mocked(FirestoreService.update).mockResolvedValue()
+
+      await GigService.approveCompletion(mockApplicationId, mockEmployerId)
+
+      // Application and gig should still be marked completed
+      expect(FirestoreService.update).toHaveBeenCalledWith(
+        'applications',
+        mockApplicationId,
+        { status: 'completed', paymentStatus: 'released' }
+      )
+
+      // But escrow release should NOT be attempted
+      expect(PaymentService.releaseEscrow).not.toHaveBeenCalled()
+    })
   })
 
   describe('disputeCompletion', () => {
