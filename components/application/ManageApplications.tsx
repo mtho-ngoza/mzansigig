@@ -57,6 +57,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
   const [disputeReason, setDisputeReason] = useState('')
   const [processingCompletion, setProcessingCompletion] = useState(false)
   const [paymentVerified, setPaymentVerified] = useState(false)
+  const [verifyingPayment, setVerifyingPayment] = useState(false)
   const [showUpdateRateModal, setShowUpdateRateModal] = useState<{
     isOpen: boolean
     application?: ApplicationWithGig
@@ -76,6 +77,8 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
   // Handle payment return from Paystack
   const verifyPayment = useCallback(async (gigId: string, reference: string) => {
     if (!user || paymentVerified) return
+
+    setVerifyingPayment(true)
 
     try {
       const response = await fetch('/api/payments/paystack/verify', {
@@ -99,9 +102,11 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
         window.location.href = '/dashboard/manage-applications'
       } else {
         showError(result.message || 'Payment verification pending')
+        setVerifyingPayment(false)
       }
     } catch (err) {
       console.error('Payment verification error:', err)
+      setVerifyingPayment(false)
     }
   }, [user, paymentVerified, success, showError])
 
@@ -498,12 +503,21 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
     return Math.max(0, diffDays)
   }
 
-  if (loading) {
+  if (loading || verifyingPayment) {
     return (
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-6xl mx-auto px-4">
           <div className="text-center">
-            <p className="text-gray-600">Loading applications...</p>
+            {verifyingPayment ? (
+              <div className="bg-white rounded-lg shadow-lg p-8 max-w-md mx-auto">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Verifying Payment...</h3>
+                <p className="text-gray-600">Please wait while we confirm your payment with Paystack.</p>
+                <p className="text-sm text-gray-500 mt-2">This may take a few seconds.</p>
+              </div>
+            ) : (
+              <p className="text-gray-600">Loading applications...</p>
+            )}
           </div>
         </div>
       </div>
