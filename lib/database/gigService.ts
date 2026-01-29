@@ -822,7 +822,11 @@ export class GigService {
           new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount);
 
         const roleLabel = confirmedBy === 'worker' ? 'Worker' : 'Employer';
-        const messageContent = `✅ **Rate Agreed!**\n\n${roleLabel} has accepted the rate of ${formatCurrency(currentRate)} for "${gig.title}".\n\n${confirmedBy === 'employer' ? 'You can now fund the escrow to begin work.' : 'Waiting for employer to fund the escrow.'}`;
+        // Message goes to otherParty: if employer confirmed, worker receives; if worker confirmed, employer receives
+        const nextStepMessage = confirmedBy === 'employer'
+          ? 'The employer will now fund the escrow. Work can begin once payment is secured.'
+          : 'You can now fund the escrow to begin work.';
+        const messageContent = `✅ **Rate Agreed!**\n\n${roleLabel} has accepted the rate of ${formatCurrency(currentRate)} for "${gig.title}".\n\n${nextStepMessage}`;
 
         // Determine names and types based on who is confirming
         const senderName = confirmedBy === 'worker' ? application.applicantName : gig.employerName;
