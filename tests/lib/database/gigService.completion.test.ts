@@ -175,7 +175,7 @@ describe('GigService - Completion Workflows', () => {
       expect(FirestoreService.update).toHaveBeenCalledWith(
         'applications',
         mockApplicationId,
-        { status: 'completed' }
+        { status: 'completed', paymentStatus: 'released' }
       )
 
       // Verify gig status updated
@@ -256,7 +256,7 @@ describe('GigService - Completion Workflows', () => {
       expect(FirestoreService.update).toHaveBeenCalledWith(
         'applications',
         mockApplicationId,
-        { status: 'completed' }
+        { status: 'completed', paymentStatus: 'released' }
       )
 
       // But should not attempt to release escrow
@@ -419,7 +419,7 @@ describe('GigService - Completion Workflows', () => {
       expect(FirestoreService.update).toHaveBeenCalledWith(
         'applications',
         mockApplicationId,
-        { status: 'completed' }
+        { status: 'completed', paymentStatus: 'released' }
       )
 
       // Verify gig status updated
@@ -541,7 +541,7 @@ describe('GigService - Completion Workflows', () => {
       expect(FirestoreService.update).toHaveBeenCalledWith(
         'applications',
         mockApplicationId,
-        { status: 'completed' }
+        { status: 'completed', paymentStatus: 'released' }
       )
 
       // But should not attempt to release escrow
