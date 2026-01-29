@@ -151,6 +151,30 @@ Empower all of Mzansi (South Africa) - from informal sector workers to professio
 - ⏰ **Funding Protection**: Auto-cancels accepted applications if not funded within configurable timeout (default 48 hours)
 - 🔄 **Smart Status Updates**: Gig status automatically changes to 'in-progress' when payment is funded
 
+#### Payment & Payout Model (Current Implementation)
+
+**Money Flow:**
+```
+Employer pays via Paystack → Paystack settles to platform bank account (T+2)
+                          → "Escrow" is virtual bookkeeping in database
+                          → Worker requests withdrawal
+                          → Admin manually transfers via EFT to worker's bank
+```
+
+**Current Model (Phase 1 - Manual Payouts):**
+- Employer payments are processed via Paystack and settled to the platform's bank account
+- "Escrow" is internal database accounting (not third-party escrow)
+- Worker wallet balances are virtual records in Firestore
+- Admin manually processes withdrawal requests via bank EFT
+- Simple, low-cost, suitable for early-stage operations
+
+**Future Enhancement (Phase 2 - Automated Payouts):**
+- Integrate [Paystack Transfers API](https://paystack.com/docs/transfers/) for automated worker payouts
+- Requires Paystack business account with Transfers enabled
+- Additional transfer fees apply (~R10-15 per transfer)
+- Will enable instant/same-day payouts to workers
+- Implementation planned when transaction volume justifies automation costs
+
 ### Messaging System
 - 💬 **Real-time Messaging**: Direct communication between employers and job seekers
 - 🔔 **Unread Message Indicators**: Visual badges showing unread message counts
@@ -236,7 +260,8 @@ Empower all of Mzansi (South Africa) - from informal sector workers to professio
 - [ ] **Multi-language Support** - isiZulu, Afrikaans, and other SA languages (critical for inclusion in 11-language nation)
 - [ ] **Enhanced Verification** - Background checks and address verification (UI ready! +25 trust score, builds trust fast)
 - [ ] **Emergency SMS Integration** - Safety notifications via Twilio/African SMS gateway (safety critical in SA context)
-- [ ] **Automated Withdrawal System** - 3-tier hybrid model for faster worker payouts (direct value to workers)
+- [ ] **Paystack Transfers API** - Automated worker payouts (currently manual EFT, upgrade when volume justifies transfer fees)
+- [ ] **Completion Proof Upload** - Allow workers to attach photos/files when requesting completion (strengthens dispute resolution)
 
 ### 📈 Priority 3: Growth & Engagement (Month 3-6)
 **Builds long-term value and stickiness**

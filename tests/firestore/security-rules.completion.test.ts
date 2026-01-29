@@ -147,7 +147,7 @@ describe('Firestore Security Rules - Completion Requests', () => {
       expect(FirestoreService.update).toHaveBeenCalledWith(
         'applications',
         mockApplicationId,
-        { status: 'completed' }
+        { status: 'completed', paymentStatus: 'released' }
       )
     })
 
