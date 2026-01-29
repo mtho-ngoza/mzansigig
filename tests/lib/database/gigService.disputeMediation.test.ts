@@ -140,7 +140,8 @@ describe('GigService - Dispute Mediation', () => {
           completionResolvedBy: mockAdminId,
           completionResolution: 'approved',
           completionResolutionNotes: resolutionNotes,
-          status: 'completed'
+          status: 'completed',
+          paymentStatus: 'released'
         })
       )
 

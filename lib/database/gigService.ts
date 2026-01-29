@@ -966,8 +966,11 @@ export class GigService {
       throw new Error('No completion request found for this application');
     }
 
-    // Update application status to completed
-    await FirestoreService.update('applications', applicationId, { status: 'completed' });
+    // Update application status to completed and payment status to released
+    await FirestoreService.update('applications', applicationId, {
+      status: 'completed',
+      paymentStatus: 'released'
+    });
 
     // Update gig status to completed
     await this.updateGig(application.gigId, { status: 'completed' });
@@ -1045,8 +1048,11 @@ export class GigService {
 
       // If auto-release date has passed, automatically complete and release
       if (now >= autoReleaseDate) {
-        // Update application status to completed
-        await FirestoreService.update('applications', applicationId, { status: 'completed' });
+        // Update application status to completed and payment status to released
+        await FirestoreService.update('applications', applicationId, {
+          status: 'completed',
+          paymentStatus: 'released'
+        });
 
         // Update gig status to completed
         await this.updateGig(application.gigId, { status: 'completed' });
@@ -1148,7 +1154,8 @@ export class GigService {
       completionResolvedBy: adminId,
       completionResolution: 'approved',
       completionResolutionNotes: resolutionNotes,
-      status: 'completed'
+      status: 'completed',
+      paymentStatus: 'released'
     });
 
     // Update gig status to completed
