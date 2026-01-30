@@ -340,7 +340,10 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
             {/* Quick Questions for Physical Work */}
             {isPhysicalWork && (
               <>
-                {(user?.experienceYears || user?.availability || user?.equipmentOwnership) && (
+                {/* Show pre-filled message only when form values actually match user profile */}
+                {((user?.experienceYears && formData.experience === user.experienceYears) ||
+                  (user?.availability && formData.availability === user.availability) ||
+                  (user?.equipmentOwnership && formData.equipment === user.equipmentOwnership)) && (
                   <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-800">
                       💡 <strong>Great news!</strong> We&apos;ve pre-filled some information from your profile to save you time. You can update these if needed for this specific gig.

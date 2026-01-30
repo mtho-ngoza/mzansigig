@@ -253,6 +253,10 @@ Employer pays via Paystack → Paystack settles to platform bank account (T+2)
 - [ ] **Beta Testing** - Validate with 20-30 users in one township before full launch
   - Platform feature-complete and tested
   - Ready for controlled beta launch
+- [ ] **Firestore Transaction Atomicity** - Wrap multi-step operations in transactions for data consistency
+  - Payment/escrow release flow (prevents partial updates if step fails)
+  - Completion approval with escrow release
+  - Any operation updating multiple collections that must succeed/fail together
 
 ### 🚀 Priority 2: High User Value (Month 1-2)
 **Should implement soon after launch - Direct user impact**
@@ -262,6 +266,9 @@ Employer pays via Paystack → Paystack settles to platform bank account (T+2)
 - [ ] **Emergency SMS Integration** - Safety notifications via Twilio/African SMS gateway (safety critical in SA context)
 - [ ] **Paystack Transfers API** - Automated worker payouts (currently manual EFT, upgrade when volume justifies transfer fees)
 - [ ] **Completion Proof Upload** - Allow workers to attach photos/files when requesting completion (strengthens dispute resolution)
+- [ ] **In-App Notification System** - Currently status updates are communicated via application views only; users miss updates if they don't open those views
+  - Options: Enhance existing messaging system for system notifications OR implement dedicated notification bell/center
+  - Consider: Push notifications (PWA), notification preferences, email digest options
 
 ### 📈 Priority 3: Growth & Engagement (Month 3-6)
 **Builds long-term value and stickiness**

@@ -62,7 +62,9 @@ service cloud.firestore {
                       request.resource.data.id == userId;
 
       // Users can only update their own profile
-      // Exception: rating and reviewCount can be updated by review system
+      // Exceptions:
+      // - rating and reviewCount can be updated by review system
+      // - wallet fields can be updated during escrow release
       allow update: if isAuthenticated() && (
                       // Owner updating their own profile
                       (isOwner(userId) &&
@@ -73,6 +75,8 @@ service cloud.firestore {
                        request.resource.data.createdAt == resource.data.createdAt) ||
                       // OR anyone can update ONLY rating and reviewCount (review system)
                       (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'reviewCount', 'updatedAt'])) ||
+                      // OR wallet balance updates during escrow release (pendingBalance, walletBalance, totalEarnings)
+                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pendingBalance', 'walletBalance', 'totalEarnings', 'updatedAt'])) ||
                       // OR admin can update userType
                       isAdmin()
                     );
@@ -562,9 +566,18 @@ service cloud.firestore {
                       hasRequiredFields(['userId', 'type', 'amount', 'status']) &&
                       request.resource.data.userId == request.auth.uid;
 
-      // Payment history is generally immutable, but allow updates for status changes
+      // Payment history updates allowed for:
+      // 1. Own history records
+      // 2. Escrow release: employer can mark worker's history as completed (via gig ownership)
       allow update: if isAuthenticated() &&
-                      resource.data.userId == request.auth.uid;
+                      (
+                        // Own history
+                        resource.data.userId == request.auth.uid ||
+                        // Employer releasing escrow can update worker's payment history for their gig
+                        (resource.data.gigId != null &&
+                         exists(/databases/$(database)/documents/gigs/$(resource.data.gigId)) &&
+                         request.auth.uid == get(/databases/$(database)/documents/gigs/$(resource.data.gigId)).data.employerId)
+                      );
 
       // Users can delete their own history, admins can delete any
       allow delete: if isAuthenticated() &&
