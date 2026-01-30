@@ -9,6 +9,8 @@ import {
   getCityCoordinates
 } from '@/lib/utils/locationUtils';
 import type { DocumentSnapshot, DocumentData } from 'firebase/firestore';
+import { doc, runTransaction, Timestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { ConfigService } from './configService';
 import { sanitizeGigText, normalizeSkills, validateBudget, GIG_TEXT_LIMITS } from '@/lib/utils/gigValidation';
 import { sanitizeApplicationMessage, APPLICATION_TEXT_LIMITS } from '@/lib/utils/applicationValidation';
@@ -948,42 +950,55 @@ export class GigService {
     applicationId: string,
     employerId: string
   ): Promise<void> {
+    // Phase 1: Validate and pre-fetch data (outside transaction)
     const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
 
     if (!application) {
       throw new Error('Application not found');
     }
 
-    // Get the gig to verify employer
     const gig = await FirestoreService.getById<Gig>('gigs', application.gigId);
     if (!gig) {
       throw new Error('Gig not found');
     }
 
-    // Verify the employer owns this gig
     if (gig.employerId !== employerId) {
       throw new Error('Only the gig employer can approve completion');
     }
 
-    // Verify completion was requested
     if (!application.completionRequestedAt) {
       throw new Error('No completion request found for this application');
     }
 
-    // Update application status to completed and payment status to released
-    await FirestoreService.update('applications', applicationId, {
-      status: 'completed',
-      paymentStatus: 'released'
-    });
-
-    // Update gig status to completed
-    await this.updateGig(application.gigId, { status: 'completed' });
-
-    // Release escrow if payment exists
+    // Pre-fetch escrow release context if payment exists
+    let escrowContext: Awaited<ReturnType<typeof import('../services/paymentService').PaymentService.getEscrowReleaseContext>> | null = null;
     if (application.paymentId) {
       const { PaymentService } = await import('../services/paymentService');
-      await PaymentService.releaseEscrow(application.paymentId);
+      escrowContext = await PaymentService.getEscrowReleaseContext(application.paymentId);
     }
+
+    // Phase 2: Execute all writes atomically in a transaction
+    await runTransaction(db, async (transaction) => {
+      // Update application status
+      const applicationRef = doc(db, 'applications', applicationId);
+      transaction.update(applicationRef, {
+        status: 'completed',
+        paymentStatus: 'released'
+      });
+
+      // Update gig status
+      const gigRef = doc(db, 'gigs', application.gigId);
+      transaction.update(gigRef, {
+        status: 'completed',
+        updatedAt: Timestamp.now()
+      });
+
+      // Release escrow if payment exists
+      if (escrowContext) {
+        const { PaymentService } = await import('../services/paymentService');
+        await PaymentService.releaseEscrowInTransaction(transaction, escrowContext);
+      }
+    });
   }
 
   // Employer disputes worker completion request
@@ -1052,20 +1067,35 @@ export class GigService {
 
       // If auto-release date has passed, automatically complete and release
       if (now >= autoReleaseDate) {
-        // Update application status to completed and payment status to released
-        await FirestoreService.update('applications', applicationId, {
-          status: 'completed',
-          paymentStatus: 'released'
-        });
-
-        // Update gig status to completed
-        await this.updateGig(application.gigId, { status: 'completed' });
-
-        // Release escrow if payment exists
+        // Pre-fetch escrow release context if payment exists
+        let escrowContext: Awaited<ReturnType<typeof import('../services/paymentService').PaymentService.getEscrowReleaseContext>> | null = null;
         if (application.paymentId) {
           const { PaymentService } = await import('../services/paymentService');
-          await PaymentService.releaseEscrow(application.paymentId);
+          escrowContext = await PaymentService.getEscrowReleaseContext(application.paymentId);
         }
+
+        // Execute all writes atomically in a transaction
+        await runTransaction(db, async (transaction) => {
+          // Update application status
+          const applicationRef = doc(db, 'applications', applicationId);
+          transaction.update(applicationRef, {
+            status: 'completed',
+            paymentStatus: 'released'
+          });
+
+          // Update gig status
+          const gigRef = doc(db, 'gigs', application.gigId);
+          transaction.update(gigRef, {
+            status: 'completed',
+            updatedAt: Timestamp.now()
+          });
+
+          // Release escrow if payment exists
+          if (escrowContext) {
+            const { PaymentService } = await import('../services/paymentService');
+            await PaymentService.releaseEscrowInTransaction(transaction, escrowContext);
+          }
+        });
 
         return true;
       }
@@ -1137,13 +1167,13 @@ export class GigService {
     adminId: string,
     resolutionNotes?: string
   ): Promise<void> {
+    // Phase 1: Validate and pre-fetch data (outside transaction)
     const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
 
     if (!application) {
       throw new Error('Application not found');
     }
 
-    // Verify this is a disputed application
     if (!application.completionDisputedAt) {
       throw new Error('This application does not have an active dispute');
     }
@@ -1152,24 +1182,39 @@ export class GigService {
       throw new Error('This dispute has already been resolved');
     }
 
-    // Mark dispute as resolved in favor of worker
-    await FirestoreService.update('applications', applicationId, {
-      completionResolvedAt: new Date(),
-      completionResolvedBy: adminId,
-      completionResolution: 'approved',
-      completionResolutionNotes: resolutionNotes,
-      status: 'completed',
-      paymentStatus: 'released'
-    });
-
-    // Update gig status to completed
-    await this.updateGig(application.gigId, { status: 'completed' });
-
-    // Release escrow to worker
+    // Pre-fetch escrow release context if payment exists
+    let escrowContext: Awaited<ReturnType<typeof import('../services/paymentService').PaymentService.getEscrowReleaseContext>> | null = null;
     if (application.paymentId) {
       const { PaymentService } = await import('../services/paymentService');
-      await PaymentService.releaseEscrow(application.paymentId);
+      escrowContext = await PaymentService.getEscrowReleaseContext(application.paymentId);
     }
+
+    // Phase 2: Execute all writes atomically in a transaction
+    await runTransaction(db, async (transaction) => {
+      // Mark dispute as resolved in favor of worker
+      const applicationRef = doc(db, 'applications', applicationId);
+      transaction.update(applicationRef, {
+        completionResolvedAt: Timestamp.now(),
+        completionResolvedBy: adminId,
+        completionResolution: 'approved',
+        completionResolutionNotes: resolutionNotes,
+        status: 'completed',
+        paymentStatus: 'released'
+      });
+
+      // Update gig status to completed
+      const gigRef = doc(db, 'gigs', application.gigId);
+      transaction.update(gigRef, {
+        status: 'completed',
+        updatedAt: Timestamp.now()
+      });
+
+      // Release escrow to worker
+      if (escrowContext) {
+        const { PaymentService } = await import('../services/paymentService');
+        await PaymentService.releaseEscrowInTransaction(transaction, escrowContext);
+      }
+    });
   }
 
   static async resolveDisputeInFavorOfEmployer(

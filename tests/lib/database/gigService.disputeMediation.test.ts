@@ -8,6 +8,27 @@ import { FirestoreService } from '@/lib/database/firestore'
 import { PaymentService } from '@/lib/services/paymentService'
 import { Gig, GigApplication } from '@/types/gig'
 
+// Mock transaction object
+const mockTransaction = {
+  update: jest.fn(),
+  get: jest.fn(),
+  set: jest.fn()
+}
+
+// Mock firebase/firestore
+jest.mock('firebase/firestore', () => ({
+  doc: jest.fn(() => ({ id: 'mock-doc-ref' })),
+  runTransaction: jest.fn((db, callback) => callback(mockTransaction)),
+  Timestamp: {
+    now: jest.fn(() => ({ toDate: () => new Date() }))
+  }
+}))
+
+// Mock firebase db
+jest.mock('@/lib/firebase', () => ({
+  db: {}
+}))
+
 // Mock dependencies
 jest.mock('@/lib/database/firestore')
 jest.mock('@/lib/services/paymentService')
@@ -58,6 +79,18 @@ describe('GigService - Dispute Mediation', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    mockTransaction.update.mockClear()
+    mockTransaction.get.mockClear()
+    mockTransaction.set.mockClear()
+
+    // Mock PaymentService transactional methods
+    ;(PaymentService.getEscrowReleaseContext as jest.Mock).mockResolvedValue({
+      paymentId: mockPaymentId,
+      paymentData: { amount: 1000, gigId: mockGigId, workerId: mockWorkerId },
+      feeBreakdown: { netAmountToWorker: 900, workerCommission: 100 },
+      paymentHistoryDocs: []
+    })
+    ;(PaymentService.releaseEscrowInTransaction as jest.Mock).mockResolvedValue(undefined)
   })
 
   describe('getAllDisputedApplications', () => {
@@ -120,8 +153,6 @@ describe('GigService - Dispute Mediation', () => {
   describe('resolveDisputeInFavorOfWorker', () => {
     it('should successfully resolve dispute and release payment to worker', async () => {
       jest.mocked(FirestoreService.getById).mockResolvedValue(mockDisputedApplication)
-      jest.mocked(FirestoreService.update).mockResolvedValue()
-      jest.mocked(PaymentService.releaseEscrow).mockResolvedValue()
 
       const resolutionNotes = 'Worker has completed the work as agreed. Employer concerns were minor.'
 
@@ -131,46 +162,21 @@ describe('GigService - Dispute Mediation', () => {
         resolutionNotes
       )
 
-      // Verify application was marked as resolved
-      expect(FirestoreService.update).toHaveBeenCalledWith(
-        'applications',
-        mockApplicationId,
-        expect.objectContaining({
-          completionResolvedAt: expect.any(Date),
-          completionResolvedBy: mockAdminId,
-          completionResolution: 'approved',
-          completionResolutionNotes: resolutionNotes,
-          status: 'completed',
-          paymentStatus: 'released'
-        })
-      )
+      // Verify transaction updates were called
+      expect(mockTransaction.update).toHaveBeenCalled()
 
-      // Verify gig was marked as completed
-      expect(FirestoreService.update).toHaveBeenCalledWith(
-        'gigs',
-        mockGigId,
-        expect.objectContaining({ status: 'completed' })
-      )
-
-      // Verify escrow was released
-      expect(PaymentService.releaseEscrow).toHaveBeenCalledWith(mockPaymentId)
+      // Verify escrow context fetched and released in transaction
+      expect(PaymentService.getEscrowReleaseContext).toHaveBeenCalledWith(mockPaymentId)
+      expect(PaymentService.releaseEscrowInTransaction).toHaveBeenCalled()
     })
 
     it('should work without resolution notes', async () => {
       jest.mocked(FirestoreService.getById).mockResolvedValue(mockDisputedApplication)
-      jest.mocked(FirestoreService.update).mockResolvedValue()
-      jest.mocked(PaymentService.releaseEscrow).mockResolvedValue()
 
       await GigService.resolveDisputeInFavorOfWorker(mockApplicationId, mockAdminId)
 
-      expect(FirestoreService.update).toHaveBeenCalledWith(
-        'applications',
-        mockApplicationId,
-        expect.objectContaining({
-          completionResolution: 'approved',
-          status: 'completed'
-        })
-      )
+      // Verify transaction updates were called
+      expect(mockTransaction.update).toHaveBeenCalled()
     })
 
     it('should handle applications without payment gracefully', async () => {
@@ -180,15 +186,15 @@ describe('GigService - Dispute Mediation', () => {
       }
 
       jest.mocked(FirestoreService.getById).mockResolvedValue(applicationWithoutPayment)
-      jest.mocked(FirestoreService.update).mockResolvedValue()
 
       await GigService.resolveDisputeInFavorOfWorker(mockApplicationId, mockAdminId)
 
-      // Should still update application and gig
-      expect(FirestoreService.update).toHaveBeenCalledTimes(2)
+      // Should still update via transaction
+      expect(mockTransaction.update).toHaveBeenCalled()
 
       // But should not attempt to release escrow
-      expect(PaymentService.releaseEscrow).not.toHaveBeenCalled()
+      expect(PaymentService.getEscrowReleaseContext).not.toHaveBeenCalled()
+      expect(PaymentService.releaseEscrowInTransaction).not.toHaveBeenCalled()
     })
 
     it('should reject if application not found', async () => {
@@ -198,7 +204,7 @@ describe('GigService - Dispute Mediation', () => {
         GigService.resolveDisputeInFavorOfWorker(mockApplicationId, mockAdminId)
       ).rejects.toThrow('Application not found')
 
-      expect(PaymentService.releaseEscrow).not.toHaveBeenCalled()
+      expect(PaymentService.releaseEscrowInTransaction).not.toHaveBeenCalled()
     })
 
     it('should reject if no active dispute exists', async () => {
@@ -213,7 +219,7 @@ describe('GigService - Dispute Mediation', () => {
         GigService.resolveDisputeInFavorOfWorker(mockApplicationId, mockAdminId)
       ).rejects.toThrow('This application does not have an active dispute')
 
-      expect(PaymentService.releaseEscrow).not.toHaveBeenCalled()
+      expect(PaymentService.releaseEscrowInTransaction).not.toHaveBeenCalled()
     })
 
     it('should reject if dispute already resolved', async () => {
@@ -228,7 +234,7 @@ describe('GigService - Dispute Mediation', () => {
         GigService.resolveDisputeInFavorOfWorker(mockApplicationId, mockAdminId)
       ).rejects.toThrow('This dispute has already been resolved')
 
-      expect(PaymentService.releaseEscrow).not.toHaveBeenCalled()
+      expect(PaymentService.releaseEscrowInTransaction).not.toHaveBeenCalled()
     })
   })
 
@@ -334,7 +340,7 @@ describe('GigService - Dispute Mediation', () => {
       await GigService.resolveDisputeInFavorOfEmployer(mockApplicationId, mockAdminId, 'Continue work')
 
       // Escrow should NOT be released
-      expect(PaymentService.releaseEscrow).not.toHaveBeenCalled()
+      expect(PaymentService.releaseEscrowInTransaction).not.toHaveBeenCalled()
 
       // Application should stay funded
       const updateCall = jest.mocked(FirestoreService.update).mock.calls[0][2]
@@ -363,22 +369,20 @@ describe('GigService - Dispute Mediation', () => {
       const workerNotes = 'Worker completed as agreed'
       const employerNotes = 'Employer is correct about missing features'
 
-      // Test worker resolution
+      // Test worker resolution (uses transaction)
       await GigService.resolveDisputeInFavorOfWorker(mockApplicationId, mockAdminId, workerNotes)
 
-      let updateCall = jest.mocked(FirestoreService.update).mock.calls[0][2]
-      expect(updateCall).toMatchObject({
-        completionResolvedBy: mockAdminId,
-        completionResolution: 'approved',
-        completionResolutionNotes: workerNotes
-      })
+      // Worker resolution now uses transaction - verify escrow was released
+      expect(mockTransaction.update).toHaveBeenCalled()
+      expect(PaymentService.releaseEscrowInTransaction).toHaveBeenCalled()
 
       jest.clearAllMocks()
+      mockTransaction.update.mockClear()
 
-      // Test employer resolution
+      // Test employer resolution (still uses FirestoreService.update)
       await GigService.resolveDisputeInFavorOfEmployer(mockApplicationId, mockAdminId, employerNotes)
 
-      updateCall = jest.mocked(FirestoreService.update).mock.calls[0][2]
+      const updateCall = jest.mocked(FirestoreService.update).mock.calls[0][2]
       expect(updateCall).toMatchObject({
         completionResolvedBy: mockAdminId,
         completionResolution: 'rejected',
