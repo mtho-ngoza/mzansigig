@@ -253,6 +253,10 @@ Employer pays via Paystack → Paystack settles to platform bank account (T+2)
 - [ ] **Beta Testing** - Validate with 20-30 users in one township before full launch
   - Platform feature-complete and tested
   - Ready for controlled beta launch
+- [ ] **Firestore Transaction Atomicity** - Wrap multi-step operations in transactions for data consistency
+  - Payment/escrow release flow (prevents partial updates if step fails)
+  - Completion approval with escrow release
+  - Any operation updating multiple collections that must succeed/fail together
 
 ### 🚀 Priority 2: High User Value (Month 1-2)
 **Should implement soon after launch - Direct user impact**
