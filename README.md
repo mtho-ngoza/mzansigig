@@ -266,6 +266,9 @@ Employer pays via Paystack → Paystack settles to platform bank account (T+2)
 - [ ] **Emergency SMS Integration** - Safety notifications via Twilio/African SMS gateway (safety critical in SA context)
 - [ ] **Paystack Transfers API** - Automated worker payouts (currently manual EFT, upgrade when volume justifies transfer fees)
 - [ ] **Completion Proof Upload** - Allow workers to attach photos/files when requesting completion (strengthens dispute resolution)
+- [ ] **In-App Notification System** - Currently status updates are communicated via application views only; users miss updates if they don't open those views
+  - Options: Enhance existing messaging system for system notifications OR implement dedicated notification bell/center
+  - Consider: Push notifications (PWA), notification preferences, email digest options
 
 ### 📈 Priority 3: Growth & Engagement (Month 3-6)
 **Builds long-term value and stickiness**
