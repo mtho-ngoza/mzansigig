@@ -1238,21 +1238,24 @@ export default function PublicGigBrowser({
                           onConversationStart={onMessageConversationStart}
                         />
                       )}
-                      <Button
-                        size="sm"
-                        onClick={() => handleApplyClick(gig)}
-                        disabled={
-                          !!(currentUser && userAppliedGigs.has(gig.id)) ||
-                          gig.status === 'reviewing' ||
-                          !!(gig.maxApplicants && (applicationCounts[gig.id] || 0) >= gig.maxApplicants)
-                        }
-                        variant={currentUser && userAppliedGigs.has(gig.id) ? 'outline' : 'primary'}
-                      >
-                        {currentUser && userAppliedGigs.has(gig.id) ? 'Already Applied' :
-                         gig.status === 'reviewing' ? 'Under Review' :
-                         gig.maxApplicants && (applicationCounts[gig.id] || 0) >= gig.maxApplicants ? 'Limit Reached' :
-                         (currentUser ? 'Apply' : 'Apply Now')}
-                      </Button>
+                      {/* Hide Apply button for employers - they're browsing for market research */}
+                      {currentUser?.userType !== 'employer' && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleApplyClick(gig)}
+                          disabled={
+                            !!(currentUser && userAppliedGigs.has(gig.id)) ||
+                            gig.status === 'reviewing' ||
+                            !!(gig.maxApplicants && (applicationCounts[gig.id] || 0) >= gig.maxApplicants)
+                          }
+                          variant={currentUser && userAppliedGigs.has(gig.id) ? 'outline' : 'primary'}
+                        >
+                          {currentUser && userAppliedGigs.has(gig.id) ? 'Already Applied' :
+                           gig.status === 'reviewing' ? 'Under Review' :
+                           gig.maxApplicants && (applicationCounts[gig.id] || 0) >= gig.maxApplicants ? 'Limit Reached' :
+                           (currentUser ? 'Apply' : 'Apply Now')}
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </CardContent>

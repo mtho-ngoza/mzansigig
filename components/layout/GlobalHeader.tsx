@@ -69,12 +69,21 @@ export function GlobalHeader({
               {/* Main Navigation - Hidden on mobile */}
               {user && (
                 <nav className="hidden lg:flex space-x-4">
+                  {/* Dashboard link - quick access for all users */}
+                  <Button
+                    variant={currentPage === 'dashboard' ? 'primary' : 'ghost'}
+                    size="sm"
+                    onClick={() => onNavigate?.('dashboard')}
+                  >
+                    Dashboard
+                  </Button>
+                  {/* Browse Gigs - primarily for job seekers, employers can browse for market research */}
                   <Button
                     variant={currentPage === 'browse' ? 'primary' : 'ghost'}
                     size="sm"
                     onClick={() => onNavigate?.('browse')}
                   >
-                    Browse Gigs
+                    {user.userType === 'employer' ? 'Browse Market' : 'Browse Gigs'}
                   </Button>
                   {user.userType === 'employer' && (
                     <Button
