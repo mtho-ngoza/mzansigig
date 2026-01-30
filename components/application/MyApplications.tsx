@@ -61,6 +61,7 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
     isOpen: boolean
     application?: ApplicationWithGig
   }>({ isOpen: false })
+  const [reviewedApplications, setReviewedApplications] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const loadApplications = async () => {
@@ -867,8 +868,8 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                           <p className="mt-3 text-xs text-green-700">
                             The funds are now available in your wallet for withdrawal.
                           </p>
-                          {/* Leave Review Button */}
-                          {application.gigEmployerId && (
+                          {/* Leave Review Button - only show if not already reviewed */}
+                          {application.gigEmployerId && !reviewedApplications.has(application.id) && (
                             <div className="mt-4">
                               <Button
                                 variant="outline"
@@ -878,6 +879,15 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                               >
                                 ⭐ Leave Review for Employer
                               </Button>
+                            </div>
+                          )}
+                          {/* Show confirmation if review was submitted */}
+                          {reviewedApplications.has(application.id) && (
+                            <div className="mt-4 flex items-center text-sm text-green-700">
+                              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                              Review submitted - awaiting employer&apos;s review to reveal
                             </div>
                           )}
                         </div>
@@ -1060,6 +1070,8 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                 reviewDeadline={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)}
                 onClose={() => setReviewDialog({ isOpen: false })}
                 onReviewSubmitted={() => {
+                  // Track that this application was reviewed
+                  setReviewedApplications(prev => new Set(prev).add(reviewDialog.application!.id))
                   setReviewDialog({ isOpen: false })
                   success('Thanks for your review!')
                 }}
