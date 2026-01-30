@@ -71,7 +71,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
     isOpen: boolean
     application?: ApplicationWithGig
   }>({ isOpen: false })
-  const [reviewedApplications, setReviewedApplications] = useState<Set<string>>(new Set())
+  const [_reviewedApplications, _setReviewedApplications] = useState<Set<string>>(new Set())
 
   const searchParams = useSearchParams()
 
@@ -1283,7 +1283,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
                 onReviewSubmitted={() => {
                   // Track that this application was reviewed
                   if (reviewDialog.application) {
-                    setReviewedApplications(prev => new Set(prev).add(reviewDialog.application!.id))
+                    _setReviewedApplications(prev => new Set(prev).add(reviewDialog.application!.id))
                   }
                   setReviewDialog({ isOpen: false })
                   success('Thanks for your review!')
