@@ -101,7 +101,7 @@ describe('ProfileCompleteness', () => {
         skills: ['React', 'TypeScript'],
         experience: '5 years',
         hourlyRate: 500,
-        availability: 'Available immediately',
+        availability: 'flexible',
         education: 'BSc Computer Science',
         languages: ['English', 'Afrikaans'],
         portfolio: [{
@@ -150,7 +150,7 @@ describe('ProfileCompleteness', () => {
         skills: ['React'],
         experience: '5 years',
         hourlyRate: 500,
-        availability: 'Available',
+        availability: 'flexible',
         education: 'BSc',
         languages: ['English'],
         portfolio: [{ id: '1', title: 'Project', description: 'Test', category: 'Web', completedAt: new Date() }]

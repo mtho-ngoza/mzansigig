@@ -29,7 +29,7 @@ describe('UserService - Job Seeker Management', () => {
     isVerified: true,
     verificationLevel: 'basic',
     hourlyRate: 150,
-    availability: 'Full-time',
+    availability: 'full-time',
     bio: 'Experienced plumber and electrician',
     createdAt: new Date('2024-01-01')
   };
@@ -51,7 +51,7 @@ describe('UserService - Job Seeker Management', () => {
     isVerified: true,
     verificationLevel: 'enhanced',
     hourlyRate: 200,
-    availability: 'Part-time',
+    availability: 'part-time',
     bio: 'Professional painter and carpenter',
     createdAt: new Date('2024-02-01')
   };
