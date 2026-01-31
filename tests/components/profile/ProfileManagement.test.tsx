@@ -82,7 +82,7 @@ describe('ProfileManagement', () => {
     skills: ['React', 'TypeScript', 'Node.js', 'PostgreSQL'],
     experience: '5 years of professional web development',
     hourlyRate: 500,
-    availability: 'Available immediately',
+    availability: 'flexible',
     languages: ['English', 'Afrikaans'],
     education: 'BSc Computer Science',
     certifications: ['AWS Certified Developer', 'React Professional'],
@@ -195,7 +195,7 @@ describe('ProfileManagement', () => {
       expect(screen.getByText('Experience & Background')).toBeInTheDocument()
       expect(screen.getByText(/5 years of professional web development/i)).toBeInTheDocument()
       expect(screen.getByText(/BSc Computer Science/i)).toBeInTheDocument()
-      expect(screen.getByText(/Available immediately/i)).toBeInTheDocument()
+      expect(screen.getByText(/Flexible/i)).toBeInTheDocument()
     })
 
     it('should display languages section', () => {

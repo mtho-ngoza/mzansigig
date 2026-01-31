@@ -42,7 +42,7 @@ describe('JobSeekerProfileDialog', () => {
     skills: ['React', 'TypeScript', 'Node.js'],
     experience: '5 years of professional web development',
     hourlyRate: 500,
-    availability: 'Available immediately',
+    availability: 'flexible',
     languages: ['English', 'Afrikaans'],
     education: 'BSc Computer Science',
     certifications: ['AWS Certified Developer', 'React Professional'],

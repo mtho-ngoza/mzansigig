@@ -77,18 +77,18 @@ describe('ExperienceForm', () => {
     it('should submit professional user data', async () => {
       render(<ExperienceForm onBack={mockOnBack} />)
 
-      // Select experience level
+      // Select experience level (now uses value format like 'mid-level')
       const experienceOptions = screen.getAllByRole('radio', { name: /years/i })
-      fireEvent.click(experienceOptions[2]) // Mid-level (3-5 years)
+      fireEvent.click(experienceOptions[2]) // Mid-level (3-5 years) -> value is 'mid-level'
 
       // Fill hourly rate
       const hourlyRateInput = screen.getByPlaceholderText('500')
       fireEvent.change(hourlyRateInput, { target: { value: '750' } })
 
-      // Select availability
+      // Select availability (now uses value format like 'flexible')
       const availabilityOptions = screen.getAllByRole('radio')
       const flexibleOption = availabilityOptions.find(
-        option => (option as HTMLInputElement).value === 'Flexible'
+        option => (option as HTMLInputElement).value === 'flexible'
       )
       if (flexibleOption) fireEvent.click(flexibleOption)
 
@@ -98,9 +98,9 @@ describe('ExperienceForm', () => {
 
       await waitFor(() => {
         expect(ProfileService.updateProfile).toHaveBeenCalledWith('user-123', expect.objectContaining({
-          experience: 'Mid-level (3-5 years)',
+          experience: 'mid-level',
           hourlyRate: 750,
-          availability: 'Flexible'
+          availability: 'flexible'
         }))
       })
 
@@ -250,10 +250,10 @@ describe('ExperienceForm', () => {
     it('should pre-fill form with existing user data', () => {
       const mockUserWithData = {
         ...mockInformalUser,
-        experience: 'Senior (5-10 years)',
+        experience: 'senior', // Uses new value format
         hourlyRate: 800,
-        availability: 'Full-time',
-        education: 'High School',
+        availability: 'full-time', // Uses new value format
+        education: 'high-school', // Uses new value format
         experienceYears: '5-10' as const,
         equipmentOwnership: 'partially-equipped' as const
       }

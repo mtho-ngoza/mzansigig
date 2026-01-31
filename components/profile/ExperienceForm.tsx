@@ -9,51 +9,17 @@ import { ProfileService } from '@/lib/database/profileService'
 import { useToast } from '@/contexts/ToastContext'
 import { isInformalWorker } from '@/lib/utils/userProfile'
 import { RATE_LIMITS, validateHourlyRate } from '@/lib/utils/profileValidation'
+import {
+  EXPERIENCE_LEVELS,
+  PROFILE_AVAILABILITY_OPTIONS,
+  EDUCATION_LEVELS,
+  EXPERIENCE_YEARS_OPTIONS,
+  EQUIPMENT_OPTIONS
+} from '@/lib/constants/formOptions'
 
 interface ExperienceFormProps {
   onBack?: () => void
 }
-
-const EXPERIENCE_LEVELS = [
-  'Entry Level (0-1 years)',
-  'Junior (1-3 years)',
-  'Mid-level (3-5 years)',
-  'Senior (5-10 years)',
-  'Expert (10+ years)'
-]
-
-const AVAILABILITY_OPTIONS = [
-  'Full-time',
-  'Part-time',
-  'Weekends only',
-  'Evenings only',
-  'Flexible',
-  'Project-based',
-  'On-demand'
-]
-
-const EDUCATION_LEVELS = [
-  'High School',
-  'Certificate/Diploma',
-  'Bachelor&apos;s Degree',
-  'Master&apos;s Degree',
-  'PhD/Doctorate',
-  'Other'
-]
-
-const EXPERIENCE_YEARS_OPTIONS = [
-  { value: 'less-than-1', label: 'Less than 1 year' },
-  { value: '1-3', label: '1-3 years' },
-  { value: '3-5', label: '3-5 years' },
-  { value: '5-10', label: '5-10 years' },
-  { value: '10-plus', label: '10+ years' }
-]
-
-const EQUIPMENT_OPTIONS = [
-  { value: 'fully-equipped', label: 'Yes, I have all necessary tools' },
-  { value: 'partially-equipped', label: 'I have some tools' },
-  { value: 'no-equipment', label: 'No, I need tools provided' }
-]
 
 export default function ExperienceForm({ onBack }: ExperienceFormProps) {
   const { success, error: showError } = useToast()
@@ -168,20 +134,20 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {EXPERIENCE_LEVELS.map(level => (
+                  {EXPERIENCE_LEVELS.map(option => (
                     <label
-                      key={level}
+                      key={option.value}
                       className="flex items-center space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
                     >
                       <input
                         type="radio"
                         name="experience"
-                        value={level}
-                        checked={formData.experience === level}
+                        value={option.value}
+                        checked={formData.experience === option.value}
                         onChange={(e) => handleInputChange('experience', e.target.value)}
                         className="text-primary-600 focus:ring-primary-500"
                       />
-                      <span className="text-sm text-gray-900">{level}</span>
+                      <span className="text-sm text-gray-900">{option.label}</span>
                     </label>
                   ))}
                 </div>
@@ -238,20 +204,20 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {AVAILABILITY_OPTIONS.map(option => (
+                {PROFILE_AVAILABILITY_OPTIONS.map(option => (
                   <label
-                    key={option}
+                    key={option.value}
                     className="flex items-center space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
                   >
                     <input
                       type="radio"
                       name="availability"
-                      value={option}
-                      checked={formData.availability === option}
+                      value={option.value}
+                      checked={formData.availability === option.value}
                       onChange={(e) => handleInputChange('availability', e.target.value)}
                       className="text-primary-600 focus:ring-primary-500"
                     />
-                    <span className="text-sm text-gray-900">{option}</span>
+                    <span className="text-sm text-gray-900">{option.label}</span>
                   </label>
                 ))}
               </div>
@@ -266,20 +232,20 @@ export default function ExperienceForm({ onBack }: ExperienceFormProps) {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {EDUCATION_LEVELS.map(level => (
+                {EDUCATION_LEVELS.map(option => (
                   <label
-                    key={level}
+                    key={option.value}
                     className="flex items-center space-x-3 cursor-pointer p-3 border border-gray-200 rounded-lg hover:bg-gray-50"
                   >
                     <input
                       type="radio"
                       name="education"
-                      value={level}
-                      checked={formData.education === level}
+                      value={option.value}
+                      checked={formData.education === option.value}
                       onChange={(e) => handleInputChange('education', e.target.value)}
                       className="text-primary-600 focus:ring-primary-500"
                     />
-                    <span className="text-sm text-gray-900">{level}</span>
+                    <span className="text-sm text-gray-900">{option.label}</span>
                   </label>
                 ))}
               </div>

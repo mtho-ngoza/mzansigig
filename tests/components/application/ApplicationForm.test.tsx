@@ -246,11 +246,14 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
       workType: 'physical'
     }
 
-    it('should pre-fill experience, availability, and equipment from user profile', async () => {
+    it('should pre-fill experience and equipment from user profile (but NOT availability)', async () => {
+      // NOTE: availability is NOT pre-filled because the profile stores work schedule preference
+      // (e.g., "Full-time", "Part-time") while the application form asks about start date
+      // (e.g., "immediately", "within-week"). These are semantically different fields.
       const mockUserWithProfile = {
         ...mockUser,
         experienceYears: '5-10' as const,
-        availability: 'within-week' as const,
+        availability: 'Full-time', // This should NOT be used for pre-fill
         equipmentOwnership: 'fully-equipped' as const
       }
 
@@ -267,24 +270,23 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
       const experienceSelect = screen.getByLabelText(/Years of Experience/i) as HTMLSelectElement
       expect(experienceSelect.value).toBe('5-10')
 
-      // Check that availability is pre-filled
+      // Check that availability is NOT pre-filled (remains empty)
       const availabilitySelect = screen.getByLabelText(/When can you start/i) as HTMLSelectElement
-      expect(availabilitySelect.value).toBe('within-week')
+      expect(availabilitySelect.value).toBe('')
 
       // Check that equipment is pre-filled
       const equipmentSelect = screen.getByLabelText(/Do you have your own tools/i) as HTMLSelectElement
       expect(equipmentSelect.value).toBe('fully-equipped')
 
-      // Check for pre-fill indicators
+      // Check for pre-fill indicators (only 2 now - experience and equipment)
       expect(screen.getByText(/pre-filled some information from your profile/i)).toBeInTheDocument()
-      expect(screen.getAllByText(/✓ Pre-filled from your profile/i)).toHaveLength(3)
+      expect(screen.getAllByText(/✓ Pre-filled from your profile/i)).toHaveLength(2)
     })
 
-    it('should allow overriding pre-filled values', async () => {
+    it('should allow overriding pre-filled values and selecting availability', async () => {
       const mockUserWithProfile = {
         ...mockUser,
         experienceYears: '1-3' as const,
-        availability: 'flexible' as const,
         equipmentOwnership: 'partially-equipped' as const
       }
 
@@ -302,7 +304,7 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
       const experienceSelect = screen.getByLabelText(/Years of Experience/i)
       fireEvent.change(experienceSelect, { target: { value: '10-plus' } })
 
-      // Change availability to different value
+      // Select availability (not pre-filled, so user must select)
       const availabilitySelect = screen.getByLabelText(/When can you start/i)
       fireEvent.change(availabilitySelect, { target: { value: 'immediately' } })
 
@@ -322,7 +324,7 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
         expect(GigService.createApplication).toHaveBeenCalled()
       })
 
-      // Check that the overridden values were submitted as structured fields
+      // Check that the values were submitted as structured fields
       const createCall = (GigService.createApplication as jest.Mock).mock.calls[0][0]
       expect(createCall.experience).toBe('10-plus')
       expect(createCall.availability).toBe('immediately')
