@@ -153,24 +153,6 @@ export default function JobSeekerProfileDialog({
                 )}
               </Card>
 
-              {/* Contact Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Contact Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-sm text-gray-500">Email:</span>
-                      <div className="font-medium">{user.email}</div>
-                    </div>
-                    <div>
-                      <span className="text-sm text-gray-500">Phone:</span>
-                      <div className="font-medium">{user.phone}</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
 
               {/* Skills & Experience */}
               {((user.skills && user.skills.length > 0) || user.experience || user.experienceYears || user.equipmentOwnership || user.hourlyRate !== undefined || user.availability) && (
