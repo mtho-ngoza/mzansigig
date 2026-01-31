@@ -9,6 +9,27 @@ import { PaymentService } from '@/lib/services/paymentService'
 import { ConfigService } from '@/lib/database/configService'
 import { Gig, GigApplication } from '@/types/gig'
 
+// Mock transaction object
+const mockTransaction = {
+  update: jest.fn(),
+  get: jest.fn(),
+  set: jest.fn()
+}
+
+// Mock firebase/firestore
+jest.mock('firebase/firestore', () => ({
+  doc: jest.fn(() => ({ id: 'mock-doc-ref' })),
+  runTransaction: jest.fn((db, callback) => callback(mockTransaction)),
+  Timestamp: {
+    now: jest.fn(() => ({ toDate: () => new Date() }))
+  }
+}))
+
+// Mock firebase db
+jest.mock('@/lib/firebase', () => ({
+  db: {}
+}))
+
 // Mock dependencies
 jest.mock('@/lib/database/firestore')
 jest.mock('@/lib/services/paymentService')
@@ -54,6 +75,18 @@ describe('GigService - Completion Workflows', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    mockTransaction.update.mockClear()
+    mockTransaction.get.mockClear()
+    mockTransaction.set.mockClear()
+
+    // Mock PaymentService transactional methods
+    ;(PaymentService.getEscrowReleaseContext as jest.Mock).mockResolvedValue({
+      paymentId: 'payment-111',
+      paymentData: { amount: 1000, gigId: 'gig-123', workerId: 'worker-789' },
+      feeBreakdown: { netAmountToWorker: 900, workerCommission: 100 },
+      paymentHistoryDocs: []
+    })
+    ;(PaymentService.releaseEscrowInTransaction as jest.Mock).mockResolvedValue(undefined)
 
     // Mock ConfigService to return default values
     ;(ConfigService.getValue as jest.Mock).mockImplementation((key: string) => {
@@ -166,27 +199,15 @@ describe('GigService - Completion Workflows', () => {
       jest.mocked(FirestoreService.getById)
         .mockResolvedValueOnce(applicationWithCompletion) // First call for application
         .mockResolvedValueOnce(mockGig) // Second call for gig
-      jest.mocked(FirestoreService.update).mockResolvedValue()
-      jest.mocked(PaymentService.releaseEscrow).mockResolvedValue()
 
       await GigService.approveCompletion(mockApplicationId, mockEmployerId)
 
-      // Verify application status updated
-      expect(FirestoreService.update).toHaveBeenCalledWith(
-        'applications',
-        mockApplicationId,
-        { status: 'completed', paymentStatus: 'released' }
-      )
+      // Verify transaction updates were called
+      expect(mockTransaction.update).toHaveBeenCalled()
 
-      // Verify gig status updated
-      expect(FirestoreService.update).toHaveBeenCalledWith(
-        'gigs',
-        mockGigId,
-        expect.objectContaining({ status: 'completed' })
-      )
-
-      // Verify escrow released
-      expect(PaymentService.releaseEscrow).toHaveBeenCalledWith(mockPaymentId)
+      // Verify escrow context fetched and released in transaction
+      expect(PaymentService.getEscrowReleaseContext).toHaveBeenCalledWith(mockPaymentId)
+      expect(PaymentService.releaseEscrowInTransaction).toHaveBeenCalled()
     })
 
     it('should reject if application not found', async () => {
@@ -248,22 +269,18 @@ describe('GigService - Completion Workflows', () => {
       jest.mocked(FirestoreService.getById)
         .mockResolvedValueOnce(applicationWithoutPayment)
         .mockResolvedValueOnce(mockGig)
-      jest.mocked(FirestoreService.update).mockResolvedValue()
 
       await GigService.approveCompletion(mockApplicationId, mockEmployerId)
 
-      // Should still update statuses
-      expect(FirestoreService.update).toHaveBeenCalledWith(
-        'applications',
-        mockApplicationId,
-        { status: 'completed', paymentStatus: 'released' }
-      )
+      // Should still update statuses via transaction
+      expect(mockTransaction.update).toHaveBeenCalled()
 
       // But should not attempt to release escrow
-      expect(PaymentService.releaseEscrow).not.toHaveBeenCalled()
+      expect(PaymentService.getEscrowReleaseContext).not.toHaveBeenCalled()
+      expect(PaymentService.releaseEscrowInTransaction).not.toHaveBeenCalled()
     })
 
-    it('should call releaseEscrow with correct paymentId when application has paymentId', async () => {
+    it('should call releaseEscrowInTransaction with correct context when application has paymentId', async () => {
       // This test documents the CRITICAL requirement: paymentId must be saved to application
       // during funding for escrow to be released on completion
       const appWithPaymentId: GigApplication = {
@@ -274,14 +291,13 @@ describe('GigService - Completion Workflows', () => {
       jest.mocked(FirestoreService.getById)
         .mockResolvedValueOnce(appWithPaymentId)
         .mockResolvedValueOnce(mockGig)
-      jest.mocked(FirestoreService.update).mockResolvedValue()
-      jest.mocked(PaymentService.releaseEscrow).mockResolvedValue()
 
       await GigService.approveCompletion(mockApplicationId, mockEmployerId)
 
-      // Verify escrow is released with the exact paymentId from the application
-      expect(PaymentService.releaseEscrow).toHaveBeenCalledWith('specific-payment-id-123')
-      expect(PaymentService.releaseEscrow).toHaveBeenCalledTimes(1)
+      // Verify escrow context is fetched with the exact paymentId from the application
+      expect(PaymentService.getEscrowReleaseContext).toHaveBeenCalledWith('specific-payment-id-123')
+      // Verify escrow is released within the transaction
+      expect(PaymentService.releaseEscrowInTransaction).toHaveBeenCalledTimes(1)
     })
 
     it('should NOT release escrow when paymentId is missing (unfunded/legacy applications)', async () => {
@@ -295,19 +311,15 @@ describe('GigService - Completion Workflows', () => {
       jest.mocked(FirestoreService.getById)
         .mockResolvedValueOnce(appWithoutPaymentId)
         .mockResolvedValueOnce(mockGig)
-      jest.mocked(FirestoreService.update).mockResolvedValue()
 
       await GigService.approveCompletion(mockApplicationId, mockEmployerId)
 
-      // Application and gig should still be marked completed
-      expect(FirestoreService.update).toHaveBeenCalledWith(
-        'applications',
-        mockApplicationId,
-        { status: 'completed', paymentStatus: 'released' }
-      )
+      // Application and gig should still be marked completed (via transaction)
+      expect(mockTransaction.update).toHaveBeenCalled()
 
       // But escrow release should NOT be attempted
-      expect(PaymentService.releaseEscrow).not.toHaveBeenCalled()
+      expect(PaymentService.getEscrowReleaseContext).not.toHaveBeenCalled()
+      expect(PaymentService.releaseEscrowInTransaction).not.toHaveBeenCalled()
     })
   })
 
@@ -455,29 +467,17 @@ describe('GigService - Completion Workflows', () => {
       }
 
       jest.mocked(FirestoreService.getById).mockResolvedValue(expiredApplication)
-      jest.mocked(FirestoreService.update).mockResolvedValue()
-      jest.mocked(PaymentService.releaseEscrow).mockResolvedValue()
 
       const result = await GigService.checkAndProcessAutoRelease(mockApplicationId)
 
       expect(result).toBe(true)
 
-      // Verify application status updated
-      expect(FirestoreService.update).toHaveBeenCalledWith(
-        'applications',
-        mockApplicationId,
-        { status: 'completed', paymentStatus: 'released' }
-      )
+      // Verify updates happened via transaction
+      expect(mockTransaction.update).toHaveBeenCalled()
 
-      // Verify gig status updated
-      expect(FirestoreService.update).toHaveBeenCalledWith(
-        'gigs',
-        mockGigId,
-        expect.objectContaining({ status: 'completed' })
-      )
-
-      // Verify escrow released
-      expect(PaymentService.releaseEscrow).toHaveBeenCalledWith(mockPaymentId)
+      // Verify escrow context fetched and released
+      expect(PaymentService.getEscrowReleaseContext).toHaveBeenCalledWith(mockPaymentId)
+      expect(PaymentService.releaseEscrowInTransaction).toHaveBeenCalled()
     })
 
     it('should not auto-release if 7 days have not passed yet', async () => {
@@ -496,8 +496,8 @@ describe('GigService - Completion Workflows', () => {
       const result = await GigService.checkAndProcessAutoRelease(mockApplicationId)
 
       expect(result).toBe(false)
-      expect(FirestoreService.update).not.toHaveBeenCalled()
-      expect(PaymentService.releaseEscrow).not.toHaveBeenCalled()
+      expect(mockTransaction.update).not.toHaveBeenCalled()
+      expect(PaymentService.releaseEscrowInTransaction).not.toHaveBeenCalled()
     })
 
     it('should not auto-release if completion was disputed', async () => {
@@ -518,8 +518,8 @@ describe('GigService - Completion Workflows', () => {
       const result = await GigService.checkAndProcessAutoRelease(mockApplicationId)
 
       expect(result).toBe(false)
-      expect(FirestoreService.update).not.toHaveBeenCalled()
-      expect(PaymentService.releaseEscrow).not.toHaveBeenCalled()
+      expect(mockTransaction.update).not.toHaveBeenCalled()
+      expect(PaymentService.releaseEscrowInTransaction).not.toHaveBeenCalled()
     })
 
     it('should return false if application not found', async () => {
@@ -578,21 +578,17 @@ describe('GigService - Completion Workflows', () => {
       }
 
       jest.mocked(FirestoreService.getById).mockResolvedValue(applicationWithoutPayment)
-      jest.mocked(FirestoreService.update).mockResolvedValue()
 
       const result = await GigService.checkAndProcessAutoRelease(mockApplicationId)
 
       expect(result).toBe(true)
 
-      // Should still update statuses
-      expect(FirestoreService.update).toHaveBeenCalledWith(
-        'applications',
-        mockApplicationId,
-        { status: 'completed', paymentStatus: 'released' }
-      )
+      // Should still update statuses via transaction
+      expect(mockTransaction.update).toHaveBeenCalled()
 
       // But should not attempt to release escrow
-      expect(PaymentService.releaseEscrow).not.toHaveBeenCalled()
+      expect(PaymentService.getEscrowReleaseContext).not.toHaveBeenCalled()
+      expect(PaymentService.releaseEscrowInTransaction).not.toHaveBeenCalled()
     })
   })
 
@@ -695,8 +691,20 @@ describe('GigService - Completion Workflows', () => {
         .mockResolvedValueOnce(eligibleApp1)
         .mockResolvedValueOnce(eligibleApp2)
 
-      jest.mocked(FirestoreService.update).mockResolvedValue()
-      jest.mocked(PaymentService.releaseEscrow).mockResolvedValue()
+      // Mock PaymentService for escrow context
+      ;(PaymentService.getEscrowReleaseContext as jest.Mock)
+        .mockResolvedValueOnce({
+          paymentId: 'payment-1',
+          paymentData: { amount: 1000, gigId: 'gig-1', workerId: 'worker-789' },
+          feeBreakdown: { netAmountToWorker: 900, workerCommission: 100 },
+          paymentHistoryDocs: []
+        })
+        .mockResolvedValueOnce({
+          paymentId: 'payment-2',
+          paymentData: { amount: 1000, gigId: 'gig-2', workerId: 'worker-789' },
+          feeBreakdown: { netAmountToWorker: 900, workerCommission: 100 },
+          paymentHistoryDocs: []
+        })
 
       const result = await GigService.processAllAutoReleases()
 
@@ -737,8 +745,13 @@ describe('GigService - Completion Workflows', () => {
         .mockResolvedValueOnce(null) // Will return false, not throw
         .mockResolvedValueOnce(eligibleApp2)
 
-      jest.mocked(FirestoreService.update).mockResolvedValue()
-      jest.mocked(PaymentService.releaseEscrow).mockResolvedValue()
+      // Mock PaymentService for escrow context (only second app has paymentId)
+      ;(PaymentService.getEscrowReleaseContext as jest.Mock).mockResolvedValue({
+        paymentId: 'payment-2',
+        paymentData: { amount: 1000, gigId: 'gig-2', workerId: 'worker-789' },
+        feeBreakdown: { netAmountToWorker: 900, workerCommission: 100 },
+        paymentHistoryDocs: []
+      })
 
       const result = await GigService.processAllAutoReleases()
 

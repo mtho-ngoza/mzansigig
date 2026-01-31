@@ -501,6 +501,121 @@ export class PaymentService {
     }
   }
 
+  /**
+   * Context needed to release escrow within a transaction
+   * Pre-fetched outside the transaction since queries aren't allowed inside
+   */
+  static async getEscrowReleaseContext(paymentId: string): Promise<{
+    paymentId: string
+    paymentData: { amount: number; gigId: string; workerId: string }
+    feeBreakdown: { netAmountToWorker: number; workerCommission: number }
+    paymentHistoryDocs: Array<{ id: string; type: string }>
+  }> {
+    const paymentDoc = await getDoc(doc(db, COLLECTIONS.PAYMENTS, paymentId))
+    if (!paymentDoc.exists()) {
+      throw new Error('Payment not found')
+    }
+
+    const paymentData = paymentDoc.data()
+    const grossAmount = paymentData.amount
+    const gigId = paymentData.gigId
+    const workerId = paymentData.workerId
+
+    const feeConfig = await this.getActiveFeeConfig()
+    const feeBreakdown = FeeConfigService.calculateFeeBreakdown(grossAmount, feeConfig)
+
+    const pendingHistoryQuery = query(
+      collection(db, COLLECTIONS.PAYMENT_HISTORY),
+      where('gigId', '==', gigId),
+      where('status', '==', 'pending')
+    )
+    const pendingHistorySnapshot = await getDocs(pendingHistoryQuery)
+    const paymentHistoryDocs = pendingHistorySnapshot.docs.map(d => ({
+      id: d.id,
+      type: d.data().type as string
+    }))
+
+    return {
+      paymentId,
+      paymentData: { amount: grossAmount, gigId, workerId },
+      feeBreakdown: {
+        netAmountToWorker: feeBreakdown.netAmountToWorker,
+        workerCommission: feeBreakdown.workerCommission
+      },
+      paymentHistoryDocs
+    }
+  }
+
+  /**
+   * Release escrow within an existing transaction
+   * Use getEscrowReleaseContext() first to pre-fetch required data
+   */
+  static async releaseEscrowInTransaction(
+    transaction: Transaction,
+    context: {
+      paymentId: string
+      paymentData: { amount: number; gigId: string; workerId: string }
+      feeBreakdown: { netAmountToWorker: number; workerCommission: number }
+      paymentHistoryDocs: Array<{ id: string; type: string }>
+    }
+  ): Promise<void> {
+    const { paymentId, paymentData, feeBreakdown, paymentHistoryDocs } = context
+    const { amount: grossAmount, gigId, workerId } = paymentData
+    const { netAmountToWorker, workerCommission: platformCommission } = feeBreakdown
+
+    // Update payment status
+    const paymentRef = doc(db, COLLECTIONS.PAYMENTS, paymentId)
+    transaction.update(paymentRef, {
+      escrowStatus: 'released',
+      escrowReleaseDate: Timestamp.now(),
+      status: 'completed',
+      completedAt: Timestamp.now(),
+      platformCommission,
+      netAmountToWorker
+    })
+
+    // Update escrow record
+    const escrowRef = doc(db, COLLECTIONS.ESCROW_ACCOUNTS, gigId)
+    transaction.update(escrowRef, {
+      status: 'released',
+      releasedAmount: netAmountToWorker,
+      platformCommission,
+      releasedAt: Timestamp.now()
+    })
+
+    // Update payment history records
+    for (const historyDoc of paymentHistoryDocs) {
+      const historyRef = doc(db, COLLECTIONS.PAYMENT_HISTORY, historyDoc.id)
+      if (historyDoc.type === 'earnings') {
+        // Worker earnings - update with net amount after commission
+        transaction.update(historyRef, {
+          amount: netAmountToWorker,
+          status: 'completed',
+          completedAt: Timestamp.now(),
+          metadata: {
+            grossAmount,
+            platformCommission,
+            netAmount: netAmountToWorker
+          }
+        })
+      } else {
+        // Employer payment - just mark completed
+        transaction.update(historyRef, {
+          status: 'completed',
+          completedAt: Timestamp.now()
+        })
+      }
+    }
+
+    // Update worker wallet
+    await WalletService.releaseEscrowWithCommissionInTransaction(
+      transaction,
+      workerId,
+      grossAmount,
+      netAmountToWorker
+    )
+  }
+
   // Milestones
   static async createMilestone(
     gigId: string,

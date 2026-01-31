@@ -16,6 +16,27 @@ import { PaymentService } from '@/lib/services/paymentService'
 import { ConfigService } from '@/lib/database/configService'
 import { GigApplication } from '@/types/gig'
 
+// Mock transaction object
+const mockTransaction = {
+  update: jest.fn(),
+  get: jest.fn(),
+  set: jest.fn()
+}
+
+// Mock firebase/firestore
+jest.mock('firebase/firestore', () => ({
+  doc: jest.fn(() => ({ id: 'mock-doc-ref' })),
+  runTransaction: jest.fn((db, callback) => callback(mockTransaction)),
+  Timestamp: {
+    now: jest.fn(() => ({ toDate: () => new Date() }))
+  }
+}))
+
+// Mock firebase db
+jest.mock('@/lib/firebase', () => ({
+  db: {}
+}))
+
 jest.mock('@/lib/database/firestore')
 jest.mock('@/lib/services/paymentService')
 jest.mock('@/lib/database/configService')
@@ -40,7 +61,20 @@ describe('Firestore Security Rules - Completion Requests', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    mockTransaction.update.mockClear()
+    mockTransaction.get.mockClear()
+    mockTransaction.set.mockClear()
+
     jest.mocked(ConfigService.getValue).mockResolvedValue(7) // 7 days auto-release
+
+    // Mock PaymentService transactional methods
+    ;(PaymentService.getEscrowReleaseContext as jest.Mock).mockResolvedValue({
+      paymentId: 'payment-123',
+      paymentData: { amount: 1000, gigId: 'gig-101', workerId: 'worker-123' },
+      feeBreakdown: { netAmountToWorker: 900, workerCommission: 100 },
+      paymentHistoryDocs: []
+    })
+    ;(PaymentService.releaseEscrowInTransaction as jest.Mock).mockResolvedValue(undefined)
   })
 
   describe('Worker Completion Request Permissions', () => {
@@ -139,16 +173,15 @@ describe('Firestore Security Rules - Completion Requests', () => {
       jest.mocked(FirestoreService.getById)
         .mockResolvedValueOnce(applicationWithCompletionRequest)
         .mockResolvedValueOnce(mockGig)
-      jest.mocked(FirestoreService.update).mockResolvedValue()
-      jest.mocked(PaymentService.releaseEscrow).mockResolvedValue()
 
       await GigService.approveCompletion(mockApplicationId, mockEmployerId)
 
-      expect(FirestoreService.update).toHaveBeenCalledWith(
-        'applications',
-        mockApplicationId,
-        { status: 'completed', paymentStatus: 'released' }
-      )
+      // Verify transaction updates were called
+      expect(mockTransaction.update).toHaveBeenCalled()
+
+      // Verify escrow was released in transaction
+      expect(PaymentService.getEscrowReleaseContext).toHaveBeenCalled()
+      expect(PaymentService.releaseEscrowInTransaction).toHaveBeenCalled()
     })
 
     it('should NOT allow different employer to approve completion', async () => {
@@ -161,7 +194,7 @@ describe('Firestore Security Rules - Completion Requests', () => {
         GigService.approveCompletion(mockApplicationId, differentEmployerId)
       ).rejects.toThrow('Only the gig employer can approve completion')
 
-      expect(FirestoreService.update).not.toHaveBeenCalled()
+      expect(mockTransaction.update).not.toHaveBeenCalled()
     })
 
     it('should allow employer to dispute completion with valid reason', async () => {

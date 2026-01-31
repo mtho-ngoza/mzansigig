@@ -1,4 +1,4 @@
-import { doc, updateDoc, getDoc, increment, Timestamp, runTransaction } from 'firebase/firestore'
+import { doc, updateDoc, getDoc, increment, Timestamp, runTransaction, Transaction } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { User } from '@/types/auth'
 
@@ -277,6 +277,42 @@ export class WalletService {
     } catch (error) {
       throw new Error(error instanceof Error ? error.message : 'Failed to release escrow with commission')
     }
+  }
+
+  /**
+   * Release escrow with commission deduction within an existing transaction
+   * Use this when escrow release needs to be part of a larger atomic operation
+   * @param transaction - Firestore transaction to use for the update
+   * @param userId - Worker's user ID
+   * @param grossAmount - Original escrow amount to deduct from pending
+   * @param netAmount - Amount after commission to add to wallet
+   */
+  static async releaseEscrowWithCommissionInTransaction(
+    transaction: Transaction,
+    userId: string,
+    grossAmount: number,
+    netAmount: number
+  ): Promise<void> {
+    const userRef = doc(db, 'users', userId)
+    const userDoc = await transaction.get(userRef)
+
+    if (!userDoc.exists()) {
+      throw new Error('User not found')
+    }
+
+    const userData = userDoc.data()
+    const currentPending = userData.pendingBalance || 0
+
+    if (currentPending < grossAmount) {
+      throw new Error(`Insufficient pending balance. Tried to release ${grossAmount} but only ${currentPending} available`)
+    }
+
+    transaction.update(userRef, {
+      pendingBalance: increment(-grossAmount),
+      walletBalance: increment(netAmount),
+      totalEarnings: increment(netAmount),
+      updatedAt: Timestamp.now()
+    })
   }
 
   /**
