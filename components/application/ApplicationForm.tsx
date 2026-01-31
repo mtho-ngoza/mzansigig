@@ -12,6 +12,11 @@ import { usePayment } from '@/contexts/PaymentContext'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
 import { VerificationNudge } from '@/components/safety/VerificationNudge'
 import { validateProposedRate, APPLICATION_TEXT_LIMITS } from '@/lib/utils/applicationValidation'
+import {
+  EXPERIENCE_YEARS_OPTIONS,
+  EQUIPMENT_OPTIONS,
+  APPLICATION_AVAILABILITY_OPTIONS
+} from '@/lib/constants/formOptions'
 
 interface ApplicationFormProps {
   gig: Gig
@@ -89,7 +94,9 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
     }
   }, [gig.id, gig.budget, calculateGigFees])
 
-  // Pre-fill experience, availability, and equipment from user profile
+  // Pre-fill experience and equipment from user profile
+  // NOTE: We do NOT pre-fill availability because the profile stores work schedule preference
+  // (e.g., "Full-time", "Part-time") while this form asks about start date (e.g., "immediately", "within-week").
   // Guarded to avoid infinite update loops when `user` reference changes frequently.
   // - Depend only on stable primitives from `user` (id and specific fields)
   // - Inside, only update state if values actually change; otherwise return prev to bail out.
@@ -99,12 +106,10 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
     setFormData(prev => {
       // Use nullish coalescing for numbers so 0 is preserved; for strings, ignore empty strings
       const nextExperience = user.experienceYears ?? prev.experience;
-      const nextAvailability = user.availability || prev.availability;
       const nextEquipment = user.equipmentOwnership || prev.equipment;
 
       const noChange =
         nextExperience === prev.experience &&
-        nextAvailability === prev.availability &&
         nextEquipment === prev.equipment;
 
       if (noChange) {
@@ -114,11 +119,10 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
       return {
         ...prev,
         experience: nextExperience,
-        availability: nextAvailability,
         equipment: nextEquipment
       };
     });
-  }, [user?.id, user?.experienceYears, user?.availability, user?.equipmentOwnership])
+  }, [user?.id, user?.experienceYears, user?.equipmentOwnership])
 
   // Determine if this is a physical/informal work category
   const isPhysicalWork = ['Construction', 'Transportation', 'Cleaning', 'Healthcare'].includes(gig.category)
@@ -342,7 +346,6 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
               <>
                 {/* Show pre-filled message only when form values actually match user profile */}
                 {((user?.experienceYears && formData.experience === user.experienceYears) ||
-                  (user?.availability && formData.availability === user.availability) ||
                   (user?.equipmentOwnership && formData.equipment === user.equipmentOwnership)) && (
                   <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
                     <p className="text-sm text-green-800">
@@ -363,11 +366,9 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
                     <option value="">Select experience</option>
-                    <option value="less-than-1">Less than 1 year</option>
-                    <option value="1-3">1-3 years</option>
-                    <option value="3-5">3-5 years</option>
-                    <option value="5-10">5-10 years</option>
-                    <option value="10-plus">10+ years</option>
+                    {EXPERIENCE_YEARS_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </select>
                   {user?.experienceYears && formData.experience === user.experienceYears && (
                     <p className="mt-1 text-xs text-green-600">✓ Pre-filled from your profile</p>
@@ -386,14 +387,10 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                   >
                     <option value="">Select availability</option>
-                    <option value="immediately">Immediately</option>
-                    <option value="within-week">Within a week</option>
-                    <option value="within-month">Within a month</option>
-                    <option value="flexible">Flexible</option>
+                    {APPLICATION_AVAILABILITY_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>{option.label}</option>
+                    ))}
                   </select>
-                  {user?.availability && formData.availability === user.availability && (
-                    <p className="mt-1 text-xs text-green-600">✓ Pre-filled from your profile</p>
-                  )}
                 </div>
 
                 {/* Equipment (for Construction/Cleaning) */}
@@ -409,9 +406,9 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
                       className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                     >
                       <option value="">Select option</option>
-                      <option value="fully-equipped">Yes, I have all necessary tools</option>
-                      <option value="partially-equipped">I have some tools</option>
-                      <option value="no-equipment">No, I need tools provided</option>
+                      {EQUIPMENT_OPTIONS.map(option => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
                     </select>
                     {user?.equipmentOwnership && formData.equipment === user.equipmentOwnership && (
                       <p className="mt-1 text-xs text-green-600">✓ Pre-filled from your profile</p>

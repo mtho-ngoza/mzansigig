@@ -1,4 +1,9 @@
 import { Coordinates, UserLocation, LocationPreferences } from './location'
+import type {
+  ExperienceYearsValue,
+  EquipmentOwnershipValue,
+  ProfileAvailabilityValue
+} from '@/lib/constants/formOptions'
 
 export interface EmergencyContact {
   id: string
@@ -64,13 +69,15 @@ export interface User {
   portfolio?: PortfolioItem[]
   experience?: string
   hourlyRate?: number
-  availability?: string
+  // Profile availability - work schedule preference (e.g., "full-time", "part-time")
+  // NOTE: This is DIFFERENT from application availability which asks "when can you start"
+  availability?: ProfileAvailabilityValue
   languages?: string[]
   education?: string
   certifications?: string[]
-  // Informal worker specific fields
-  experienceYears?: 'less-than-1' | '1-3' | '3-5' | '5-10' | '10-plus'
-  equipmentOwnership?: 'fully-equipped' | 'partially-equipped' | 'no-equipment'
+  // Informal worker specific fields - use centralized types from formOptions.ts
+  experienceYears?: ExperienceYearsValue
+  equipmentOwnership?: EquipmentOwnershipValue
   socialLinks?: {
     linkedin?: string
     website?: string
