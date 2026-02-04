@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Payment } from '@/types/payment'
 import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
 import { validatePaymentAmount, getPaymentLimits, PAYMENT_LIMITS, PaymentLimits } from '@/lib/utils/paymentValidation'
+import { auth } from '@/lib/firebase'
 
 // Available payment providers
 type PaymentProvider = 'tradesafe' | 'paystack' | 'ozow' | 'yoco'
@@ -165,14 +166,22 @@ export default function PaymentDialog({
         return
       }
 
+      // Get Firebase ID token for secure API authentication
+      const firebaseUser = auth.currentUser
+      if (!firebaseUser) {
+        showError('Session expired. Please sign in again.')
+        setStep('confirm')
+        return
+      }
+      const idToken = await firebaseUser.getIdToken()
+
       // For TradeSafe provider (primary)
       if (selectedProvider === 'tradesafe') {
-        // Get the worker ID from the gig (need to pass it through props)
         const response = await fetch('/api/payments/tradesafe/initialize', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-user-id': user.id
+            'Authorization': `Bearer ${idToken}`
           },
           body: JSON.stringify({
             gigId,
@@ -205,7 +214,7 @@ export default function PaymentDialog({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-user-id': user.id
+            'Authorization': `Bearer ${idToken}`
           },
           body: JSON.stringify({
             gigId,
