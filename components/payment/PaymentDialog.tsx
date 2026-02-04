@@ -11,7 +11,7 @@ import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
 import { validatePaymentAmount, getPaymentLimits, PAYMENT_LIMITS, PaymentLimits } from '@/lib/utils/paymentValidation'
 
 // Available payment providers
-type PaymentProvider = 'paystack' | 'ozow' | 'yoco'
+type PaymentProvider = 'tradesafe' | 'paystack' | 'ozow' | 'yoco'
 
 interface ProviderOption {
   id: PaymentProvider
@@ -23,18 +23,25 @@ interface ProviderOption {
 
 const PAYMENT_PROVIDERS: ProviderOption[] = [
   {
+    id: 'tradesafe',
+    name: 'TradeSafe Escrow',
+    description: 'Secure escrow - EFT, Card, SnapScan, Ozow',
+    icon: '🔒',
+    available: true
+  },
+  {
     id: 'paystack',
     name: 'Paystack',
     description: 'Credit/Debit Card, Bank Transfer, EFT',
     icon: '💳',
-    available: true
+    available: false // Deprecated - application rejected
   },
   {
     id: 'ozow',
     name: 'Ozow',
     description: 'Instant EFT payments',
     icon: '🏦',
-    available: false // Not yet implemented
+    available: false // Available via TradeSafe
   },
   {
     id: 'yoco',
@@ -58,7 +65,7 @@ interface PaymentDialogProps {
 
 export default function PaymentDialog({
   gigId,
-  workerId: _workerId,
+  workerId,
   workerName,
   amount,
   description,
@@ -74,7 +81,7 @@ export default function PaymentDialog({
   const { success: _showSuccess, error: showError } = useToast()
   const { user } = useAuth()
 
-  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>('paystack')
+  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>('tradesafe')
   // Payment type is always 'fixed' for full payment
   const paymentType = 'fixed'
   const [step, setStep] = useState<'amount' | 'provider' | 'confirm' | 'large-amount-confirm' | 'processing'>('amount')
@@ -158,7 +165,41 @@ export default function PaymentDialog({
         return
       }
 
-      // For Paystack provider
+      // For TradeSafe provider (primary)
+      if (selectedProvider === 'tradesafe') {
+        // Get the worker ID from the gig (need to pass it through props)
+        const response = await fetch('/api/payments/tradesafe/initialize', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-user-id': user.id
+          },
+          body: JSON.stringify({
+            gigId,
+            amount: fees ? amount + fees.totalFees : amount,
+            title: description || `Payment for gig work to ${workerName}`,
+            description: `Funding gig ${gigId}`,
+            workerId: workerId
+          })
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.message || 'Failed to initialize TradeSafe payment')
+        }
+
+        const data = await response.json()
+
+        if (!data.success || !data.checkoutUrl) {
+          throw new Error('Failed to get payment URL from TradeSafe')
+        }
+
+        // Redirect to TradeSafe checkout
+        window.location.href = data.checkoutUrl
+        return
+      }
+
+      // For Paystack provider (deprecated)
       if (selectedProvider === 'paystack') {
         const response = await fetch('/api/payments/paystack/initialize', {
           method: 'POST',

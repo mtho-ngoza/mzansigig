@@ -1,0 +1,89 @@
+'use client'
+
+import { useSearchParams, useRouter } from 'next/navigation'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+
+/**
+ * Payment Error Page
+ *
+ * Handles redirect from TradeSafe after failed/cancelled payment
+ * Query params from TradeSafe:
+ * - status: Payment status
+ * - transactionId: TradeSafe transaction ID
+ * - reference: External reference (gigId)
+ * - error: Error message (if available)
+ */
+export default function PaymentErrorPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+
+  const transactionId = searchParams.get('transactionId')
+  const reference = searchParams.get('reference') // gigId
+  const status = searchParams.get('status')
+  const errorMessage = searchParams.get('error')
+
+  const isCancelled = status === 'cancelled' || status === 'CANCELLED'
+
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <Card className="w-full max-w-md text-center">
+        <CardHeader>
+          <div className="text-6xl mb-4">{isCancelled ? '🚫' : '❌'}</div>
+          <CardTitle className="text-2xl text-red-600">
+            {isCancelled ? 'Payment Cancelled' : 'Payment Failed'}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-gray-600">
+            {isCancelled
+              ? 'You cancelled the payment. No funds have been deducted from your account.'
+              : 'There was a problem processing your payment. Please try again.'}
+          </p>
+
+          {errorMessage && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-left">
+              <h4 className="font-medium text-red-800 mb-1">Error Details</h4>
+              <p className="text-sm text-red-700">{errorMessage}</p>
+            </div>
+          )}
+
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-left">
+            <h4 className="font-medium text-gray-800 mb-2">What you can do:</h4>
+            <ul className="text-sm text-gray-700 space-y-1">
+              <li>• Try the payment again</li>
+              <li>• Use a different payment method</li>
+              <li>• Check your bank account balance</li>
+              <li>• Contact support if the issue persists</li>
+            </ul>
+          </div>
+
+          {transactionId && (
+            <div className="text-sm text-gray-500">
+              <p>Reference: {transactionId}</p>
+            </div>
+          )}
+
+          <div className="pt-4 space-y-2">
+            <Button
+              onClick={() => router.push(reference
+                ? `/dashboard/manage-applications?gig=${reference}`
+                : '/dashboard/manage-applications'
+              )}
+              className="w-full"
+            >
+              Try Again
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push('/dashboard')}
+              className="w-full"
+            >
+              Go to Dashboard
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
