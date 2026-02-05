@@ -136,9 +136,9 @@ export class PaymentService {
         }
       }
 
-      // Payment provider (e.g., 'paystack') is stored directly in paymentMethodId
+      // Payment provider (e.g., 'tradesafe') is stored directly in paymentMethodId
       // No need to fetch from database since we no longer store payment methods
-      const provider = intentData.paymentMethodId || 'paystack'
+      const provider = intentData.paymentMethodId || 'tradesafe'
       console.debug('Payment provider:', provider)
 
       // Get gig details for better descriptions
@@ -165,7 +165,7 @@ export class PaymentService {
         currency: 'ZAR' as const,
         type: intentData.type,
         status: 'processing' as const,
-        provider, // Payment provider (paystack, ozow, yoco)
+        provider, // Payment provider (tradesafe, ozow, yoco)
         escrowStatus: 'pending' as const,
         transactionId: `txn_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         providerTransactionId: `prov_${Date.now()}`,

@@ -607,7 +607,7 @@ service cloud.firestore {
     }
 
     // ========================================
-    // Payment Intents Collection (snake_case - for Paystack integration)
+    // Payment Intents Collection (snake_case - for payment gateway integration)
     // ========================================
     match /payment_intents/{intentId} {
       // Users can read their own payment intents

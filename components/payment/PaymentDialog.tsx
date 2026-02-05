@@ -12,7 +12,9 @@ import { validatePaymentAmount, getPaymentLimits, PAYMENT_LIMITS, PaymentLimits 
 import { auth } from '@/lib/firebase'
 
 // Available payment providers
-type PaymentProvider = 'tradesafe' | 'paystack' | 'ozow' | 'yoco'
+// Note: PayFast and Paystack applications were rejected (marketplace/escrow flagged as high-risk)
+// TradeSafe is purpose-built for marketplace escrow in South Africa
+type PaymentProvider = 'tradesafe' | 'ozow' | 'yoco'
 
 interface ProviderOption {
   id: PaymentProvider
@@ -29,13 +31,6 @@ const PAYMENT_PROVIDERS: ProviderOption[] = [
     description: 'Secure escrow - EFT, Card, SnapScan, Ozow',
     icon: '🔒',
     available: true
-  },
-  {
-    id: 'paystack',
-    name: 'Paystack',
-    description: 'Credit/Debit Card, Bank Transfer, EFT',
-    icon: '💳',
-    available: false // Deprecated - application rejected
   },
   {
     id: 'ozow',
@@ -205,40 +200,6 @@ export default function PaymentDialog({
 
         // Redirect to TradeSafe checkout
         window.location.href = data.checkoutUrl
-        return
-      }
-
-      // For Paystack provider (deprecated)
-      if (selectedProvider === 'paystack') {
-        const response = await fetch('/api/payments/paystack/initialize', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${idToken}`
-          },
-          body: JSON.stringify({
-            gigId,
-            amount: fees ? amount + fees.totalFees : amount,
-            itemName: description || `Payment for gig work to ${workerName}`,
-            itemDescription: `Funding gig ${gigId}`,
-            customerEmail: user.email,
-            customerName: `${user.firstName || ''} ${user.lastName || ''}`.trim()
-          })
-        })
-
-        if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.message || 'Failed to initialize Paystack payment')
-        }
-
-        const data = await response.json()
-
-        if (!data.success || !data.authorizationUrl) {
-          throw new Error('Failed to get payment URL from Paystack')
-        }
-
-        // Redirect to Paystack checkout
-        window.location.href = data.authorizationUrl
         return
       }
 

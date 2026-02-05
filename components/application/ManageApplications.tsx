@@ -75,41 +75,27 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
 
   const searchParams = useSearchParams()
 
-  // Handle payment return from Paystack
-  const verifyPayment = useCallback(async (gigId: string, reference: string) => {
+  // Handle payment return from TradeSafe
+  // TradeSafe verification happens via webhook, so we just need to check the gig status
+  const verifyPayment = useCallback(async (_gigId: string, _reference: string) => {
     if (!user || paymentVerified) return
 
     setVerifyingPayment(true)
 
     try {
-      const response = await fetch('/api/payments/paystack/verify', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-user-id': user.id
-        },
-        body: JSON.stringify({
-          gigId,
-          reference
-        })
-      })
-
-      const result = await response.json()
-
-      if (result.success) {
-        success('Lekker! Payment verified - gig is now funded')
-        setPaymentVerified(true)
-        // Refresh page to show updated status
+      // TradeSafe webhook handles actual verification
+      // Just show success and refresh to see updated status
+      success('Lekker! Payment received - gig is being funded')
+      setPaymentVerified(true)
+      // Refresh page to show updated status (webhook will have updated the database)
+      setTimeout(() => {
         window.location.href = '/dashboard/manage-applications'
-      } else {
-        showError(result.message || 'Payment verification pending')
-        setVerifyingPayment(false)
-      }
+      }, 1500)
     } catch (err) {
       console.error('Payment verification error:', err)
       setVerifyingPayment(false)
     }
-  }, [user, paymentVerified, success, showError])
+  }, [user, paymentVerified, success])
 
   // Check for payment success in URL params
   useEffect(() => {
@@ -513,7 +499,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
               <div className="bg-white rounded-lg shadow-lg p-8 max-w-md mx-auto">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">Verifying Payment...</h3>
-                <p className="text-gray-600">Please wait while we confirm your payment with Paystack.</p>
+                <p className="text-gray-600">Please wait while we confirm your payment.</p>
                 <p className="text-sm text-gray-500 mt-2">This may take a few seconds.</p>
               </div>
             ) : (

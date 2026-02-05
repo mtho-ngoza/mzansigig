@@ -2,7 +2,7 @@
  * PaymentDialog Component Tests
  *
  * Tests for the payment dialog including:
- * - Paystack integration (amount with fees)
+ * - TradeSafe escrow integration (amount with fees)
  * - Fee calculation and display
  * - Payment provider selection
  * - Large amount confirmation flow
@@ -47,6 +47,15 @@ jest.mock('@/lib/utils/paymentValidation', () => {
     }))
   }
 })
+
+// Mock Firebase auth for ID token
+jest.mock('@/lib/firebase', () => ({
+  auth: {
+    currentUser: {
+      getIdToken: jest.fn(() => Promise.resolve('mock-firebase-id-token'))
+    }
+  }
+}))
 
 // Test data
 const mockUser = {
@@ -219,8 +228,8 @@ describe('PaymentDialog', () => {
     })
   })
 
-  describe('Paystack Payment - Amount with Fees (Critical Fix)', () => {
-    it('should send total amount including fees to Paystack API', async () => {
+  describe('TradeSafe Payment - Amount with Fees (Critical Fix)', () => {
+    it('should send total amount including fees to TradeSafe API', async () => {
       const calculateFees = jest.fn().mockResolvedValue(mockFees)
 
       // Mock fetch to return success but we won't test the redirect
@@ -228,9 +237,8 @@ describe('PaymentDialog', () => {
         ok: true,
         json: () => Promise.resolve({
           success: true,
-          authorizationUrl: 'https://checkout.paystack.com/test',
-          reference: 'KSG_TEST_123',
-          accessCode: 'test_access_code'
+          checkoutUrl: 'https://checkout.tradesafe.co.za/test',
+          transactionId: 'TS_TEST_123'
         })
       })
 
@@ -250,7 +258,7 @@ describe('PaymentDialog', () => {
         expect(screen.getByText('Select Payment Provider')).toBeInTheDocument()
       }, { timeout: 3000 })
 
-      // Paystack should be selected by default, proceed to confirm
+      // TradeSafe should be selected by default, proceed to confirm
       await act(async () => {
         fireEvent.click(screen.getByText('Next'))
       })
@@ -268,12 +276,12 @@ describe('PaymentDialog', () => {
 
       await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
-          '/api/payments/paystack/initialize',
+          '/api/payments/tradesafe/initialize',
           expect.objectContaining({
             method: 'POST',
             headers: expect.objectContaining({
               'Content-Type': 'application/json',
-              'x-user-id': 'user-123'
+              'Authorization': expect.stringMatching(/^Bearer /)
             }),
             body: expect.any(String)
           })
@@ -305,7 +313,7 @@ describe('PaymentDialog', () => {
       // The provider selection should be visible
       await waitFor(() => {
         expect(screen.getByText('Select Payment Provider')).toBeInTheDocument()
-        expect(screen.getByText('Paystack')).toBeInTheDocument()
+        expect(screen.getByText('TradeSafe Escrow')).toBeInTheDocument()
       }, { timeout: 3000 })
     })
   })
@@ -387,7 +395,7 @@ describe('PaymentDialog', () => {
       })
 
       await waitFor(() => {
-        expect(screen.getByText('Paystack')).toBeInTheDocument()
+        expect(screen.getByText('TradeSafe Escrow')).toBeInTheDocument()
         expect(screen.getByText('Ozow')).toBeInTheDocument()
         expect(screen.getByText('Yoco')).toBeInTheDocument()
       }, { timeout: 3000 })
@@ -407,11 +415,11 @@ describe('PaymentDialog', () => {
 
       await waitFor(() => {
         const comingSoonBadges = screen.getAllByText('Coming Soon')
-        expect(comingSoonBadges.length).toBe(2) // Ozow and Yoco
+        expect(comingSoonBadges.length).toBe(2) // Ozow and Yoco (TradeSafe is available)
       }, { timeout: 3000 })
     })
 
-    it('should default to Paystack provider', async () => {
+    it('should default to TradeSafe provider', async () => {
       const calculateFees = jest.fn().mockResolvedValue(mockFees)
       renderPaymentDialog({}, { calculateFees })
 
@@ -424,8 +432,9 @@ describe('PaymentDialog', () => {
       })
 
       await waitFor(() => {
-        // Paystack should be selected (has checkmark)
+        // TradeSafe should be selected (has checkmark)
         expect(screen.getByText('✓')).toBeInTheDocument()
+        expect(screen.getByText('TradeSafe Escrow')).toBeInTheDocument()
       }, { timeout: 3000 })
     })
 
@@ -452,8 +461,8 @@ describe('PaymentDialog', () => {
       await waitFor(() => {
         // In confirm step, shows "Payment Provider" header with selected provider details
         expect(screen.getByText('Payment Provider')).toBeInTheDocument()
-        expect(screen.getByText('Paystack')).toBeInTheDocument()
-        expect(screen.getByText('Credit/Debit Card, Bank Transfer, EFT')).toBeInTheDocument()
+        expect(screen.getByText('TradeSafe Escrow')).toBeInTheDocument()
+        expect(screen.getByText('Secure escrow - EFT, Card, SnapScan, Ozow')).toBeInTheDocument()
       }, { timeout: 3000 })
     })
 
@@ -549,7 +558,7 @@ describe('PaymentDialog', () => {
   // for MVP simplicity (full payment required to fund gig)
 
   describe('Error Handling', () => {
-    it('should handle Paystack API error gracefully', async () => {
+    it('should handle TradeSafe API error gracefully', async () => {
       const calculateFees = jest.fn().mockResolvedValue(mockFees)
 
       mockFetch.mockResolvedValueOnce({

@@ -1,23 +1,42 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { FirestoreService } from '@/lib/database/firestore'
+import { verifyAuthToken } from '@/lib/auth/verifyToken'
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { suggestion, userId, timestamp } = body
-
-    if (!suggestion || !userId) {
+    // Verify Firebase ID token (secure authentication)
+    const auth = await verifyAuthToken(request)
+    if (!auth.authenticated || !auth.userId) {
       return NextResponse.json(
-        { error: 'Missing required fields' },
+        { error: auth.error || 'Unauthorized' },
+        { status: 401 }
+      )
+    }
+
+    const body = await request.json()
+    const { suggestion, timestamp } = body
+
+    if (!suggestion) {
+      return NextResponse.json(
+        { error: 'Missing required field: suggestion' },
+        { status: 400 }
+      )
+    }
+
+    // Validate suggestion length to prevent abuse
+    if (typeof suggestion !== 'string' || suggestion.length > 1000) {
+      return NextResponse.json(
+        { error: 'Suggestion must be a string with max 1000 characters' },
         { status: 400 }
       )
     }
 
     // Save to categoryFeedback collection for admin review
+    // Use authenticated userId from token, not from request body
     await FirestoreService.create('categoryFeedback', {
-      suggestion,
-      userId,
-      timestamp: new Date(timestamp),
+      suggestion: suggestion.trim(),
+      userId: auth.userId,
+      timestamp: timestamp ? new Date(timestamp) : new Date(),
       status: 'pending',
       createdAt: new Date()
     })

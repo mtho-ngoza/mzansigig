@@ -29,67 +29,77 @@ MzansiGig requires a payment gateway for escrow payments between employers and w
 
 ### South African Payment Gateway Options
 
-#### Option A: Paystack (Recommended for MVP) ⭐
+> **IMPORTANT NOTE**: PayFast and Paystack applications were REJECTED for this platform.
+> Both flagged the marketplace/escrow model as high-risk. Use TradeSafe instead.
 
-**Pros**:
-- Modern API, excellent documentation
-- Supports split payments and transfers
-- Backed by Stripe
-- No monthly fees, pay per transaction
+#### Option A: TradeSafe Escrow (Recommended) ⭐
+
+**Why TradeSafe?**:
+- Purpose-built for marketplace escrow in South Africa
+- Standard Bank has 35% stake (bank-backed credibility)
+- First escrow company in the world to offer public API
+- Handles escrow compliance - no need for marketplace approval from card networks
+- Supports: EFT, Ozow, Card (Visa/MC/Amex), SnapScan, PayJustNow (BNPL)
+- Split payments to multiple parties (providers, platform fees)
+- GraphQL API with sandbox environment
 
 **Pricing**:
+- See https://www.tradesafe.co.za/fees/ for current pricing
+- Percentage-based fee on transaction value
 - No monthly fee
-- Card transaction fee: 2.9% + R1 per transaction
-- EFT transaction fee: 2%
-- Transfer top-up fee: 1%
 
 **Setup Steps**:
 
-1. **Create Paystack Account**
-   - Go to https://paystack.com
+1. **Create TradeSafe Account**
+   - Go to https://www.tradesafe.co.za
    - Sign up for merchant account
-   - Choose "South Africa" as your country
+   - Complete KYC verification
    - **Documents needed**: ID, proof of address, business registration
 
-2. **Get API Keys**
-   - Log in to Paystack dashboard
-   - Go to Settings → API Keys & Webhooks
-   - Note your **Public Key** and **Secret Key**
-   - Copy test keys for development
+2. **Get API Credentials**
+   - Log in to TradeSafe Merchant Portal
+   - Go to Applications
+   - Create a new application
+   - Copy **Client ID** and **Client Secret**
 
-3. **Configure Webhook**
-   - Set Webhook URL: `https://yourdomain.com/api/payments/paystack/webhook`
-   - Select events: `charge.success`, `charge.failed`
-   - Copy webhook secret for verification
+3. **Configure Webhooks**
+   - Set callback URLs in your application settings
+   - Configure webhook endpoint: `https://yourdomain.com/api/payments/tradesafe/webhook`
 
 4. **Add to Environment Variables**
    ```bash
-   PAYSTACK_SECRET_KEY=sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-   PAYSTACK_PUBLIC_KEY=pk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   TRADESAFE_CLIENT_ID=your_client_id_here
+   TRADESAFE_CLIENT_SECRET=your_client_secret_here
+   TRADESAFE_ENVIRONMENT=sandbox  # or 'production'
    ```
 
 5. **Test Integration**
-   - Use test card: 4084 0841 1111 1111 (CVV: 408, Expiry: any future date)
+   - Use sandbox environment for testing
    - Test successful payment flow
-   - Test failed payment flow
+   - Test escrow hold and release
    - Verify webhook notifications
 
 6. **Go Live**
-   - Submit compliance documents
-   - Wait for approval (2-5 business days)
-   - Switch to live keys (sk_live_*, pk_live_*)
+   - Switch TRADESAFE_ENVIRONMENT to 'production'
    - Test with small real transaction
 
 **Integration Code Location**:
-- Payment API: `app/api/payments/paystack/*`
-- Payment Service: `lib/services/paystackService.ts`
+- Payment API: `app/api/payments/tradesafe/*`
+- Payment Service: `lib/services/tradesafeService.ts`
 - Frontend Component: `components/payment/PaymentDialog.tsx`
 
-**Paystack Documentation**: https://paystack.com/docs/
+**TradeSafe Documentation**: https://www.tradesafe.co.za/integration/
 
 ---
 
-#### Option B: Yoco
+#### ~~Option B: Paystack~~ (REJECTED)
+
+> **Note**: Paystack application was rejected. Marketplace/escrow model flagged as high-risk.
+> Do not attempt to use Paystack for this platform.
+
+---
+
+#### Option C: Yoco
 
 **Pros**:
 - Modern, developer-friendly
@@ -151,11 +161,12 @@ MzansiGig requires a payment gateway for escrow payments between employers and w
 
 ### Recommended Choice
 
-**For MVP/Launch**: Paystack
-- Modern API with excellent documentation
-- Native split payments and transfers support
-- Backed by Stripe
-- Can switch later if needed
+**For MVP/Launch**: TradeSafe
+- Purpose-built for marketplace escrow
+- Bank-backed (Standard Bank stake)
+- Handles escrow compliance
+- GraphQL API with sandbox
+- PayFast and Paystack both rejected this platform
 
 ---
 
@@ -445,7 +456,7 @@ We respect your privacy and comply with POPIA...
 - Improve service
 
 ## 4. Data Sharing
-- Payment gateway (Paystack)
+- Payment gateway (TradeSafe)
 - Government authorities (if required by law)
 - We NEVER sell your data
 
@@ -567,10 +578,12 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
 NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:abcdef123456
 
 # ------------------
-# Payment Gateway (Paystack)
+# Payment Gateway (TradeSafe)
 # ------------------
-PAYSTACK_SECRET_KEY=your_paystack_secret_key_here
-PAYSTACK_PUBLIC_KEY=your_paystack_public_key_here
+# IMPORTANT: DO NOT use PayFast or Paystack (applications rejected)
+TRADESAFE_CLIENT_ID=your_tradesafe_client_id_here
+TRADESAFE_CLIENT_SECRET=your_tradesafe_client_secret_here
+TRADESAFE_ENVIRONMENT=production
 
 # ------------------
 # Google Cloud Vision API
@@ -732,7 +745,7 @@ NEXT_PUBLIC_ENABLE_LOCATION_SEARCH=false
 
 | Service | Cost (ZAR) | Notes |
 |---------|------------|-------|
-| **Paystack** | 2.9% + R1/tx | ~R200-350 for 50 transactions |
+| **TradeSafe** | See tradesafe.co.za/fees | Percentage-based escrow fees |
 | **Firebase** | R300-800 | Based on 1000 active users |
 | **Google Cloud Vision** | R15-30 | ~500 ID verifications/month |
 | **Domain** | R150/year | .co.za domain |
@@ -752,18 +765,18 @@ NEXT_PUBLIC_ENABLE_LOCATION_SEARCH=false
 ## Support and Resources
 
 ### Documentation Links
-- **Paystack**: https://paystack.com/docs/
+- **TradeSafe**: https://www.tradesafe.co.za/integration/
 - **Firebase**: https://firebase.google.com/docs
 - **Google Cloud Vision**: https://cloud.google.com/vision/docs
 - **POPIA Compliance**: https://popia.co.za
 
 ### Support Contacts
-- Paystack Support: support@paystack.com
+- TradeSafe Support: https://www.tradesafe.co.za/contact/
 - Firebase Support: https://firebase.google.com/support
 - POPIA Info Officer: [Register at https://popia.co.za]
 
 ### Recommended Next Steps
-1. Create accounts (Paystack, Firebase production, Google Cloud)
+1. Create accounts (TradeSafe, Firebase production, Google Cloud)
 2. Set up test environments and verify integration
 3. Get legal documents reviewed
 4. Configure environment variables

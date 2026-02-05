@@ -19,7 +19,7 @@ export interface ProcessPaymentParams {
   transactionId?: string   // Provider transaction ID
   paymentId?: string       // Our payment reference
   // Provider info
-  provider?: 'paystack' | 'payfast' | 'ozow' | 'yoco'
+  provider?: 'tradesafe' | 'ozow' | 'yoco'
   // Metadata
   verifiedVia: 'webhook' | 'itn' | 'sandbox-fallback' | 'verify'
   itemName?: string
@@ -64,7 +64,7 @@ export async function processSuccessfulPayment(
     fees = 0,
     transactionId,
     paymentId,
-    provider = 'paystack',
+    provider = 'tradesafe',
     verifiedVia,
     itemName,
     merchantId
