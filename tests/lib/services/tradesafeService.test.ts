@@ -88,10 +88,7 @@ describe('TradeSafeService', () => {
         json: () => Promise.resolve({
           data: {
             apiProfile: {
-              token: {
-                id: 'platform_token_id',
-                name: 'Platform'
-              }
+              token: 'platform_token_id'
             }
           }
         })
@@ -109,7 +106,7 @@ describe('TradeSafeService', () => {
         })
       )
 
-      expect(profile.id).toBe('platform_token_id')
+      expect(profile).toBe('platform_token_id')
     })
 
     it('should throw error on auth failure', async () => {
@@ -605,7 +602,7 @@ describe('TradeSafeService', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({
-          data: { apiProfile: { token: { id: 'test', name: 'Test' } } }
+          data: { apiProfile: { token: 'test' } }
         })
       })
 
@@ -627,7 +624,7 @@ describe('TradeSafeService', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({
-          data: { apiProfile: { token: { id: 'test', name: 'Test' } } }
+          data: { apiProfile: { token: 'test' } }
         })
       })
 
