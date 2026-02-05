@@ -161,7 +161,7 @@ describe('JobSeekerProfileDialog', () => {
       ;(FirestoreService.getById as jest.Mock).mockResolvedValue(mockUser)
     })
 
-    it('should display contact information', async () => {
+    it('should NOT display contact information for privacy', async () => {
       render(
         <JobSeekerProfileDialog
           userId="user-123"
@@ -171,11 +171,13 @@ describe('JobSeekerProfileDialog', () => {
       )
 
       await waitFor(() => {
-        expect(screen.getByText(/Contact Information/i)).toBeInTheDocument()
+        expect(screen.getByText('John Doe')).toBeInTheDocument()
       })
 
-      expect(screen.getByText('john.doe@example.com')).toBeInTheDocument()
-      expect(screen.getByText('+27123456789')).toBeInTheDocument()
+      // Contact information should NOT be displayed for privacy/POPIA compliance
+      expect(screen.queryByText(/Contact Information/i)).not.toBeInTheDocument()
+      expect(screen.queryByText('john.doe@example.com')).not.toBeInTheDocument()
+      expect(screen.queryByText('+27123456789')).not.toBeInTheDocument()
     })
 
     it('should display skills', async () => {
@@ -312,7 +314,8 @@ describe('JobSeekerProfileDialog', () => {
         expect(screen.getByText('Jane Smith')).toBeInTheDocument()
       })
 
-      expect(screen.getByText('jane@example.com')).toBeInTheDocument()
+      // Email should NOT be displayed for privacy compliance
+      expect(screen.queryByText('jane@example.com')).not.toBeInTheDocument()
       expect(screen.getByText('Johannesburg')).toBeInTheDocument()
     })
   })
