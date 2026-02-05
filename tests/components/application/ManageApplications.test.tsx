@@ -665,7 +665,8 @@ describe('ManageApplications', () => {
   })
 
   describe('Payment Verification on Return', () => {
-    const originalFetch = global.fetch
+    // Note: TradeSafe verification happens via webhook, not client-side API call
+    // The component just shows a success message and redirects
 
     beforeEach(() => {
       mockSearchParams.clear()
@@ -678,53 +679,15 @@ describe('ManageApplications', () => {
       ;(window as any).location = { href: '' }
     })
 
-    afterEach(() => {
-      global.fetch = originalFetch
-    })
-
-    it('should call verify endpoint when payment=success in URL', async () => {
+    it('should show success toast when payment=success in URL', async () => {
       mockSearchParams.set('payment', 'success')
       mockSearchParams.set('gig', 'gig-123')
       mockSearchParams.set('reference', 'KSG_ABC123_XYZ')
 
-      const mockFetch = jest.fn().mockResolvedValue({
-        json: () => Promise.resolve({ success: true, status: 'funded' })
-      })
-      global.fetch = mockFetch
-
       render(<ManageApplications />)
 
       await waitFor(() => {
-        expect(mockFetch).toHaveBeenCalledWith(
-          '/api/payments/paystack/verify',
-          expect.objectContaining({
-            method: 'POST',
-            headers: expect.objectContaining({
-              'Content-Type': 'application/json',
-              'x-user-id': 'employer-123'
-            }),
-            body: JSON.stringify({
-              gigId: 'gig-123',
-              reference: 'KSG_ABC123_XYZ'
-            })
-          })
-        )
-      })
-    })
-
-    it('should show success toast when verification succeeds', async () => {
-      mockSearchParams.set('payment', 'success')
-      mockSearchParams.set('gig', 'gig-123')
-      mockSearchParams.set('reference', 'KSG_ABC123_XYZ')
-
-      global.fetch = jest.fn().mockResolvedValue({
-        json: () => Promise.resolve({ success: true, status: 'funded' })
-      })
-
-      render(<ManageApplications />)
-
-      await waitFor(() => {
-        expect(mockSuccess).toHaveBeenCalledWith('Lekker! Payment verified - gig is now funded')
+        expect(mockSuccess).toHaveBeenCalledWith('Lekker! Payment received - gig is being funded')
       })
     })
 
@@ -738,60 +701,32 @@ describe('ManageApplications', () => {
       })
     })
 
-    it('should show error message when verification fails', async () => {
-      mockSearchParams.set('payment', 'success')
-      mockSearchParams.set('gig', 'gig-123')
-      mockSearchParams.set('reference', 'KSG_ABC123_XYZ')
-
-      global.fetch = jest.fn().mockResolvedValue({
-        json: () => Promise.resolve({ success: false, message: 'Verification pending' })
-      })
-
-      render(<ManageApplications />)
-
-      await waitFor(() => {
-        expect(mockShowError).toHaveBeenCalledWith('Verification pending')
-      })
-    })
-
-    it('should not call verify endpoint without gig param', async () => {
+    it('should not show success without gig param', async () => {
       mockSearchParams.set('payment', 'success')
       // No gig param set
 
-      const mockFetch = jest.fn()
-      global.fetch = mockFetch
-
       render(<ManageApplications />)
 
       await waitFor(() => {
         expect(screen.getByText('Applied by Jane Smith')).toBeInTheDocument()
       })
 
-      // Verify endpoint should not be called without gigId
-      expect(mockFetch).not.toHaveBeenCalledWith(
-        '/api/payments/paystack/verify',
-        expect.anything()
-      )
+      // Success should not be shown without gigId
+      expect(mockSuccess).not.toHaveBeenCalled()
     })
 
-    it('should not call verify endpoint without payment param', async () => {
+    it('should not show success without payment param', async () => {
       mockSearchParams.set('gig', 'gig-123')
       // No payment param set
 
-      const mockFetch = jest.fn()
-      global.fetch = mockFetch
-
       render(<ManageApplications />)
 
       await waitFor(() => {
         expect(screen.getByText('Applied by Jane Smith')).toBeInTheDocument()
       })
 
-      // Verify endpoint should not be called without payment success
-      expect(mockFetch).not.toHaveBeenCalledWith(
-        '/api/payments/paystack/verify',
-        expect.anything()
-      )
+      // Success should not be shown without payment success
+      expect(mockSuccess).not.toHaveBeenCalled()
     })
   })
 

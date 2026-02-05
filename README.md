@@ -23,12 +23,12 @@ Empower all of Mzansi (South Africa) - from informal sector workers to professio
 
 ## ✅ Platform Status: Production Ready
 
-**Readiness**: 🟢 **96% Complete**
+**Readiness**: 🟡 **90% Complete** (blocked on payment provider approval)
 
 ### What's Implemented
 - ✅ **1241 tests passing** | ✅ Zero TypeScript errors | ✅ Build successful
 - ✅ **All core features implemented and tested**
-- ✅ **Payment system fully functional** (escrow, withdrawals, fees)
+- 🔄 **Payment system** - Logic complete, awaiting TradeSafe approval for live payments
 - ✅ **Trust & safety features operational** (ID verification, reviews, trust scores)
 - ✅ **Admin document review dashboard** with trust score integration
 - ✅ **Mobile-responsive** with PWA support
@@ -151,29 +151,35 @@ Empower all of Mzansi (South Africa) - from informal sector workers to professio
 - ⏰ **Funding Protection**: Auto-cancels accepted applications if not funded within configurable timeout (default 48 hours)
 - 🔄 **Smart Status Updates**: Gig status automatically changes to 'in-progress' when payment is funded
 
-#### Payment & Payout Model (Current Implementation)
+#### Payment & Payout Model (Current Status)
 
-**Money Flow:**
+**Payment Provider Status:**
+- ❌ **PayFast** - Application rejected (risk assessment)
+- ❌ **Paystack** - Application rejected (risk assessment - marketplace/escrow model flagged)
+- ✅ **TradeSafe** - Integrated (purpose-built for marketplace escrow)
+
+**Why TradeSafe?**
+TradeSafe is South Africa's longest-running digital escrow service, purpose-built for marketplace transactions:
+- Standard Bank has 35% stake (bank-backed credibility)
+- First escrow company in the world to offer public API
+- Handles escrow compliance - no need for marketplace approval from card networks
+- Supports: EFT, Ozow, Card (Visa/MC/Amex), SnapScan, PayJustNow (BNPL)
+- Split payments to multiple parties (providers, platform fees)
+- GraphQL API with sandbox environment
+
+**Proposed Flow (TradeSafe):**
 ```
-Employer pays via Paystack → Paystack settles to platform bank account (T+2)
-                          → "Escrow" is virtual bookkeeping in database
-                          → Worker requests withdrawal
-                          → Admin manually transfers via EFT to worker's bank
+Employer pays → TradeSafe holds in licensed escrow account
+             → Worker completes gig
+             → Client confirms completion (or auto-release after 7 days)
+             → TradeSafe releases to worker (minus platform fee)
 ```
 
-**Current Model (Phase 1 - Manual Payouts):**
-- Employer payments are processed via Paystack and settled to the platform's bank account
-- "Escrow" is internal database accounting (not third-party escrow)
-- Worker wallet balances are virtual records in Firestore
-- Admin manually processes withdrawal requests via bank EFT
-- Simple, low-cost, suitable for early-stage operations
+**Key Advantage:** TradeSafe handles all escrow compliance and licensing - the platform doesn't need to be approved as a "marketplace" because we're using their licensed escrow infrastructure.
 
-**Future Enhancement (Phase 2 - Automated Payouts):**
-- Integrate [Paystack Transfers API](https://paystack.com/docs/transfers/) for automated worker payouts
-- Requires Paystack business account with Transfers enabled
-- Additional transfer fees apply (~R10-15 per transfer)
-- Will enable instant/same-day payouts to workers
-- Implementation planned when transaction volume justifies automation costs
+**Resources:**
+- [TradeSafe Integration Docs](https://www.tradesafe.co.za/integration/)
+- [TradeSafe Fees](https://www.tradesafe.co.za/fees/)
 
 ### Messaging System
 - 💬 **Real-time Messaging**: Direct communication between employers and job seekers
@@ -230,16 +236,18 @@ Employer pays via Paystack → Paystack settles to platform bank account (T+2)
 
 ## 🚀 Development Roadmap
 
-**Platform Status**: Feature-complete with 1489 passing tests. Payment gateway integration complete:
-1. **Payment Gateway Integration** (Paystack API) - DONE
+**Platform Status**: Feature-complete with 1489 passing tests. Payment gateway integration in progress:
+1. **Payment Gateway Integration** - TradeSafe (pending approval)
 
 ### 🎯 Priority 1: Launch Essentials
 **Critical - Required before public launch**
 
-- [x] **Payment Gateway Integration** - Paystack integration complete
-  - Paystack service with initialize, verify, and webhook support
-  - Split payments and transfers API ready
-  - Alternative: Ozow or Yoco (can be added later)
+- [x] **Payment Gateway Integration** - TradeSafe escrow (integrated)
+  - ❌ PayFast rejected (risk assessment)
+  - ❌ Paystack rejected (marketplace model flagged as high-risk)
+  - ✅ TradeSafe integration complete - purpose-built for marketplace escrow
+  - GraphQL API with sandbox/production support
+  - Supports: EFT, Ozow, Card, SnapScan
 - [x] **Legal Documents** - POPIA-compliant Terms of Service and Privacy Policy
   - Terms of Service: 205 lines, fully implemented with SA law references
   - Privacy Policy: 265 lines, POPIA-compliant
@@ -264,7 +272,7 @@ Employer pays via Paystack → Paystack settles to platform bank account (T+2)
 - [ ] **Multi-language Support** - isiZulu, Afrikaans, and other SA languages (critical for inclusion in 11-language nation)
 - [ ] **Enhanced Verification** - Background checks and address verification (UI ready! +25 trust score, builds trust fast)
 - [ ] **Emergency SMS Integration** - Safety notifications via Twilio/African SMS gateway (safety critical in SA context)
-- [ ] **Paystack Transfers API** - Automated worker payouts (currently manual EFT, upgrade when volume justifies transfer fees)
+- [ ] **Automated Payouts** - TradeSafe handles payouts directly to workers (pending integration)
 - [ ] **Completion Proof Upload** - Allow workers to attach photos/files when requesting completion (strengthens dispute resolution)
 - [ ] **In-App Notification System** - Currently status updates are communicated via application views only; users miss updates if they don't open those views
   - Options: Enhance existing messaging system for system notifications OR implement dedicated notification bell/center
@@ -420,7 +428,7 @@ npm run test:ci
 - [x] Employer payment dashboard
 - [x] Real-time messaging system
 - [x] Mobile responsive design with PWA
-- [x] Payment system with escrow (manual/simulated - pending gateway integration)
+- [x] Payment system with escrow logic (awaiting TradeSafe approval for live payments)
 - [x] Review and rating system
 - [x] Browse talent with advanced filters
 - [x] Application withdrawal for workers

@@ -130,7 +130,7 @@ We share limited information with other users:
 
 We share information with:
 
-**Payment Processors** (Paystack):
+**Payment Processors** (TradeSafe):
 - Payment card details
 - Transaction amounts
 - Bank account details (for payouts)

@@ -1,7 +1,7 @@
 export interface PaymentMethod {
   id: string
   type: 'card' | 'bank' | 'mobile_money' | 'eft'
-  provider: 'paystack' | 'ozow' | 'yoco' | 'stripe' | 'manual' | 'eft'
+  provider: 'tradesafe' | 'ozow' | 'yoco' | 'manual' | 'eft'
 
   // Card details (for card type)
   cardLast4?: string
@@ -40,7 +40,7 @@ export interface Payment {
   type: 'milestone' | 'hourly' | 'fixed' | 'bonus'
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'refunded' | 'disputed'
 
-  // Payment provider (paystack, ozow, yoco)
+  // Payment provider (tradesafe, ozow, yoco)
   provider?: string
   // Legacy fields for backward compatibility with existing data
   paymentMethodId?: string
@@ -245,19 +245,15 @@ export interface PaymentState {
   error: string | null
 }
 
-export type PaymentProvider = 'paystack' | 'ozow' | 'yoco' | 'stripe'
+// Note: PayFast and Paystack applications were rejected (marketplace/escrow flagged as high-risk)
+// TradeSafe is purpose-built for marketplace escrow in South Africa
+export type PaymentProvider = 'tradesafe' | 'ozow' | 'yoco'
 
 // South African payment provider specific types
-export interface PaystackConfig {
-  secretKey: string
-  publicKey: string
-}
-
-export interface PayFastConfig {
-  merchantId: string
-  merchantKey: string
-  passphrase: string
-  sandbox: boolean
+export interface TradeSafeConfig {
+  clientId: string
+  clientSecret: string
+  environment: 'sandbox' | 'production'
 }
 
 export interface OzowConfig {

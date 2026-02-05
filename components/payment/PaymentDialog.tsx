@@ -9,9 +9,12 @@ import { useAuth } from '@/contexts/AuthContext'
 import { Payment } from '@/types/payment'
 import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
 import { validatePaymentAmount, getPaymentLimits, PAYMENT_LIMITS, PaymentLimits } from '@/lib/utils/paymentValidation'
+import { auth } from '@/lib/firebase'
 
 // Available payment providers
-type PaymentProvider = 'paystack' | 'ozow' | 'yoco'
+// Note: PayFast and Paystack applications were rejected (marketplace/escrow flagged as high-risk)
+// TradeSafe is purpose-built for marketplace escrow in South Africa
+type PaymentProvider = 'tradesafe' | 'ozow' | 'yoco'
 
 interface ProviderOption {
   id: PaymentProvider
@@ -23,10 +26,10 @@ interface ProviderOption {
 
 const PAYMENT_PROVIDERS: ProviderOption[] = [
   {
-    id: 'paystack',
-    name: 'Paystack',
-    description: 'Credit/Debit Card, Bank Transfer, EFT',
-    icon: '💳',
+    id: 'tradesafe',
+    name: 'TradeSafe Escrow',
+    description: 'Secure escrow - EFT, Card, SnapScan, Ozow',
+    icon: '🔒',
     available: true
   },
   {
@@ -34,7 +37,7 @@ const PAYMENT_PROVIDERS: ProviderOption[] = [
     name: 'Ozow',
     description: 'Instant EFT payments',
     icon: '🏦',
-    available: false // Not yet implemented
+    available: false // Available via TradeSafe
   },
   {
     id: 'yoco',
@@ -58,7 +61,7 @@ interface PaymentDialogProps {
 
 export default function PaymentDialog({
   gigId,
-  workerId: _workerId,
+  workerId,
   workerName,
   amount,
   description,
@@ -74,7 +77,7 @@ export default function PaymentDialog({
   const { success: _showSuccess, error: showError } = useToast()
   const { user } = useAuth()
 
-  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>('paystack')
+  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>('tradesafe')
   // Payment type is always 'fixed' for full payment
   const paymentType = 'fixed'
   const [step, setStep] = useState<'amount' | 'provider' | 'confirm' | 'large-amount-confirm' | 'processing'>('amount')
@@ -158,37 +161,45 @@ export default function PaymentDialog({
         return
       }
 
-      // For Paystack provider
-      if (selectedProvider === 'paystack') {
-        const response = await fetch('/api/payments/paystack/initialize', {
+      // Get Firebase ID token for secure API authentication
+      const firebaseUser = auth.currentUser
+      if (!firebaseUser) {
+        showError('Session expired. Please sign in again.')
+        setStep('confirm')
+        return
+      }
+      const idToken = await firebaseUser.getIdToken()
+
+      // For TradeSafe provider (primary)
+      if (selectedProvider === 'tradesafe') {
+        const response = await fetch('/api/payments/tradesafe/initialize', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'x-user-id': user.id
+            'Authorization': `Bearer ${idToken}`
           },
           body: JSON.stringify({
             gigId,
             amount: fees ? amount + fees.totalFees : amount,
-            itemName: description || `Payment for gig work to ${workerName}`,
-            itemDescription: `Funding gig ${gigId}`,
-            customerEmail: user.email,
-            customerName: `${user.firstName || ''} ${user.lastName || ''}`.trim()
+            title: description || `Payment for gig work to ${workerName}`,
+            description: `Funding gig ${gigId}`,
+            workerId: workerId
           })
         })
 
         if (!response.ok) {
           const error = await response.json()
-          throw new Error(error.message || 'Failed to initialize Paystack payment')
+          throw new Error(error.message || 'Failed to initialize TradeSafe payment')
         }
 
         const data = await response.json()
 
-        if (!data.success || !data.authorizationUrl) {
-          throw new Error('Failed to get payment URL from Paystack')
+        if (!data.success || !data.checkoutUrl) {
+          throw new Error('Failed to get payment URL from TradeSafe')
         }
 
-        // Redirect to Paystack checkout
-        window.location.href = data.authorizationUrl
+        // Redirect to TradeSafe checkout
+        window.location.href = data.checkoutUrl
         return
       }
 

@@ -139,8 +139,8 @@ export default function FeeConfigManager() {
         largePaymentThreshold: 10000, // R10,000 requires confirmation
         escrowReleaseDelayHours: parseInt(formData.escrowReleaseDelayHours),
         autoReleaseEnabled: formData.autoReleaseEnabled,
-        enabledProviders: ['paystack', 'ozow', 'yoco'],
-        defaultProvider: 'paystack',
+        enabledProviders: ['tradesafe', 'ozow', 'yoco'],
+        defaultProvider: 'tradesafe',
         vatIncluded: formData.vatIncluded,
         vatPercentage: parseFloat(formData.vatPercentage),
         isActive: true

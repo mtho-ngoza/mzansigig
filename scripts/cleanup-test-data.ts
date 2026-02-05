@@ -33,8 +33,10 @@ const firebaseAdmin = require('firebase-admin') as any
 const COLLECTIONS_TO_DELETE = [
   'payments',
   'paymentIntents',
+  'payment_intents', // snake_case version (legacy Paystack)
   'paymentHistory',
   'escrowAccounts',
+  'escrow',
   'paymentDisputes',
   'withdrawals',
   'milestones',
@@ -42,7 +44,9 @@ const COLLECTIONS_TO_DELETE = [
   'reviews',
   'conversations',
   'messages',
-  'walletTransactions'
+  'walletTransactions',
+  'wallet_transactions', // snake_case version
+  'feeConfigs' // Delete so we can reseed with TradeSafe as default provider
 ]
 
 // Fields to clear from gigs when resetting

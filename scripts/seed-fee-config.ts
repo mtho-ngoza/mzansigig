@@ -65,8 +65,9 @@ const DEFAULT_FEE_CONFIG = {
   autoReleaseEnabled: true,
 
   // Payment providers
-  enabledProviders: ['paystack', 'ozow', 'yoco'],
-  defaultProvider: 'paystack',
+  // Note: PayFast and Paystack applications were rejected (marketplace/escrow flagged as high-risk)
+  enabledProviders: ['tradesafe', 'ozow', 'yoco'],
+  defaultProvider: 'tradesafe',
 
   // South African tax
   vatIncluded: true,
