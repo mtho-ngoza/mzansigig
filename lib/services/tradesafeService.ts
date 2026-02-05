@@ -279,7 +279,7 @@ export class TradeSafeService {
    */
   async createTransaction(input: TransactionCreateInput): Promise<Transaction> {
     const mutation = `
-      mutation transactionCreate($input: TransactionInput!) {
+      mutation transactionCreate($input: CreateTransactionInput!) {
         transactionCreate(input: $input) {
           id
           title
