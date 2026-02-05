@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       value: amount,
       buyerToken: buyerToken,
       sellerToken: sellerToken,
-      agentToken: platformToken.id,
+      agentToken: platformToken,
       agentFeePercent: platformFee,
       daysToDeliver: 7,
       daysToInspect: 7,

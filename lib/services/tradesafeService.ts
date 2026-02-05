@@ -202,19 +202,16 @@ export class TradeSafeService {
    * Get the API owner's profile token
    * Used for platform/agent role
    */
-  async getApiProfile(): Promise<TradeSafeToken> {
+  async getApiProfile(): Promise<string> {
     const query = `
       query apiProfile {
         apiProfile {
-          token {
-            id
-            name
-          }
+          token
         }
       }
     `
 
-    const data = await this.graphql<{ apiProfile: { token: TradeSafeToken } }>(query)
+    const data = await this.graphql<{ apiProfile: { token: string } }>(query)
     return data.apiProfile.token
   }
 
