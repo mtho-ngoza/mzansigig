@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -15,7 +16,7 @@ import { Button } from '@/components/ui/Button'
  * - transactionId: TradeSafe transaction ID
  * - reference: TradeSafe reference code
  */
-export default function PaymentErrorPage() {
+function PaymentErrorContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -90,5 +91,24 @@ export default function PaymentErrorPage() {
         </CardContent>
       </Card>
     </div>
+  )
+}
+
+function LoadingState() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    </div>
+  )
+}
+
+export default function PaymentErrorPage() {
+  return (
+    <Suspense fallback={<LoadingState />}>
+      <PaymentErrorContent />
+    </Suspense>
   )
 }
