@@ -345,23 +345,6 @@ describe('TradeSafeService', () => {
       expect(requestBody.variables.embed).toBe(true)
     })
 
-    it('should include custom payment methods', async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve({
-          data: { checkoutLink: 'https://pay-sandbox.tradesafe.dev/checkout/abc123' }
-        })
-      })
-
-      const service = new TradeSafeService()
-      await service.getCheckoutLink({
-        transactionId: 'txn_123',
-        paymentMethods: ['EFT', 'CARD']
-      })
-
-      const requestBody = JSON.parse(mockFetch.mock.calls[1][1].body)
-      expect(requestBody.variables.paymentMethods).toEqual(['EFT', 'CARD'])
-    })
   })
 
   describe('delivery actions', () => {

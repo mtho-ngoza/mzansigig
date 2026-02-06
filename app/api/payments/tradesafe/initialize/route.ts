@@ -141,8 +141,7 @@ export async function POST(request: NextRequest) {
 
     // Generate checkout link
     const checkoutUrl = await tradeSafe.getCheckoutLink({
-      transactionId: transaction.id,
-      paymentMethods: ['EFT', 'INSTANT_EFT', 'CARD']
+      transactionId: transaction.id
     })
 
     // Store payment intent in database for tracking
