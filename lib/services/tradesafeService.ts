@@ -90,9 +90,6 @@ export type AllocationState =
 export interface CheckoutLinkOptions {
   transactionId: string
   embed?: boolean
-  // paymentMethods is deprecated: TradeSafe schema no longer accepts PaymentMethod enum here.
-  // Kept for backward compatibility but currently ignored by API calls.
-  paymentMethods?: Array<'EFT' | 'INSTANT_EFT' | 'CARD' | 'SNAP' | 'PJN'>
 }
 
 export class TradeSafeService {
@@ -428,7 +425,6 @@ export class TradeSafeService {
     const variables = {
       transactionId: options.transactionId,
       embed: options.embed || false
-      // paymentMethods argument removed per latest TradeSafe schema
     }
 
     const data = await this.graphql<{ checkoutLink: string }>(mutation, variables)
