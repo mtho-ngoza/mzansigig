@@ -9,21 +9,25 @@ import { Button } from '@/components/ui/Button'
  *
  * Handles redirect from TradeSafe after failed/cancelled payment
  * Query params from TradeSafe:
- * - status: Payment status
+ * - action: 'failure' | 'success'
+ * - method: Payment method used (card, eft, etc)
+ * - reason: Error reason (canceled, declined, etc)
  * - transactionId: TradeSafe transaction ID
- * - reference: External reference (gigId)
- * - error: Error message (if available)
+ * - reference: TradeSafe reference code
  */
 export default function PaymentErrorPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
   const transactionId = searchParams.get('transactionId')
-  const reference = searchParams.get('reference') // gigId
+  const reference = searchParams.get('reference')
+  const reason = searchParams.get('reason')
+  const method = searchParams.get('method')
+  // Legacy params
   const status = searchParams.get('status')
   const errorMessage = searchParams.get('error')
 
-  const isCancelled = status === 'cancelled' || status === 'CANCELLED'
+  const isCancelled = reason === 'canceled' || status === 'cancelled' || status === 'CANCELLED'
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -41,10 +45,11 @@ export default function PaymentErrorPage() {
               : 'There was a problem processing your payment. Please try again.'}
           </p>
 
-          {errorMessage && (
+          {(errorMessage || reason) && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-left">
-              <h4 className="font-medium text-red-800 mb-1">Error Details</h4>
-              <p className="text-sm text-red-700">{errorMessage}</p>
+              <h4 className="font-medium text-red-800 mb-1">Details</h4>
+              <p className="text-sm text-red-700">{errorMessage || `Reason: ${reason}`}</p>
+              {method && <p className="text-sm text-red-600 mt-1">Payment method: {method}</p>}
             </div>
           )}
 
