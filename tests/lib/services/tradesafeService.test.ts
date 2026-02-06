@@ -344,7 +344,6 @@ describe('TradeSafeService', () => {
       const requestBody = JSON.parse(mockFetch.mock.calls[1][1].body)
       expect(requestBody.variables.embed).toBe(true)
     })
-
   })
 
   describe('delivery actions', () => {
