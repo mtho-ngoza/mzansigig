@@ -90,6 +90,8 @@ export type AllocationState =
 export interface CheckoutLinkOptions {
   transactionId: string
   embed?: boolean
+  // paymentMethods is deprecated: TradeSafe schema no longer accepts PaymentMethod enum here.
+  // Kept for backward compatibility but currently ignored by API calls.
   paymentMethods?: Array<'EFT' | 'INSTANT_EFT' | 'CARD' | 'SNAP' | 'PJN'>
 }
 
@@ -109,6 +111,18 @@ export class TradeSafeService {
       clientSecret: config?.clientSecret || process.env.TRADESAFE_CLIENT_SECRET || '',
       environment: config?.environment || (process.env.TRADESAFE_ENVIRONMENT as 'sandbox' | 'production') || 'sandbox'
     }
+
+    // Debug logging for environment variable injection
+    console.log('TradeSafe config loaded:', {
+      clientId: this.config.clientId ? `${this.config.clientId.substring(0, 8)}...` : 'NOT SET',
+      clientSecret: this.config.clientSecret ? `${this.config.clientSecret.substring(0, 8)}...` : 'NOT SET',
+      environment: this.config.environment,
+      envVars: {
+        TRADESAFE_CLIENT_ID: process.env.TRADESAFE_CLIENT_ID ? 'SET' : 'NOT SET',
+        TRADESAFE_CLIENT_SECRET: process.env.TRADESAFE_CLIENT_SECRET ? 'SET' : 'NOT SET',
+        TRADESAFE_ENVIRONMENT: process.env.TRADESAFE_ENVIRONMENT || 'NOT SET'
+      }
+    })
 
     if (!this.config.clientId || !this.config.clientSecret) {
       throw new Error('TradeSafe client ID and secret are required')
@@ -139,7 +153,11 @@ export class TradeSafeService {
       return this.accessToken
     }
 
-    console.log('TradeSafe: Authenticating...')
+    console.log('TradeSafe: Authenticating...', {
+      authUrl: this.AUTH_URL,
+      clientId: this.config.clientId ? `${this.config.clientId.substring(0, 8)}...` : 'NOT SET',
+      clientSecretLength: this.config.clientSecret?.length || 0
+    })
 
     const response = await fetch(this.AUTH_URL, {
       method: 'POST',
@@ -155,7 +173,11 @@ export class TradeSafeService {
 
     if (!response.ok) {
       const error = await response.text()
-      console.error('TradeSafe auth error:', error)
+      console.error('TradeSafe auth error:', {
+        status: response.status,
+        statusText: response.statusText,
+        error: error
+      })
       throw new Error(`TradeSafe authentication failed: ${response.statusText}`)
     }
 
@@ -398,15 +420,15 @@ export class TradeSafeService {
    */
   async getCheckoutLink(options: CheckoutLinkOptions): Promise<string> {
     const mutation = `
-      mutation checkoutLink($transactionId: ID!, $embed: Boolean, $paymentMethods: [PaymentMethod!]) {
-        checkoutLink(transactionId: $transactionId, embed: $embed, paymentMethods: $paymentMethods)
+      mutation checkoutLink($transactionId: ID!, $embed: Boolean) {
+        checkoutLink(transactionId: $transactionId, embed: $embed)
       }
     `
 
     const variables = {
       transactionId: options.transactionId,
-      embed: options.embed || false,
-      paymentMethods: options.paymentMethods || ['EFT', 'INSTANT_EFT', 'CARD']
+      embed: options.embed || false
+      // paymentMethods argument removed per latest TradeSafe schema
     }
 
     const data = await this.graphql<{ checkoutLink: string }>(mutation, variables)

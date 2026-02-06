@@ -345,7 +345,7 @@ describe('TradeSafeService', () => {
       expect(requestBody.variables.embed).toBe(true)
     })
 
-    it('should include custom payment methods', async () => {
+    it('should ignore payment methods per latest schema', async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve({
@@ -360,7 +360,7 @@ describe('TradeSafeService', () => {
       })
 
       const requestBody = JSON.parse(mockFetch.mock.calls[1][1].body)
-      expect(requestBody.variables.paymentMethods).toEqual(['EFT', 'CARD'])
+      expect(requestBody.variables.paymentMethods).toBeUndefined()
     })
   })
 
