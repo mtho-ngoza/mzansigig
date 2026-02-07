@@ -158,10 +158,10 @@ export async function POST(request: NextRequest) {
     console.log('Full transaction response:', JSON.stringify(transaction, null, 2))
     console.log('Key IDs:', {
       transactionId: transaction.id,
-      reference_from_tradesafe: transaction.reference,
       our_gigId: gigId,
       allocationId: transaction.allocations?.[0]?.id
     })
+    console.log('NOTE: TradeSafe does NOT return reference in response. We use transactionId to lookup paymentIntent which has gigId.')
 
     // Generate checkout link
     const checkoutUrl = await tradeSafe.getCheckoutLink({
@@ -172,7 +172,8 @@ export async function POST(request: NextRequest) {
     console.log('Checkout URL:', checkoutUrl)
 
     // Store payment intent in database for tracking
-    const paymentIntentData = {
+    // Note: TradeSafe does NOT return our reference in the response, so we store our gigId
+    const paymentIntentData: Record<string, unknown> = {
       gigId,
       employerId,
       workerId,
@@ -180,8 +181,7 @@ export async function POST(request: NextRequest) {
       provider: 'tradesafe',
       status: 'created',
       transactionId: transaction.id,
-      allocationId: transaction.allocations[0]?.id,
-      tradeSafeReference: transaction.reference,
+      allocationId: transaction.allocations[0]?.id || null,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       expiresAt: new Date(Date.now() + 15 * 60 * 1000)
     }
@@ -192,9 +192,9 @@ export async function POST(request: NextRequest) {
     console.log('PaymentIntent stored:', {
       paymentIntentId: paymentIntentRef.id,
       gigId,
-      transactionId: transaction.id,
-      tradeSafeReference: transaction.reference
+      transactionId: transaction.id
     })
+    console.log('NOTE: We store gigId in paymentIntent, lookup by transactionId to get gigId')
 
     // Return checkout URL for redirect
     return NextResponse.json({
