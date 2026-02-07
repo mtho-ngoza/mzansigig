@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useEffect, useState, Suspense, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -10,30 +10,73 @@ import { Button } from '@/components/ui/Button'
  *
  * Handles redirect from TradeSafe after successful payment
  * Query params from TradeSafe:
- * - status: Payment status
- * - method: Payment method used
+ * - action: 'complete' or 'success'
+ * - method: Payment method used (eft, card, etc)
  * - transactionId: TradeSafe transaction ID
- * - reference: External reference (gigId)
+ * - reference: TradeSafe's internal reference (NOT our gigId)
+ *
+ * We use transactionId to look up the payment and get the actual gigId.
  */
 function PaymentSuccessContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [countdown, setCountdown] = useState(5)
+  const [gigId, setGigId] = useState<string | null>(null)
+  const [verifying, setVerifying] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const transactionId = searchParams.get('transactionId')
-  const reference = searchParams.get('reference') // gigId
   const method = searchParams.get('method')
 
-  // Auto-redirect after countdown
+  // Verify payment and get gigId
+  const verifyPayment = useCallback(async () => {
+    if (!transactionId) {
+      setVerifying(false)
+      setError('No transaction ID provided')
+      return
+    }
+
+    try {
+      const response = await fetch('/api/payments/tradesafe/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transactionId })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        setGigId(data.gigId)
+        console.log('Payment verified:', data)
+      } else {
+        console.error('Payment verification failed:', data)
+        setError(data.error || 'Failed to verify payment')
+      }
+    } catch (err) {
+      console.error('Payment verification error:', err)
+      setError('Failed to verify payment')
+    } finally {
+      setVerifying(false)
+    }
+  }, [transactionId])
+
+  // Verify payment on mount
   useEffect(() => {
+    verifyPayment()
+  }, [verifyPayment])
+
+  // Auto-redirect after countdown (only after verification completes)
+  useEffect(() => {
+    if (verifying) return
+
     const timer = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(timer)
           // Redirect to manage applications or dashboard
-          router.push(reference
-            ? `/dashboard/manage-applications?payment=success&gig=${reference}`
-            : '/dashboard'
+          router.push(gigId
+            ? `/dashboard/manage-applications?payment=success&gig=${gigId}`
+            : '/dashboard/manage-applications?payment=success'
           )
           return 0
         }
@@ -42,7 +85,26 @@ function PaymentSuccessContent() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [router, reference])
+  }, [router, gigId, verifying])
+
+  // Show loading while verifying
+  if (verifying) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-md text-center">
+          <CardHeader>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+            <CardTitle className="text-xl text-gray-600">
+              Verifying Payment...
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-gray-500">Please wait while we confirm your payment.</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -57,6 +119,14 @@ function PaymentSuccessContent() {
           <p className="text-gray-600">
             Your payment has been processed and the funds are now held in secure escrow.
           </p>
+
+          {error && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-left">
+              <p className="text-sm text-yellow-700">
+                Note: {error}. Your payment may still have been processed.
+              </p>
+            </div>
+          )}
 
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-left">
             <h4 className="font-medium text-green-800 mb-2">What happens next?</h4>
@@ -80,9 +150,9 @@ function PaymentSuccessContent() {
               Redirecting in {countdown} seconds...
             </p>
             <Button
-              onClick={() => router.push(reference
-                ? `/dashboard/manage-applications?payment=success&gig=${reference}`
-                : '/dashboard'
+              onClick={() => router.push(gigId
+                ? `/dashboard/manage-applications?payment=success&gig=${gigId}`
+                : '/dashboard/manage-applications?payment=success'
               )}
               className="w-full"
             >

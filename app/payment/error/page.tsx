@@ -72,10 +72,7 @@ function PaymentErrorContent() {
 
           <div className="pt-4 space-y-2">
             <Button
-              onClick={() => router.push(reference
-                ? `/dashboard/manage-applications?gig=${reference}`
-                : '/dashboard/manage-applications'
-              )}
+              onClick={() => router.push('/dashboard/manage-applications')}
               className="w-full"
             >
               Try Again
