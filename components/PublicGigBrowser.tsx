@@ -334,19 +334,22 @@ export default function PublicGigBrowser({
 
       if (cachedGigs && cachedGigs.length > 0) {
         // Cache hit! Use cached data (saves Firestore query)
-        openGigs = cachedGigs
+        // Filter out gigs with assignedTo set (application already accepted)
+        openGigs = cachedGigs.filter(gig => !gig.assignedTo)
         setHasMoreGigs(cachedGigs.length >= PAGE_SIZE)
       } else {
         // Cache miss - fetch from Firestore
         const result = await GigService.getGigsByStatusWithCursor('open', PAGE_SIZE)
-        openGigs = result.gigs
+        // Filter out gigs with assignedTo set (application already accepted)
+        // These gigs are technically 'open' but a worker has been selected
+        openGigs = result.gigs.filter(gig => !gig.assignedTo)
 
         // Store cursor for next page
         setLastDocCursor(result.lastDoc)
-        setHasMoreGigs(openGigs.length === PAGE_SIZE && result.lastDoc !== null)
+        setHasMoreGigs(result.gigs.length === PAGE_SIZE && result.lastDoc !== null)
 
-        // Cache the results for next visit
-        GigCache.set(cacheKey, openGigs)
+        // Cache the unfiltered results for next visit (filtering happens on read)
+        GigCache.set(cacheKey, result.gigs)
       }
 
       // Load application counts and check which gigs user has applied to (only if user is authenticated)
@@ -525,15 +528,18 @@ export default function PublicGigBrowser({
     setIsLoadingMore(true)
     try {
       // Load next batch using cursor-based pagination
-      const { gigs: moreGigs, lastDoc } = await GigService.getGigsByStatusWithCursor(
+      const { gigs: rawGigs, lastDoc } = await GigService.getGigsByStatusWithCursor(
         'open',
         PAGE_SIZE,
         lastDocCursor
       )
 
+      // Filter out gigs with assignedTo set (application already accepted)
+      const moreGigs = rawGigs.filter(gig => !gig.assignedTo)
+
       // Update cursor for next page
       setLastDocCursor(lastDoc)
-      setHasMoreGigs(moreGigs.length === PAGE_SIZE && lastDoc !== null)
+      setHasMoreGigs(rawGigs.length === PAGE_SIZE && lastDoc !== null)
 
       // Load application counts for new gigs
       if (currentUser && moreGigs.length > 0) {
@@ -677,7 +683,8 @@ export default function PublicGigBrowser({
       // Load search results with a reasonable limit
       const SEARCH_LIMIT = 100
       const searchResults = await GigService.searchGigs(searchTerm, selectedCategory || undefined, SEARCH_LIMIT)
-      const openGigs = searchResults.filter(gig => gig.status === 'open')
+      // Filter for open gigs without an accepted application (assignedTo not set)
+      const openGigs = searchResults.filter(gig => gig.status === 'open' && !gig.assignedTo)
 
       // Track if there are more gigs
       setHasMoreGigs(openGigs.length === SEARCH_LIMIT)

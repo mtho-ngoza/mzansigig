@@ -21,7 +21,7 @@ function PaymentErrorContent() {
   const router = useRouter()
 
   const transactionId = searchParams.get('transactionId')
-  const reference = searchParams.get('reference')
+  searchParams.get('reference');
   const reason = searchParams.get('reason')
   const method = searchParams.get('method')
   // Legacy params
@@ -72,10 +72,7 @@ function PaymentErrorContent() {
 
           <div className="pt-4 space-y-2">
             <Button
-              onClick={() => router.push(reference
-                ? `/dashboard/manage-applications?gig=${reference}`
-                : '/dashboard/manage-applications'
-              )}
+              onClick={() => router.push('/dashboard/manage-applications')}
               className="w-full"
             >
               Try Again
