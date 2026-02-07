@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getFirebaseAdmin } from '@/lib/firebase-admin'
+import * as admin from 'firebase-admin'
 
 /**
  * POST /tradesafe/callback
@@ -8,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server'
  * 2. Webhook notifications - server-to-server updates with type and state params
  *
  * For user redirects: Use 303 redirect to payment success/error page
- * For webhooks: Return 200 OK (webhooks are server-to-server, can't redirect)
+ * For webhooks: Process the webhook and update database, return 200 OK
  */
 export async function POST(request: NextRequest) {
   try {
@@ -55,15 +57,26 @@ export async function POST(request: NextRequest) {
 
     if (isWebhook) {
       // This is a webhook notification (server-to-server)
-      // Don't redirect - just acknowledge receipt
-      // Note: The proper webhook handler at /api/payments/tradesafe/webhook handles processing
-      console.log('TradeSafe callback: Webhook notification received, state:', params.get('state'))
+      const state = params.get('state') || ''
+      const transactionId = params.get('id') || ''
+      const gigId = params.get('reference') || ''
+      const balance = parseFloat(params.get('balance') || '0')
 
-      // Return 200 to acknowledge receipt
+      console.log('TradeSafe webhook received:', { state, transactionId, gigId, balance })
+
+      // Process payment success states
+      if (['FUNDS_DEPOSITED', 'FUNDS_RECEIVED', 'INITIATED'].includes(state)) {
+        await handlePaymentSuccess(gigId, transactionId, balance)
+      } else if (state === 'COMPLETED') {
+        await handleTransactionCompleted(gigId, transactionId)
+      } else if (state === 'CANCELLED') {
+        await handleTransactionCancelled(gigId, transactionId)
+      }
+
       return NextResponse.json({
         received: true,
-        state: params.get('state'),
-        note: 'Webhook received at callback URL. Configure webhook URL to /api/payments/tradesafe/webhook for full processing.'
+        state,
+        processed: true
       })
     }
 
@@ -105,6 +118,161 @@ export async function POST(request: NextRequest) {
       { status: 303 }
     )
   }
+}
+
+/**
+ * Handle successful payment - update gig to in-progress
+ */
+async function handlePaymentSuccess(gigId: string, transactionId: string, amount: number) {
+  if (!gigId || !transactionId) {
+    console.warn('TradeSafe webhook: Missing gigId or transactionId')
+    return
+  }
+
+  console.log('TradeSafe webhook: Processing payment success for gig:', gigId)
+
+  const app = getFirebaseAdmin()
+  const db = app.firestore()
+
+  // Update payment intent status
+  const paymentIntentQuery = await db.collection('paymentIntents')
+    .where('transactionId', '==', transactionId)
+    .where('provider', '==', 'tradesafe')
+    .limit(1)
+    .get()
+
+  if (!paymentIntentQuery.empty) {
+    const paymentIntent = paymentIntentQuery.docs[0]
+    const paymentData = paymentIntent.data()
+
+    // Only update if not already funded
+    if (paymentData.status !== 'funded' && paymentData.status !== 'completed') {
+      await paymentIntent.ref.update({
+        status: 'funded',
+        fundedAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+    }
+  }
+
+  // Update gig status to in-progress
+  const gigRef = db.collection('gigs').doc(gigId)
+  const gigDoc = await gigRef.get()
+
+  if (gigDoc.exists) {
+    const gigData = gigDoc.data()
+    // Only update if not already funded
+    if (gigData?.paymentStatus !== 'funded' && gigData?.paymentStatus !== 'completed') {
+      await gigRef.update({
+        status: 'in-progress',
+        paymentStatus: 'funded',
+        escrowTransactionId: transactionId,
+        escrowAmount: amount,
+        fundedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+
+      // Also update the accepted application
+      const applicationsQuery = await db.collection('applications')
+        .where('gigId', '==', gigId)
+        .where('status', '==', 'accepted')
+        .limit(1)
+        .get()
+
+      if (!applicationsQuery.empty) {
+        await applicationsQuery.docs[0].ref.update({
+          status: 'funded',
+          paymentStatus: 'in_escrow',
+          fundedAt: admin.firestore.FieldValue.serverTimestamp()
+        })
+      }
+
+      console.log('TradeSafe webhook: Gig and application updated to funded:', gigId)
+    } else {
+      console.log('TradeSafe webhook: Gig already funded, skipping update:', gigId)
+    }
+  } else {
+    console.warn('TradeSafe webhook: Gig not found:', gigId)
+  }
+}
+
+/**
+ * Handle transaction completed - funds released to worker
+ */
+async function handleTransactionCompleted(gigId: string, transactionId: string) {
+  if (!gigId) return
+
+  console.log('TradeSafe webhook: Processing transaction completed for gig:', gigId)
+
+  const app = getFirebaseAdmin()
+  const db = app.firestore()
+
+  // Update gig status
+  const gigRef = db.collection('gigs').doc(gigId)
+  await gigRef.update({
+    status: 'completed',
+    paymentStatus: 'released',
+    completedAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  })
+
+  // Update payment intent
+  const paymentIntentQuery = await db.collection('paymentIntents')
+    .where('transactionId', '==', transactionId)
+    .where('provider', '==', 'tradesafe')
+    .limit(1)
+    .get()
+
+  if (!paymentIntentQuery.empty) {
+    await paymentIntentQuery.docs[0].ref.update({
+      status: 'completed',
+      completedAt: admin.firestore.FieldValue.serverTimestamp()
+    })
+  }
+
+  console.log('TradeSafe webhook: Transaction completed, gig marked complete:', gigId)
+}
+
+/**
+ * Handle transaction cancelled - refund processed
+ */
+async function handleTransactionCancelled(gigId: string, transactionId: string) {
+  if (!gigId) return
+
+  console.log('TradeSafe webhook: Processing transaction cancellation for gig:', gigId)
+
+  const app = getFirebaseAdmin()
+  const db = app.firestore()
+
+  // Update payment intent status
+  const paymentIntentQuery = await db.collection('paymentIntents')
+    .where('transactionId', '==', transactionId)
+    .where('provider', '==', 'tradesafe')
+    .limit(1)
+    .get()
+
+  if (!paymentIntentQuery.empty) {
+    await paymentIntentQuery.docs[0].ref.update({
+      status: 'cancelled',
+      cancelledAt: admin.firestore.FieldValue.serverTimestamp()
+    })
+  }
+
+  // Update gig status
+  const gigRef = db.collection('gigs').doc(gigId)
+  const gigDoc = await gigRef.get()
+
+  if (gigDoc.exists) {
+    const gigData = gigDoc.data()
+    if (gigData?.paymentStatus === 'funded') {
+      await gigRef.update({
+        paymentStatus: 'refunded',
+        escrowTransactionId: null,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+    }
+  }
+
+  console.log('TradeSafe webhook: Transaction cancelled:', transactionId)
 }
 
 /**
