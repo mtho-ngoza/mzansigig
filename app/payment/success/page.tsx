@@ -8,34 +8,38 @@ import { Button } from '@/components/ui/Button'
 /**
  * Payment Success Page
  *
- * Handles redirect from TradeSafe after successful payment
- * Query params from TradeSafe:
- * - action: 'complete' or 'success'
- * - method: Payment method used (eft, card, etc)
- * - transactionId: TradeSafe transaction ID
- * - reference: TradeSafe's internal reference (NOT our gigId)
+ * Handles redirect from TradeSafe after successful payment.
  *
- * We use transactionId to look up the payment and get the actual gigId.
+ * Note: The webhook already updates the database, so verification here is optional.
+ * We try to verify to get the gigId for a better redirect, but redirect regardless.
  */
 function PaymentSuccessContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [countdown, setCountdown] = useState(5)
   const [gigId, setGigId] = useState<string | null>(null)
-  const [verifying, setVerifying] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [verified, setVerified] = useState(false)
 
-  const transactionId = searchParams.get('transactionId')
+  const transactionId = searchParams.get('transactionId') || searchParams.get('id')
   const method = searchParams.get('method')
 
-  // Verify payment and get gigId
+  // Log what params we received from TradeSafe
+  useEffect(() => {
+    console.log('=== SUCCESS PAGE: Loaded ===')
+    console.log('All URL params:', Object.fromEntries(searchParams.entries()))
+    console.log('transactionId:', transactionId)
+    console.log('method:', method)
+  }, [searchParams, transactionId, method])
+
+  // Try to verify payment and get gigId (optional - webhook already updated DB)
   const verifyPayment = useCallback(async () => {
     if (!transactionId) {
-      setVerifying(false)
-      setError('No transaction ID provided')
+      console.log('=== SUCCESS PAGE: No transactionId, skipping verify ===')
+      setVerified(true)
       return
     }
 
+    console.log('=== SUCCESS PAGE: Verifying payment ===')
     try {
       const response = await fetch('/api/payments/tradesafe/verify', {
         method: 'POST',
@@ -44,40 +48,39 @@ function PaymentSuccessContent() {
       })
 
       const data = await response.json()
+      console.log('=== SUCCESS PAGE: Verify response ===', data)
 
-      if (response.ok && data.success) {
+      if (response.ok && data.success && data.gigId) {
         setGigId(data.gigId)
-        console.log('Payment verified:', data)
-      } else {
-        console.error('Payment verification failed:', data)
-        setError(data.error || 'Failed to verify payment')
+        console.log('Got gigId:', data.gigId)
       }
     } catch (err) {
-      console.error('Payment verification error:', err)
-      setError('Failed to verify payment')
+      console.error('Verify error (non-fatal):', err)
     } finally {
-      setVerifying(false)
+      setVerified(true)
     }
   }, [transactionId])
 
-  // Verify payment on mount
+  // Verify on mount
   useEffect(() => {
     verifyPayment()
   }, [verifyPayment])
 
-  // Auto-redirect after countdown (only after verification completes)
+  // Auto-redirect after countdown
   useEffect(() => {
-    if (verifying) return
+    if (!verified) return
+
+    console.log('=== SUCCESS PAGE: Starting countdown, gigId:', gigId, '===')
 
     const timer = setInterval(() => {
       setCountdown(prev => {
         if (prev <= 1) {
           clearInterval(timer)
-          // Redirect to manage applications or dashboard
-          router.push(gigId
+          const redirectUrl = gigId
             ? `/dashboard/manage-applications?payment=success&gig=${gigId}`
             : '/dashboard/manage-applications?payment=success'
-          )
+          console.log('=== SUCCESS PAGE: Redirecting to:', redirectUrl, '===')
+          router.push(redirectUrl)
           return 0
         }
         return prev - 1
@@ -85,21 +88,29 @@ function PaymentSuccessContent() {
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [router, gigId, verifying])
+  }, [router, gigId, verified])
 
-  // Show loading while verifying
-  if (verifying) {
+  const handleGoToDashboard = () => {
+    const redirectUrl = gigId
+      ? `/dashboard/manage-applications?payment=success&gig=${gigId}`
+      : '/dashboard/manage-applications?payment=success'
+    console.log('=== SUCCESS PAGE: Manual redirect to:', redirectUrl, '===')
+    router.push(redirectUrl)
+  }
+
+  // Show loading only briefly while verifying
+  if (!verified) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <Card className="w-full max-w-md text-center">
           <CardHeader>
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
             <CardTitle className="text-xl text-gray-600">
-              Verifying Payment...
+              Confirming Payment...
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-gray-500">Please wait while we confirm your payment.</p>
+            <p className="text-gray-500">Please wait a moment.</p>
           </CardContent>
         </Card>
       </div>
@@ -119,14 +130,6 @@ function PaymentSuccessContent() {
           <p className="text-gray-600">
             Your payment has been processed and the funds are now held in secure escrow.
           </p>
-
-          {error && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-left">
-              <p className="text-sm text-yellow-700">
-                Note: {error}. Your payment may still have been processed.
-              </p>
-            </div>
-          )}
 
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-left">
             <h4 className="font-medium text-green-800 mb-2">What happens next?</h4>
@@ -149,13 +152,7 @@ function PaymentSuccessContent() {
             <p className="text-sm text-gray-500 mb-2">
               Redirecting in {countdown} seconds...
             </p>
-            <Button
-              onClick={() => router.push(gigId
-                ? `/dashboard/manage-applications?payment=success&gig=${gigId}`
-                : '/dashboard/manage-applications?payment=success'
-              )}
-              className="w-full"
-            >
+            <Button onClick={handleGoToDashboard} className="w-full">
               Go to Dashboard Now
             </Button>
           </div>
