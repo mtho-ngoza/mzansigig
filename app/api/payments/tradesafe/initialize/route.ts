@@ -126,6 +126,21 @@ export async function POST(request: NextRequest) {
     const platformFee = configDoc.exists ? (configDoc.data()?.platformFeePercent || 10) : 10
 
     // Create TradeSafe transaction
+    console.log('=== TRADESAFE INITIALIZE: Step 1 - Creating transaction ===')
+    console.log('Input to createTransaction:', {
+      title,
+      description: description || `Payment for gig: ${title}`,
+      value: amount,
+      buyerToken,
+      sellerToken,
+      agentToken: platformToken,
+      agentFeePercent: platformFee,
+      daysToDeliver: 7,
+      daysToInspect: 7,
+      reference: gigId,
+      gigId_we_are_sending: gigId
+    })
+
     const transaction = await tradeSafe.createTransaction({
       title: title,
       description: description || `Payment for gig: ${title}`,
@@ -139,13 +154,25 @@ export async function POST(request: NextRequest) {
       reference: gigId
     })
 
+    console.log('=== TRADESAFE INITIALIZE: Step 2 - Transaction created ===')
+    console.log('Full transaction response:', JSON.stringify(transaction, null, 2))
+    console.log('Key IDs:', {
+      transactionId: transaction.id,
+      reference_from_tradesafe: transaction.reference,
+      our_gigId: gigId,
+      allocationId: transaction.allocations?.[0]?.id
+    })
+
     // Generate checkout link
     const checkoutUrl = await tradeSafe.getCheckoutLink({
       transactionId: transaction.id
     })
 
+    console.log('=== TRADESAFE INITIALIZE: Step 3 - Checkout link generated ===')
+    console.log('Checkout URL:', checkoutUrl)
+
     // Store payment intent in database for tracking
-    await db.collection('paymentIntents').add({
+    const paymentIntentData = {
       gigId,
       employerId,
       workerId,
@@ -154,16 +181,19 @@ export async function POST(request: NextRequest) {
       status: 'created',
       transactionId: transaction.id,
       allocationId: transaction.allocations[0]?.id,
+      tradeSafeReference: transaction.reference,
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000) // Checkout link valid for 15 minutes
-    })
+      expiresAt: new Date(Date.now() + 15 * 60 * 1000)
+    }
 
-    // Log payment creation
-    console.log('TradeSafe payment initialized:', {
+    const paymentIntentRef = await db.collection('paymentIntents').add(paymentIntentData)
+
+    console.log('=== TRADESAFE INITIALIZE: Step 4 - Payment intent stored ===')
+    console.log('PaymentIntent stored:', {
+      paymentIntentId: paymentIntentRef.id,
       gigId,
-      amount,
       transactionId: transaction.id,
-      mode: tradeSafe.isSandbox() ? 'sandbox' : 'production'
+      tradeSafeReference: transaction.reference
     })
 
     // Return checkout URL for redirect

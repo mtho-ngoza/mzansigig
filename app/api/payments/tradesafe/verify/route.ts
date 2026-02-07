@@ -27,20 +27,26 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { transactionId } = body
 
+    console.log('=== VERIFY ENDPOINT: Request received ===')
+    console.log('Body:', JSON.stringify(body))
+    console.log('transactionId:', transactionId)
+
     if (!transactionId) {
+      console.log('=== VERIFY ENDPOINT: FAILED - No transactionId ===')
       return NextResponse.json(
         { error: 'Missing required field: transactionId' },
         { status: 400 }
       )
     }
 
-    console.log('TradeSafe verify: Checking transaction:', transactionId)
-
     // Get Firebase admin
     const app = getFirebaseAdmin()
     const db = app.firestore()
 
     // Find the payment intent by transaction ID
+    console.log('=== VERIFY ENDPOINT: Step 1 - Finding paymentIntent ===')
+    console.log('Searching for transactionId:', transactionId)
+
     const paymentIntentQuery = await db.collection('paymentIntents')
       .where('transactionId', '==', transactionId)
       .where('provider', '==', 'tradesafe')
@@ -48,7 +54,8 @@ export async function POST(request: NextRequest) {
       .get()
 
     if (paymentIntentQuery.empty) {
-      console.warn('TradeSafe verify: Payment intent not found for transaction:', transactionId)
+      console.warn('=== VERIFY ENDPOINT: FAILED - PaymentIntent not found ===')
+      console.warn('transactionId searched:', transactionId)
       return NextResponse.json(
         { error: 'Payment not found', transactionId },
         { status: 404 }
@@ -59,31 +66,39 @@ export async function POST(request: NextRequest) {
     const paymentData = paymentIntent.data()
     const gigId = paymentData.gigId
 
+    console.log('=== VERIFY ENDPOINT: Step 2 - Found paymentIntent ===')
+    console.log('paymentIntent id:', paymentIntent.id)
+    console.log('gigId from paymentIntent:', gigId)
+    console.log('current status:', paymentData.status)
+    console.log('full paymentData:', JSON.stringify(paymentData))
+
     // Initialize TradeSafe service and check transaction status
+    console.log('=== VERIFY ENDPOINT: Step 3 - Calling TradeSafe API ===')
     const tradeSafe = new TradeSafeService()
     const transaction = await tradeSafe.getTransaction(transactionId)
 
     if (!transaction) {
-      console.error('TradeSafe verify: Transaction not found in TradeSafe:', transactionId)
+      console.error('=== VERIFY ENDPOINT: FAILED - Transaction not found in TradeSafe ===')
       return NextResponse.json(
         { error: 'Transaction not found in TradeSafe' },
         { status: 404 }
       )
     }
 
-    console.log('TradeSafe verify: Transaction state:', {
-      transactionId,
-      gigId,
-      state: transaction.state,
-      currentPaymentStatus: paymentData.status
-    })
+    console.log('=== VERIFY ENDPOINT: Step 4 - TradeSafe response ===')
+    console.log('Full transaction from TradeSafe:', JSON.stringify(transaction, null, 2))
+    console.log('Transaction state:', transaction.state)
+    console.log('Transaction reference:', transaction.reference)
 
     // Check if payment was successful (funds deposited)
     const isPaymentSuccess = ['FUNDS_DEPOSITED', 'FUNDS_RECEIVED', 'INITIATED', 'COMPLETED'].includes(transaction.state)
+    console.log('=== VERIFY ENDPOINT: Step 5 - Payment success check ===')
+    console.log('isPaymentSuccess:', isPaymentSuccess)
+    console.log('current paymentData.status:', paymentData.status)
 
     if (isPaymentSuccess && paymentData.status !== 'funded' && paymentData.status !== 'completed') {
       // Payment successful but not yet recorded - update database
-      console.log('TradeSafe verify: Updating payment status to funded:', gigId)
+      console.log('=== VERIFY ENDPOINT: Step 6 - Updating database ===')
 
       // Update payment intent
       await paymentIntent.ref.update({
@@ -91,12 +106,15 @@ export async function POST(request: NextRequest) {
         fundedAt: admin.firestore.FieldValue.serverTimestamp(),
         verifiedAt: admin.firestore.FieldValue.serverTimestamp()
       })
+      console.log('PaymentIntent updated to funded')
 
       // Update gig status
       const gigRef = db.collection('gigs').doc(gigId)
       const gigDoc = await gigRef.get()
 
       if (gigDoc.exists) {
+        console.log('Found gig, current data:', JSON.stringify(gigDoc.data()))
+
         await gigRef.update({
           status: 'in-progress',
           paymentStatus: 'funded',
@@ -105,6 +123,7 @@ export async function POST(request: NextRequest) {
           fundedAt: admin.firestore.FieldValue.serverTimestamp(),
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         })
+        console.log('Gig updated to in-progress/funded')
 
         // Also update the application status to 'funded'
         const applicationsQuery = await db.collection('applications')
@@ -119,21 +138,34 @@ export async function POST(request: NextRequest) {
             paymentStatus: 'in_escrow',
             fundedAt: admin.firestore.FieldValue.serverTimestamp()
           })
+          console.log('Application updated to funded')
+        } else {
+          console.warn('No accepted application found for gigId:', gigId)
         }
 
-        console.log('TradeSafe verify: Gig and application updated to funded:', gigId)
+        console.log('=== VERIFY ENDPOINT: COMPLETE - All updates done ===')
+      } else {
+        console.warn('=== VERIFY ENDPOINT: WARNING - Gig not found ===')
+        console.warn('gigId:', gigId)
       }
+    } else {
+      console.log('=== VERIFY ENDPOINT: Skipping update ===')
+      console.log('Reason: isPaymentSuccess=', isPaymentSuccess, 'status=', paymentData.status)
     }
 
-    return NextResponse.json({
+    const response = {
       success: true,
       gigId,
       status: isPaymentSuccess ? 'funded' : paymentData.status,
       state: transaction.state,
       transactionId
-    })
+    }
+    console.log('=== VERIFY ENDPOINT: Returning ===', response)
+
+    return NextResponse.json(response)
   } catch (error) {
-    console.error('TradeSafe verify error:', error)
+    console.error('=== VERIFY ENDPOINT: ERROR ===')
+    console.error('Error:', error)
     return NextResponse.json(
       {
         error: 'Failed to verify payment',

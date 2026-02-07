@@ -53,6 +53,7 @@ export interface Transaction {
   createdAt: string
   allocations: Allocation[]
   parties: Party[]
+  reference?: string // External reference we set during creation (e.g., gigId)
 }
 
 export interface Allocation {
