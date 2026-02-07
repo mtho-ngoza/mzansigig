@@ -3,11 +3,12 @@ import { NextRequest, NextResponse } from 'next/server'
 /**
  * POST /tradesafe/callback
  *
- * Handles POST callbacks from TradeSafe after payment completion.
- * TradeSafe sends payment result via POST, we redirect to appropriate page.
+ * Handles two types of POST requests from TradeSafe:
+ * 1. User redirect callbacks - after payment, user is redirected here with action param
+ * 2. Webhook notifications - server-to-server updates with type and state params
  *
- * IMPORTANT: Use 303 (See Other) redirect to force GET method on the target page.
- * 307 preserves POST which doesn't work with Next.js page routes.
+ * For user redirects: Use 303 redirect to payment success/error page
+ * For webhooks: Return 200 OK (webhooks are server-to-server, can't redirect)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -16,14 +17,15 @@ export async function POST(request: NextRequest) {
 
     let params: URLSearchParams
     let rawBody: string | null = null
+    let parsedBody: Record<string, unknown> | null = null
 
     if (contentType.includes('application/json')) {
       rawBody = await request.text()
       try {
-        const body = JSON.parse(rawBody)
+        parsedBody = JSON.parse(rawBody)
         // Flatten object to URL params
         params = new URLSearchParams()
-        for (const [key, value] of Object.entries(body)) {
+        for (const [key, value] of Object.entries(parsedBody)) {
           if (value !== null && value !== undefined) {
             params.set(key, String(value))
           }
@@ -47,7 +49,26 @@ export async function POST(request: NextRequest) {
       url: request.url
     })
 
-    // TradeSafe uses 'action' param: 'success', 'failure', or 'canceled'
+    // Detect webhook notification vs user redirect
+    // Webhooks have: type (e.g. "Transaction"), state, signature
+    // User redirects have: action (e.g. "success", "failure")
+    const isWebhook = params.has('type') && params.has('state') && params.has('signature')
+
+    if (isWebhook) {
+      // This is a webhook notification (server-to-server)
+      // Don't redirect - just acknowledge receipt
+      // Note: The proper webhook handler at /api/payments/tradesafe/webhook handles processing
+      console.log('TradeSafe callback: Webhook notification received, state:', params.get('state'))
+
+      // Return 200 to acknowledge receipt
+      return NextResponse.json({
+        received: true,
+        state: params.get('state'),
+        note: 'Webhook received at callback URL. Configure webhook URL to /api/payments/tradesafe/webhook for full processing.'
+      })
+    }
+
+    // User redirect callback - redirect to appropriate page
     const action = params.get('action') || params.get('status') || ''
     const actionLower = action.toLowerCase()
 
