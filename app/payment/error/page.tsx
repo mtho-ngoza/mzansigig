@@ -21,7 +21,6 @@ function PaymentErrorContent() {
   const router = useRouter()
 
   const transactionId = searchParams.get('transactionId')
-  searchParams.get('reference');
   const reason = searchParams.get('reason')
   const method = searchParams.get('method')
   // Legacy params
