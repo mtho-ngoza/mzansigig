@@ -17,15 +17,14 @@ export async function POST(request: NextRequest) {
 
     let params: URLSearchParams
     let rawBody: string | null = null
-    let parsedBody: Record<string, unknown> | null = null
 
     if (contentType.includes('application/json')) {
       rawBody = await request.text()
       try {
-        parsedBody = JSON.parse(rawBody)
+        const body = JSON.parse(rawBody) as Record<string, unknown>
         // Flatten object to URL params
         params = new URLSearchParams()
-        for (const [key, value] of Object.entries(parsedBody)) {
+        for (const [key, value] of Object.entries(body)) {
           if (value !== null && value !== undefined) {
             params.set(key, String(value))
           }
