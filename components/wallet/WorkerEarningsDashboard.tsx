@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
@@ -8,6 +8,7 @@ import { WalletService } from '@/lib/services/walletService'
 import { PaymentService } from '@/lib/services/paymentService'
 import { PaymentHistory } from '@/types/payment'
 import TransactionHistory from './TransactionHistory'
+import { useSearchParams } from 'next/navigation'
 
 interface WalletBalance {
   walletBalance: number
@@ -22,6 +23,7 @@ interface WorkerEarningsDashboardProps {
 
 export default function WorkerEarningsDashboard({ onWithdrawalRequest }: WorkerEarningsDashboardProps) {
   const { user } = useAuth()
+  const searchParams = useSearchParams()
   const [balance, setBalance] = useState<WalletBalance>({
     walletBalance: 0,
     pendingBalance: 0,
@@ -32,32 +34,58 @@ export default function WorkerEarningsDashboard({ onWithdrawalRequest }: WorkerE
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [showFullHistory, setShowFullHistory] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
 
-  useEffect(() => {
+  const loadWalletData = useCallback(async () => {
     if (!user) return
 
-    const loadWalletData = async () => {
-      try {
-        setIsLoading(true)
-        setError(null)
+    try {
+      setIsLoading(true)
+      setError(null)
 
-        // Load wallet balance
-        const walletBalance = await WalletService.getWalletBalance(user.id)
-        setBalance(walletBalance)
+      // Load wallet balance
+      const walletBalance = await WalletService.getWalletBalance(user.id)
+      setBalance(walletBalance)
 
-        // Load recent transactions
-        const history = await PaymentService.getUserPaymentHistory(user.id, 5)
-        setRecentTransactions(history)
-      } catch (err) {
-        console.error('Error loading wallet data:', err)
-        setError('Failed to load wallet data')
-      } finally {
-        setIsLoading(false)
+      // Load recent transactions
+      const history = await PaymentService.getUserPaymentHistory(user.id, 5)
+      setRecentTransactions(history)
+    } catch (err) {
+      console.error('Error loading wallet data:', err)
+      setError('Failed to load wallet data')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [user])
+
+  // Load data on mount and when user changes
+  useEffect(() => {
+    loadWalletData()
+  }, [loadWalletData, refreshKey])
+
+  // Refresh when returning from payment (detected via URL params)
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment')
+    if (paymentStatus === 'success') {
+      // Delay slightly to allow webhook to complete
+      const timer = setTimeout(() => {
+        setRefreshKey(prev => prev + 1)
+      }, 2000)
+      return () => clearTimeout(timer)
+    }
+  }, [searchParams])
+
+  // Refresh when page becomes visible (user returns to tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        setRefreshKey(prev => prev + 1)
       }
     }
 
-    loadWalletData()
-  }, [user])
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
 
   if (!user) {
     return null
