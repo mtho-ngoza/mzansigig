@@ -21,6 +21,12 @@ export interface Gig {
   workType: 'remote' | 'physical' | 'hybrid' // Clear work type classification
   maxTravelDistance?: number
   maxApplicants?: number // Maximum number of applicants employer wants to review
+  // Payment/escrow fields (set when gig is funded)
+  paymentStatus?: 'pending' | 'funded' | 'released' | 'refunded' | 'completed'
+  escrowTransactionId?: string // TradeSafe transaction ID
+  escrowAmount?: number // Amount held in escrow
+  fundedAt?: Date // When escrow was funded
+  completedAt?: Date // When gig was marked complete
 }
 
 // Rate negotiation history entry

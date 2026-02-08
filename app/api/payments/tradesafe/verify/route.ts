@@ -133,12 +133,40 @@ export async function POST(request: NextRequest) {
           .get()
 
         if (!applicationsQuery.empty) {
-          await applicationsQuery.docs[0].ref.update({
+          const appDoc = applicationsQuery.docs[0]
+          const appData = appDoc.data()
+
+          await appDoc.ref.update({
             status: 'funded',
             paymentStatus: 'in_escrow',
             fundedAt: admin.firestore.FieldValue.serverTimestamp()
           })
           console.log('Application updated to funded')
+
+          // Update worker's pending balance (funds in escrow)
+          console.log('=== VERIFY ENDPOINT: Updating worker pendingBalance ===')
+          const workerId = appData.applicantId
+          if (workerId) {
+            const workerRef = db.collection('users').doc(workerId)
+            const workerDoc = await workerRef.get()
+
+            if (workerDoc.exists) {
+              const workerData = workerDoc.data()
+              const currentPending = workerData?.pendingBalance || 0
+              const newPending = currentPending + paymentData.amount
+
+              await workerRef.update({
+                pendingBalance: newPending,
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+              })
+              console.log('Worker pendingBalance updated:', {
+                workerId,
+                previousBalance: currentPending,
+                addedAmount: paymentData.amount,
+                newBalance: newPending
+              })
+            }
+          }
         } else {
           console.warn('No accepted application found for gigId:', gigId)
         }

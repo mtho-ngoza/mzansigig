@@ -266,13 +266,42 @@ async function handlePaymentSuccess(gigId: string, transactionId: string, amount
 
       if (!applicationsQuery.empty) {
         const appDoc = applicationsQuery.docs[0]
-        console.log('Found application:', appDoc.id)
+        const appData = appDoc.data()
+        console.log('Found application:', appDoc.id, 'workerId:', appData.applicantId)
+
         await appDoc.ref.update({
           status: 'funded',
           paymentStatus: 'in_escrow',
           fundedAt: admin.firestore.FieldValue.serverTimestamp()
         })
         console.log('Application updated to funded')
+
+        // Update worker's pending balance (funds in escrow)
+        console.log('=== PAYMENT SUCCESS: Step 5 - Updating worker pendingBalance ===')
+        const workerId = appData.applicantId
+        if (workerId) {
+          const workerRef = db.collection('users').doc(workerId)
+          const workerDoc = await workerRef.get()
+
+          if (workerDoc.exists) {
+            const workerData = workerDoc.data()
+            const currentPending = workerData?.pendingBalance || 0
+            const newPending = currentPending + amount
+
+            await workerRef.update({
+              pendingBalance: newPending,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            })
+            console.log('Worker pendingBalance updated:', {
+              workerId,
+              previousBalance: currentPending,
+              addedAmount: amount,
+              newBalance: newPending
+            })
+          } else {
+            console.warn('Worker not found:', workerId)
+          }
+        }
       } else {
         console.warn('No accepted application found for gigId:', gigId)
       }
