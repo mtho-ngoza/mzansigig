@@ -762,7 +762,8 @@ export class GigService {
   static async confirmApplicationRate(
     applicationId: string,
     confirmedBy: 'worker' | 'employer',
-    userId: string
+    userId: string,
+    overrideRate?: number
   ): Promise<void> {
     const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
 
@@ -788,8 +789,8 @@ export class GigService {
       throw new Error('Rate is already agreed');
     }
 
-    // Get the current rate (last proposed or original)
-    const currentRate = application.lastRateUpdate?.amount ?? application.proposedRate;
+    // Resolve the current rate with explicit override support (acceptance flow)
+    const currentRate = (overrideRate !== undefined ? overrideRate : (application.lastRateUpdate?.amount ?? application.proposedRate ?? application.agreedRate));
 
     // Check who last proposed - the OTHER party must confirm
     const lastProposedBy = application.lastRateUpdate?.by || 'worker'; // Default to worker (initial proposal)
@@ -890,7 +891,8 @@ export class GigService {
    */
   static async acceptApplicationWithRate(
     applicationId: string,
-    employerId: string
+    employerId: string,
+    rate?: number
   ): Promise<void> {
     const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
 
@@ -903,9 +905,22 @@ export class GigService {
       throw new Error('Unauthorized: Only the employer can accept this application');
     }
 
-    // If rate is not yet agreed, confirm it first (only works if worker proposed last)
+    // If rate is not yet agreed, confirm it first (supports explicit rate override when provided)
     if (application.rateStatus !== 'agreed') {
-      await this.confirmApplicationRate(applicationId, 'employer', employerId);
+      // Determine an effective rate to confirm. This guards against legacy/edge cases
+      // where proposedRate or lastRateUpdate may be missing in the stored document.
+      let effectiveRate = rate;
+      if (effectiveRate === undefined) {
+        effectiveRate = application.proposedRate ?? application.agreedRate;
+      }
+
+      if (effectiveRate !== undefined) {
+        if (typeof effectiveRate !== 'number' || !isFinite(effectiveRate) || effectiveRate <= 0) {
+          throw new Error('Invalid rate provided for acceptance');
+        }
+      }
+
+      await this.confirmApplicationRate(applicationId, 'employer', employerId, effectiveRate);
     }
 
     // Now accept the application
