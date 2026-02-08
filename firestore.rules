@@ -200,11 +200,24 @@ service cloud.firestore {
                       exists(/databases/$(database)/documents/gigs/$(request.resource.data.gigId));
 
       // Reviewers can update their own reviews within 24 hours
+      // OR anyone involved in the gig can update isRevealed/counterReviewId for mutual reveal
       allow update: if isAuthenticated() &&
-                      request.auth.uid == resource.data.reviewerId &&
-                      request.time < resource.data.createdAt + duration.value(24, 'h') &&
-                      request.resource.data.reviewerId == resource.data.reviewerId &&
-                      request.resource.data.gigId == resource.data.gigId;
+                      (
+                        // Reviewer updating their own review within 24 hours
+                        (request.auth.uid == resource.data.reviewerId &&
+                         request.time < resource.data.createdAt + duration.value(24, 'h') &&
+                         request.resource.data.reviewerId == resource.data.reviewerId &&
+                         request.resource.data.gigId == resource.data.gigId) ||
+                        // Mutual reveal: allow updating only isRevealed and counterReviewId
+                        // This is needed when the second reviewer's submission triggers reveal of both reviews
+                        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRevealed', 'counterReviewId', 'updatedAt']) &&
+                         request.resource.data.reviewerId == resource.data.reviewerId &&
+                         request.resource.data.revieweeId == resource.data.revieweeId &&
+                         request.resource.data.gigId == resource.data.gigId &&
+                         request.resource.data.rating == resource.data.rating &&
+                         request.resource.data.comment == resource.data.comment &&
+                         request.resource.data.type == resource.data.type)
+                      );
 
       // Only reviewer or admin can delete
       allow delete: if isAuthenticated() &&

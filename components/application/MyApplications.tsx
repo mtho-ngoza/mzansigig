@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { GigService } from '@/lib/database/gigService'
+import { ReviewService } from '@/lib/database/reviewService'
 import { useAuth } from '@/contexts/AuthContext'
 import { useToast } from '@/contexts/ToastContext'
 import { GigApplication } from '@/types/gig'
@@ -71,28 +72,42 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
         setLoading(true)
         const userApplications = await GigService.getApplicationsByApplicant(user.id)
 
-        // Fetch gig details for each application
-        const applicationsWithGigs = await Promise.all(
-          userApplications.map(async (app) => {
-            try {
-              const gig = await GigService.getGigById(app.gigId)
-              return {
-                ...app,
-                gigTitle: gig?.title || 'Unknown Gig',
-                gigEmployer: gig?.employerName || 'Unknown Employer',
-                gigEmployerId: gig?.employerId,
-                gigBudget: gig?.budget
+        // Fetch gig details for each application and user's existing reviews in parallel
+        const [applicationsWithGigs, userReviews] = await Promise.all([
+          Promise.all(
+            userApplications.map(async (app) => {
+              try {
+                const gig = await GigService.getGigById(app.gigId)
+                return {
+                  ...app,
+                  gigTitle: gig?.title || 'Unknown Gig',
+                  gigEmployer: gig?.employerName || 'Unknown Employer',
+                  gigEmployerId: gig?.employerId,
+                  gigBudget: gig?.budget
+                }
+              } catch (error) {
+                console.error('Error fetching gig details:', error)
+                return {
+                  ...app,
+                  gigTitle: 'Unknown Gig',
+                  gigEmployer: 'Unknown Employer'
+                }
               }
-            } catch (error) {
-              console.error('Error fetching gig details:', error)
-              return {
-                ...app,
-                gigTitle: 'Unknown Gig',
-                gigEmployer: 'Unknown Employer'
-              }
-            }
-          })
-        )
+            })
+          ),
+          ReviewService.getReviewsByReviewer(user.id).catch(() => [])
+        ])
+
+        // Build set of application IDs that have already been reviewed
+        // Match reviews to applications by gigId
+        const reviewedGigIds = new Set(userReviews.map(r => r.gigId))
+        const alreadyReviewed = new Set<string>()
+        for (const app of applicationsWithGigs) {
+          if (reviewedGigIds.has(app.gigId)) {
+            alreadyReviewed.add(app.id)
+          }
+        }
+        setReviewedApplications(alreadyReviewed)
 
         setApplications(applicationsWithGigs)
       } catch (error) {

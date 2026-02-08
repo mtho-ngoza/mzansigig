@@ -103,7 +103,8 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
   useEffect(() => {
     const paymentStatus = searchParams.get('payment')
 
-    if (paymentStatus === 'success' && !paymentVerified) {
+    const gigId = searchParams.get('gig')
+    if (paymentStatus === 'success' && gigId && !paymentVerified) {
       handlePaymentSuccess()
     } else if (paymentStatus === 'cancelled') {
       showError('Payment was cancelled')

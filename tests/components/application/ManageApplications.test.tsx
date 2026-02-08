@@ -687,7 +687,7 @@ describe('ManageApplications', () => {
       render(<ManageApplications />)
 
       await waitFor(() => {
-        expect(mockSuccess).toHaveBeenCalledWith('Lekker! Payment received - gig is being funded')
+        expect(mockSuccess).toHaveBeenCalledWith('Lekker! Payment received - gig is now funded')
       })
     })
 

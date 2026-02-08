@@ -9,10 +9,12 @@ import '@testing-library/jest-dom'
 import MyApplications from '@/components/application/MyApplications'
 import { useAuth } from '@/contexts/AuthContext'
 import { GigService } from '@/lib/database/gigService'
+import { ReviewService } from '@/lib/database/reviewService'
 
 // Mock dependencies
 jest.mock('@/contexts/AuthContext')
 jest.mock('@/lib/database/gigService')
+jest.mock('@/lib/database/reviewService')
 
 const mockSuccess = jest.fn()
 const mockShowError = jest.fn()
@@ -196,6 +198,8 @@ describe('MyApplications', () => {
     ;(GigService.getGigById as jest.Mock).mockImplementation((gigId: string) => {
       return Promise.resolve(mockGigs[gigId as keyof typeof mockGigs] || null)
     })
+    // Default: no existing reviews
+    ;(ReviewService.getReviewsByReviewer as jest.Mock).mockResolvedValue([])
   })
 
   describe('Basic Rendering', () => {
@@ -423,6 +427,38 @@ describe('MyApplications', () => {
       })
 
       expect(screen.queryByText(/Leave Review for Employer/i)).not.toBeInTheDocument()
+    })
+
+    it('should not show Leave Review button when worker has already reviewed this gig', async () => {
+      // Worker has a completed application
+      ;(GigService.getApplicationsByApplicant as jest.Mock).mockResolvedValue([completedApplication])
+
+      // Worker has already submitted a review for this gig
+      ;(ReviewService.getReviewsByReviewer as jest.Mock).mockResolvedValue([
+        {
+          id: 'review-123',
+          gigId: 'gig-4', // Same gigId as completedApplication
+          reviewerId: 'worker-123',
+          revieweeId: 'employer-completed',
+          rating: 5,
+          comment: 'Great employer!',
+          type: 'worker-to-employer',
+          isRevealed: false,
+          createdAt: new Date()
+        }
+      ])
+
+      render(<MyApplications />)
+
+      await waitFor(() => {
+        expect(screen.getByText('Gig Completed - Payment Released')).toBeInTheDocument()
+      })
+
+      // Leave Review button should NOT be shown since worker already reviewed
+      expect(screen.queryByText(/Leave Review for Employer/i)).not.toBeInTheDocument()
+
+      // Should show the "Review submitted" message instead
+      expect(screen.getByText(/Review submitted/i)).toBeInTheDocument()
     })
   })
 
