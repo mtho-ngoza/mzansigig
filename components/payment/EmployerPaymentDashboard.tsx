@@ -257,7 +257,7 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
                     <div>
                       <p className="text-sm font-medium text-gray-600">In Escrow</p>
                       <p className="text-2xl font-bold text-green-600">
-                        {formatCurrency(analytics?.pendingPayments || 0)}
+                        {formatCurrency(analytics?.pendingBalance || 0)}
                       </p>
                     </div>
                     <div className="text-3xl">🔒</div>

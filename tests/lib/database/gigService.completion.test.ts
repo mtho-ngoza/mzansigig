@@ -34,6 +34,12 @@ jest.mock('@/lib/firebase', () => ({
 jest.mock('@/lib/database/firestore')
 jest.mock('@/lib/services/paymentService')
 jest.mock('@/lib/database/configService')
+jest.mock('@/lib/services/walletService', () => ({
+  WalletService: {
+    releaseEscrowWithCommissionInTransaction: jest.fn().mockResolvedValue(undefined),
+    releaseEmployerEscrowInTransaction: jest.fn().mockResolvedValue(undefined)
+  }
+}))
 
 describe('GigService - Completion Workflows', () => {
   const mockGigId = 'gig-123'
@@ -300,26 +306,71 @@ describe('GigService - Completion Workflows', () => {
       expect(PaymentService.releaseEscrowInTransaction).toHaveBeenCalledTimes(1)
     })
 
-    it('should NOT release escrow when paymentId is missing (unfunded/legacy applications)', async () => {
-      // This documents expected behavior for applications without paymentId
-      // These might be legacy apps or apps where funding failed
+    it('should release escrow via WalletService when paymentId is missing but escrowAmount exists (TradeSafe)', async () => {
+      // TradeSafe payments don't create payment records but do set escrowAmount on gig
       const appWithoutPaymentId: GigApplication = {
         ...applicationWithCompletion,
-        paymentId: undefined
+        paymentId: undefined,
+        proposedRate: 1000
+      }
+
+      const gigWithEscrow: Gig = {
+        ...mockGig,
+        escrowAmount: 1000
       }
 
       jest.mocked(FirestoreService.getById)
         .mockResolvedValueOnce(appWithoutPaymentId)
-        .mockResolvedValueOnce(mockGig)
+        .mockResolvedValueOnce(gigWithEscrow)
+
+      const { WalletService } = require('@/lib/services/walletService')
 
       await GigService.approveCompletion(mockApplicationId, mockEmployerId)
 
-      // Application and gig should still be marked completed (via transaction)
+      // Application and gig should be marked completed
       expect(mockTransaction.update).toHaveBeenCalled()
 
-      // But escrow release should NOT be attempted
+      // PaymentService should NOT be called (no paymentId)
       expect(PaymentService.getEscrowReleaseContext).not.toHaveBeenCalled()
       expect(PaymentService.releaseEscrowInTransaction).not.toHaveBeenCalled()
+
+      // WalletService SHOULD be called (fallback for TradeSafe)
+      expect(WalletService.releaseEscrowWithCommissionInTransaction).toHaveBeenCalled()
+      expect(WalletService.releaseEmployerEscrowInTransaction).toHaveBeenCalled()
+    })
+
+    it('should NOT release escrow when both paymentId and escrowAmount are missing (unfunded/legacy)', async () => {
+      // Legacy or unfunded apps have neither paymentId nor escrowAmount
+      const appWithoutPaymentId: GigApplication = {
+        ...applicationWithCompletion,
+        paymentId: undefined,
+        proposedRate: undefined,
+        agreedRate: undefined
+      }
+
+      const gigWithoutEscrow: Gig = {
+        ...mockGig,
+        escrowAmount: undefined
+      }
+
+      jest.mocked(FirestoreService.getById)
+        .mockResolvedValueOnce(appWithoutPaymentId)
+        .mockResolvedValueOnce(gigWithoutEscrow)
+
+      const { WalletService } = require('@/lib/services/walletService')
+      WalletService.releaseEscrowWithCommissionInTransaction.mockClear()
+      WalletService.releaseEmployerEscrowInTransaction.mockClear()
+
+      await GigService.approveCompletion(mockApplicationId, mockEmployerId)
+
+      // Application and gig should still be marked completed
+      expect(mockTransaction.update).toHaveBeenCalled()
+
+      // No escrow release should be attempted
+      expect(PaymentService.getEscrowReleaseContext).not.toHaveBeenCalled()
+      expect(PaymentService.releaseEscrowInTransaction).not.toHaveBeenCalled()
+      expect(WalletService.releaseEscrowWithCommissionInTransaction).not.toHaveBeenCalled()
+      expect(WalletService.releaseEmployerEscrowInTransaction).not.toHaveBeenCalled()
     })
   })
 

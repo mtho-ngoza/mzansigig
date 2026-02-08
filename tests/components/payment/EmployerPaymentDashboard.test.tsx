@@ -54,7 +54,7 @@ const mockPaymentContextValue = {
     totalPaid: 5000,
     totalWithdrawn: 0,
     availableBalance: 0,
-    pendingBalance: 0,
+    pendingBalance: 2000, // Funds in escrow
     pendingPayments: 2000,
     completedGigs: 10,
     averageGigValue: 500,
@@ -149,7 +149,7 @@ describe('EmployerPaymentDashboard', () => {
         expect(screen.getByText('R5000.00')).toBeInTheDocument()
         // This Month
         expect(screen.getByText('R1500.00')).toBeInTheDocument()
-        // In Escrow (pendingPayments)
+        // In Escrow (pendingBalance - actual funds in escrow)
         expect(screen.getByText('R2000.00')).toBeInTheDocument()
       })
     })

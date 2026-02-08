@@ -54,9 +54,9 @@ export default function EarningsAnalytics() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Pending</p>
+                <p className="text-sm font-medium text-gray-600">Pending (Escrow)</p>
                 <p className="text-2xl font-bold text-orange-600">
-                  {formatCurrency(analytics.pendingPayments)}
+                  {formatCurrency(analytics.pendingBalance)}
                 </p>
               </div>
               <div className="text-3xl">⏳</div>

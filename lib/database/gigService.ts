@@ -950,6 +950,10 @@ export class GigService {
     applicationId: string,
     employerId: string
   ): Promise<void> {
+    console.log('=== APPROVE COMPLETION: Starting ===')
+    console.log('applicationId:', applicationId)
+    console.log('employerId:', employerId)
+
     // Phase 1: Validate and pre-fetch data (outside transaction)
     const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
 
@@ -970,6 +974,18 @@ export class GigService {
       throw new Error('No completion request found for this application');
     }
 
+    console.log('Application found:', {
+      id: applicationId,
+      workerId: application.applicantId,
+      paymentId: application.paymentId,
+      status: application.status
+    })
+    console.log('Gig found:', {
+      id: gig.id,
+      escrowAmount: gig.escrowAmount,
+      employerId: gig.employerId
+    })
+
     // Pre-fetch escrow release context if payment exists
     let escrowContext: Awaited<ReturnType<typeof import('../services/paymentService').PaymentService.getEscrowReleaseContext>> | null = null;
     if (application.paymentId) {
@@ -977,28 +993,80 @@ export class GigService {
       escrowContext = await PaymentService.getEscrowReleaseContext(application.paymentId);
     }
 
+    // Get the escrow amount - use gig.escrowAmount as source of truth
+    const escrowAmount = gig.escrowAmount || application.agreedRate || application.proposedRate || 0;
+    const workerId = application.applicantId;
+
+    console.log('Escrow release details:', {
+      escrowAmount,
+      workerId,
+      hasPaymentContext: !!escrowContext
+    })
+
     // Phase 2: Execute all writes atomically in a transaction
     await runTransaction(db, async (transaction) => {
       // Update application status
       const applicationRef = doc(db, 'applications', applicationId);
       transaction.update(applicationRef, {
         status: 'completed',
-        paymentStatus: 'released'
+        paymentStatus: 'released',
+        completedAt: Timestamp.now()
       });
+      console.log('Application status updated to completed')
 
       // Update gig status
       const gigRef = doc(db, 'gigs', application.gigId);
       transaction.update(gigRef, {
         status: 'completed',
+        paymentStatus: 'released',
+        completedAt: Timestamp.now(),
         updatedAt: Timestamp.now()
       });
+      console.log('Gig status updated to completed')
 
-      // Release escrow if payment exists
+      // Release escrow - either via payment context or directly via wallet service
       if (escrowContext) {
+        console.log('Releasing escrow via PaymentService...')
         const { PaymentService } = await import('../services/paymentService');
         await PaymentService.releaseEscrowInTransaction(transaction, escrowContext);
+      } else if (escrowAmount > 0 && workerId) {
+        // Fallback: Direct wallet update for TradeSafe payments without payment record
+        console.log('Releasing escrow directly via WalletService (TradeSafe fallback)...')
+        const { WalletService } = await import('../services/walletService');
+
+        // Calculate net amount (apply platform commission)
+        // Using 10% commission as default - should match fee config
+        const platformCommission = escrowAmount * 0.10;
+        const netAmount = escrowAmount - platformCommission;
+
+        console.log('Fee calculation:', {
+          grossAmount: escrowAmount,
+          platformCommission,
+          netAmount
+        })
+
+        // Update worker wallet - move from pending to available
+        await WalletService.releaseEscrowWithCommissionInTransaction(
+          transaction,
+          workerId,
+          escrowAmount,
+          netAmount
+        );
+        console.log('Worker wallet updated')
+
+        // Update employer wallet - decrease pending balance
+        await WalletService.releaseEmployerEscrowInTransaction(
+          transaction,
+          employerId,
+          escrowAmount
+        );
+        console.log('Employer pending balance updated')
+      } else {
+        console.warn('No escrow to release - escrowAmount:', escrowAmount, 'workerId:', workerId)
       }
     });
+
+    console.log('=== APPROVE COMPLETION: COMPLETE ===')
   }
 
   // Employer disputes worker completion request

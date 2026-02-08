@@ -507,7 +507,7 @@ export class PaymentService {
    */
   static async getEscrowReleaseContext(paymentId: string): Promise<{
     paymentId: string
-    paymentData: { amount: number; gigId: string; workerId: string }
+    paymentData: { amount: number; gigId: string; workerId: string; employerId: string }
     feeBreakdown: { netAmountToWorker: number; workerCommission: number }
     paymentHistoryDocs: Array<{ id: string; type: string }>
   }> {
@@ -520,6 +520,7 @@ export class PaymentService {
     const grossAmount = paymentData.amount
     const gigId = paymentData.gigId
     const workerId = paymentData.workerId
+    const employerId = paymentData.employerId || ''
 
     const feeConfig = await this.getActiveFeeConfig()
     const feeBreakdown = FeeConfigService.calculateFeeBreakdown(grossAmount, feeConfig)
@@ -537,7 +538,7 @@ export class PaymentService {
 
     return {
       paymentId,
-      paymentData: { amount: grossAmount, gigId, workerId },
+      paymentData: { amount: grossAmount, gigId, workerId, employerId },
       feeBreakdown: {
         netAmountToWorker: feeBreakdown.netAmountToWorker,
         workerCommission: feeBreakdown.workerCommission
@@ -554,14 +555,21 @@ export class PaymentService {
     transaction: Transaction,
     context: {
       paymentId: string
-      paymentData: { amount: number; gigId: string; workerId: string }
+      paymentData: { amount: number; gigId: string; workerId: string; employerId?: string }
       feeBreakdown: { netAmountToWorker: number; workerCommission: number }
       paymentHistoryDocs: Array<{ id: string; type: string }>
     }
   ): Promise<void> {
     const { paymentId, paymentData, feeBreakdown, paymentHistoryDocs } = context
-    const { amount: grossAmount, gigId, workerId } = paymentData
+    const { amount: grossAmount, gigId, workerId, employerId } = paymentData
     const { netAmountToWorker, workerCommission: platformCommission } = feeBreakdown
+
+    console.log('=== RELEASE ESCROW IN TRANSACTION ===')
+    console.log('paymentId:', paymentId)
+    console.log('grossAmount:', grossAmount)
+    console.log('workerId:', workerId)
+    console.log('employerId:', employerId)
+    console.log('netAmountToWorker:', netAmountToWorker)
 
     // Update payment status
     const paymentRef = doc(db, COLLECTIONS.PAYMENTS, paymentId)
@@ -607,13 +615,28 @@ export class PaymentService {
       }
     }
 
-    // Update worker wallet
+    // Update worker wallet - move from pending to available
+    console.log('Updating worker wallet...')
     await WalletService.releaseEscrowWithCommissionInTransaction(
       transaction,
       workerId,
       grossAmount,
       netAmountToWorker
     )
+
+    // Update employer wallet - decrease pending balance
+    if (employerId) {
+      console.log('Updating employer pending balance...')
+      await WalletService.releaseEmployerEscrowInTransaction(
+        transaction,
+        employerId,
+        grossAmount
+      )
+    } else {
+      console.warn('No employerId found, skipping employer balance update')
+    }
+
+    console.log('=== RELEASE ESCROW COMPLETE ===')
   }
 
   // Milestones

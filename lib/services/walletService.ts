@@ -316,6 +316,43 @@ export class WalletService {
   }
 
   /**
+   * Release employer's escrow within an existing transaction
+   * Decreases employer's pendingBalance when funds are released to worker
+   * @param transaction - Firestore transaction to use for the update
+   * @param employerId - Employer's user ID
+   * @param amount - Amount being released from escrow
+   */
+  static async releaseEmployerEscrowInTransaction(
+    transaction: Transaction,
+    employerId: string,
+    amount: number
+  ): Promise<void> {
+    const userRef = doc(db, 'users', employerId)
+    const userDoc = await transaction.get(userRef)
+
+    if (!userDoc.exists()) {
+      console.warn('Employer not found for escrow release:', employerId)
+      return
+    }
+
+    const userData = userDoc.data()
+    const currentPending = userData.pendingBalance || 0
+    const newPending = Math.max(0, currentPending - amount)
+
+    console.log('Releasing employer escrow:', {
+      employerId,
+      currentPending,
+      releaseAmount: amount,
+      newPending
+    })
+
+    transaction.update(userRef, {
+      pendingBalance: newPending,
+      updatedAt: Timestamp.now()
+    })
+  }
+
+  /**
    * Reset wallet balances to zero (FOR DEVELOPMENT/TESTING ONLY)
    * Use this to clear old test data from user wallet
    */
