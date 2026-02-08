@@ -355,6 +355,55 @@ async function handlePaymentSuccess(gigId: string, transactionId: string, _balan
         console.warn('No workerId provided, skipping balance update')
       }
 
+      // Update employer's pending balance (funds they have in escrow)
+      console.log('=== PAYMENT SUCCESS: Step 7 - Updating employer pendingBalance ===')
+      const employerId = gigData?.employerId
+      if (employerId) {
+        try {
+          const employerRef = db.collection('users').doc(employerId)
+          const employerDoc = await employerRef.get()
+
+          if (employerDoc.exists) {
+            const employerData = employerDoc.data()
+            const currentPending = employerData?.pendingBalance || 0
+            const newPending = currentPending + escrowAmount
+
+            console.log('Employer current state:', {
+              employerId,
+              currentPending,
+              escrowAmount,
+              newPending
+            })
+
+            await employerRef.update({
+              pendingBalance: newPending,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            })
+
+            // Verify the update
+            const verifyDoc = await employerRef.get()
+            const verifyData = verifyDoc.data()
+            console.log('Employer pendingBalance updated - VERIFIED:', {
+              employerId,
+              previousBalance: currentPending,
+              addedAmount: escrowAmount,
+              expectedNewBalance: newPending,
+              actualNewBalance: verifyData?.pendingBalance,
+              updateSuccess: verifyData?.pendingBalance === newPending
+            })
+          } else {
+            console.warn('Employer document NOT FOUND:', employerId)
+          }
+        } catch (updateError) {
+          console.error('=== PAYMENT SUCCESS: FAILED to update employer balance ===')
+          console.error('Error:', updateError)
+          console.error('EmployerId:', employerId)
+          console.error('EscrowAmount:', escrowAmount)
+        }
+      } else {
+        console.warn('No employerId found in gig, skipping employer balance update')
+      }
+
       console.log('=== PAYMENT SUCCESS: COMPLETE ===')
     } else {
       console.log('=== PAYMENT SUCCESS: Gig already funded, skipping ===')
@@ -537,6 +586,55 @@ async function handleTransactionCompleted(gigId: string, transactionId: string) 
     }
   } else {
     console.warn('Cannot update wallet - workerId:', workerId, 'releaseAmount:', releaseAmount)
+  }
+
+  // Step 7: CRITICAL - Decrease employer's pendingBalance (funds released from escrow)
+  console.log('=== TRANSACTION COMPLETED: Step 7 - Updating employer pendingBalance ===')
+  const employerId = gigData?.employerId
+  if (employerId && releaseAmount > 0) {
+    try {
+      const employerRef = db.collection('users').doc(employerId)
+      const employerDoc = await employerRef.get()
+
+      if (employerDoc.exists) {
+        const employerData = employerDoc.data()
+        const currentPending = employerData?.pendingBalance || 0
+        const newPending = Math.max(0, currentPending - releaseAmount)
+
+        console.log('Employer current state:', {
+          employerId,
+          currentPending,
+          releaseAmount,
+          newPending
+        })
+
+        await employerRef.update({
+          pendingBalance: newPending,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        })
+
+        // Verify the update
+        const verifyDoc = await employerRef.get()
+        const verifyData = verifyDoc.data()
+        console.log('Employer pendingBalance updated - VERIFIED:', {
+          employerId,
+          previousBalance: currentPending,
+          releasedAmount: releaseAmount,
+          expectedNewBalance: newPending,
+          actualNewBalance: verifyData?.pendingBalance,
+          updateSuccess: verifyData?.pendingBalance === newPending
+        })
+      } else {
+        console.warn('Employer document NOT FOUND:', employerId)
+      }
+    } catch (updateError) {
+      console.error('=== TRANSACTION COMPLETED: FAILED to update employer balance ===')
+      console.error('Error:', updateError)
+      console.error('EmployerId:', employerId)
+      console.error('ReleaseAmount:', releaseAmount)
+    }
+  } else {
+    console.warn('Cannot update employer balance - employerId:', employerId, 'releaseAmount:', releaseAmount)
   }
 
   console.log('=== TRANSACTION COMPLETED: COMPLETE ===')
