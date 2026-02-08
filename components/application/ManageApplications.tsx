@@ -76,18 +76,19 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
   const searchParams = useSearchParams()
 
   // Handle payment return from TradeSafe
-  // TradeSafe verification happens via webhook, so we just need to check the gig status
-  const verifyPayment = useCallback(async (_gigId: string, _reference: string) => {
+  // TradeSafe verification happens via webhook, so we just need to refresh data
+  const handlePaymentSuccess = useCallback(async () => {
     if (!user || paymentVerified) return
 
     setVerifyingPayment(true)
+    setPaymentVerified(true)
 
     try {
-      // TradeSafe webhook handles actual verification
-      // Just show success and refresh to see updated status
-      success('Lekker! Payment received - gig is being funded')
-      setPaymentVerified(true)
-      // Refresh page to show updated status (webhook will have updated the database)
+      // TradeSafe webhook already updated the database
+      // Show success message
+      success('Lekker! Payment received - gig is now funded')
+
+      // Clean URL and reload to show updated status
       setTimeout(() => {
         window.location.href = '/dashboard/manage-applications'
       }, 1500)
@@ -98,18 +99,17 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
   }, [user, paymentVerified, success])
 
   // Check for payment success in URL params
+  // Note: reference is optional - we just need payment=success to trigger refresh
   useEffect(() => {
     const paymentStatus = searchParams.get('payment')
-    const gigId = searchParams.get('gig')
-    const reference = searchParams.get('reference')
 
-    if (paymentStatus === 'success' && gigId && reference && !paymentVerified) {
-      verifyPayment(gigId, reference)
+    if (paymentStatus === 'success' && !paymentVerified) {
+      handlePaymentSuccess()
     } else if (paymentStatus === 'cancelled') {
       showError('Payment was cancelled')
       window.history.replaceState({}, '', '/dashboard/manage-applications')
     }
-  }, [searchParams, paymentVerified, verifyPayment, showError])
+  }, [searchParams, paymentVerified, handlePaymentSuccess, showError])
 
   useEffect(() => {
     const loadApplicationsAndGigs = async () => {
