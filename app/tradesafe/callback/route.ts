@@ -184,12 +184,14 @@ async function lookupGigIdFromTransaction(transactionId: string, fallbackReferen
 
 /**
  * Handle successful payment - update gig to in-progress
+ * IMPORTANT: We use agreedRate from application, NOT balance from TradeSafe
+ * because TradeSafe may not send the balance field reliably
  */
-async function handlePaymentSuccess(gigId: string, transactionId: string, amount: number) {
+async function handlePaymentSuccess(gigId: string, transactionId: string, _balanceFromTradeSafe: number) {
   console.log('=== PAYMENT SUCCESS: Starting ===')
   console.log('gigId:', gigId)
   console.log('transactionId:', transactionId)
-  console.log('amount:', amount)
+  console.log('Note: Using agreedRate from application, not TradeSafe balance')
 
   if (!gigId || !transactionId) {
     console.warn('=== PAYMENT SUCCESS: FAILED - Missing gigId or transactionId ===')
@@ -245,65 +247,83 @@ async function handlePaymentSuccess(gigId: string, transactionId: string, amount
 
     // Only update if not already funded
     if (gigData?.paymentStatus !== 'funded' && gigData?.paymentStatus !== 'completed') {
-      console.log('=== PAYMENT SUCCESS: Step 3 - Updating gig ===')
-      await gigRef.update({
-        status: 'in-progress',
-        paymentStatus: 'funded',
-        escrowTransactionId: transactionId,
-        escrowAmount: amount,
-        fundedAt: admin.firestore.FieldValue.serverTimestamp(),
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      })
-      console.log('Gig updated to in-progress/funded')
-
-      // Also update the accepted application
-      console.log('=== PAYMENT SUCCESS: Step 4 - Finding application ===')
+      // First find the application to get the agreedRate
+      console.log('=== PAYMENT SUCCESS: Step 3 - Finding application for agreedRate ===')
       const applicationsQuery = await db.collection('applications')
         .where('gigId', '==', gigId)
         .where('status', '==', 'accepted')
         .limit(1)
         .get()
 
-      if (!applicationsQuery.empty) {
-        const appDoc = applicationsQuery.docs[0]
-        const appData = appDoc.data()
-        console.log('Found application:', appDoc.id, 'workerId:', appData.applicantId)
+      if (applicationsQuery.empty) {
+        console.warn('=== PAYMENT SUCCESS: FAILED - No accepted application found ===')
+        return
+      }
 
-        await appDoc.ref.update({
-          status: 'funded',
-          paymentStatus: 'in_escrow',
-          fundedAt: admin.firestore.FieldValue.serverTimestamp()
-        })
-        console.log('Application updated to funded')
+      const appDoc = applicationsQuery.docs[0]
+      const appData = appDoc.data()
+      const workerId = appData.applicantId
 
-        // Update worker's pending balance (funds in escrow)
-        console.log('=== PAYMENT SUCCESS: Step 5 - Updating worker pendingBalance ===')
-        const workerId = appData.applicantId
-        if (workerId) {
-          const workerRef = db.collection('users').doc(workerId)
-          const workerDoc = await workerRef.get()
+      // Use agreedRate from application, fallback to proposedRate, then gig budget
+      const escrowAmount = appData.agreedRate || appData.proposedRate || gigData?.budget || 0
 
-          if (workerDoc.exists) {
-            const workerData = workerDoc.data()
-            const currentPending = workerData?.pendingBalance || 0
-            const newPending = currentPending + amount
+      console.log('Application found:', {
+        id: appDoc.id,
+        workerId,
+        agreedRate: appData.agreedRate,
+        proposedRate: appData.proposedRate,
+        escrowAmount
+      })
 
-            await workerRef.update({
-              pendingBalance: newPending,
-              updatedAt: admin.firestore.FieldValue.serverTimestamp()
-            })
-            console.log('Worker pendingBalance updated:', {
-              workerId,
-              previousBalance: currentPending,
-              addedAmount: amount,
-              newBalance: newPending
-            })
-          } else {
-            console.warn('Worker not found:', workerId)
-          }
+      if (escrowAmount === 0) {
+        console.warn('=== PAYMENT SUCCESS: WARNING - escrowAmount is 0 ===')
+      }
+
+      // Update gig
+      console.log('=== PAYMENT SUCCESS: Step 4 - Updating gig ===')
+      await gigRef.update({
+        status: 'in-progress',
+        paymentStatus: 'funded',
+        escrowTransactionId: transactionId,
+        escrowAmount: escrowAmount,
+        fundedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+      console.log('Gig updated to in-progress/funded with escrowAmount:', escrowAmount)
+
+      // Update application
+      console.log('=== PAYMENT SUCCESS: Step 5 - Updating application ===')
+      await appDoc.ref.update({
+        status: 'funded',
+        paymentStatus: 'in_escrow',
+        fundedAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+      console.log('Application updated to funded')
+
+      // Update worker's pending balance (funds in escrow)
+      console.log('=== PAYMENT SUCCESS: Step 6 - Updating worker pendingBalance ===')
+      if (workerId) {
+        const workerRef = db.collection('users').doc(workerId)
+        const workerDoc = await workerRef.get()
+
+        if (workerDoc.exists) {
+          const workerData = workerDoc.data()
+          const currentPending = workerData?.pendingBalance || 0
+          const newPending = currentPending + escrowAmount
+
+          await workerRef.update({
+            pendingBalance: newPending,
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          })
+          console.log('Worker pendingBalance updated:', {
+            workerId,
+            previousBalance: currentPending,
+            addedAmount: escrowAmount,
+            newBalance: newPending
+          })
+        } else {
+          console.warn('Worker not found:', workerId)
         }
-      } else {
-        console.warn('No accepted application found for gigId:', gigId)
       }
 
       console.log('=== PAYMENT SUCCESS: COMPLETE ===')
@@ -318,25 +338,100 @@ async function handlePaymentSuccess(gigId: string, transactionId: string, amount
 
 /**
  * Handle transaction completed - funds released to worker
+ * CRITICAL: This moves funds from pendingBalance to walletBalance
  */
 async function handleTransactionCompleted(gigId: string, transactionId: string) {
-  if (!gigId) return
+  if (!gigId) {
+    console.warn('=== TRANSACTION COMPLETED: FAILED - Missing gigId ===')
+    return
+  }
 
-  console.log('TradeSafe webhook: Processing transaction completed for gig:', gigId)
+  console.log('=== TRANSACTION COMPLETED: Starting ===')
+  console.log('gigId:', gigId)
+  console.log('transactionId:', transactionId)
 
   const app = getFirebaseAdmin()
   const db = app.firestore()
 
-  // Update gig status
+  // Step 1: Get the gig to find escrowAmount
+  console.log('=== TRANSACTION COMPLETED: Step 1 - Finding gig ===')
   const gigRef = db.collection('gigs').doc(gigId)
+  const gigDoc = await gigRef.get()
+
+  if (!gigDoc.exists) {
+    console.warn('=== TRANSACTION COMPLETED: FAILED - Gig not found ===')
+    return
+  }
+
+  const gigData = gigDoc.data()
+  const escrowAmount = gigData?.escrowAmount || 0
+
+  console.log('Gig found:', {
+    id: gigDoc.id,
+    currentStatus: gigData?.status,
+    escrowAmount
+  })
+
+  // Step 2: Find the funded application to get workerId
+  console.log('=== TRANSACTION COMPLETED: Step 2 - Finding application ===')
+  const applicationsQuery = await db.collection('applications')
+    .where('gigId', '==', gigId)
+    .where('status', '==', 'funded')
+    .limit(1)
+    .get()
+
+  if (applicationsQuery.empty) {
+    console.warn('=== TRANSACTION COMPLETED: No funded application found, trying completed ===')
+    // Try completed status in case it was already updated
+    const completedAppsQuery = await db.collection('applications')
+      .where('gigId', '==', gigId)
+      .where('status', '==', 'completed')
+      .limit(1)
+      .get()
+
+    if (completedAppsQuery.empty) {
+      console.warn('=== TRANSACTION COMPLETED: FAILED - No application found ===')
+      return
+    }
+  }
+
+  const appDoc = applicationsQuery.empty
+    ? (await db.collection('applications').where('gigId', '==', gigId).where('status', '==', 'completed').limit(1).get()).docs[0]
+    : applicationsQuery.docs[0]
+
+  const appData = appDoc.data()
+  const workerId = appData.applicantId
+
+  // Use escrowAmount from gig, or agreedRate from application as fallback
+  const releaseAmount = escrowAmount || appData.agreedRate || appData.proposedRate || 0
+
+  console.log('Application found:', {
+    id: appDoc.id,
+    workerId,
+    releaseAmount
+  })
+
+  // Step 3: Update gig status
+  console.log('=== TRANSACTION COMPLETED: Step 3 - Updating gig ===')
   await gigRef.update({
     status: 'completed',
     paymentStatus: 'released',
     completedAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   })
+  console.log('Gig updated to completed/released')
 
-  // Update payment intent
+  // Step 4: Update application status
+  console.log('=== TRANSACTION COMPLETED: Step 4 - Updating application ===')
+  await appDoc.ref.update({
+    status: 'completed',
+    paymentStatus: 'released',
+    completedAt: admin.firestore.FieldValue.serverTimestamp()
+  })
+  console.log('Application updated to completed/released')
+
+  // Step 5: Update payment intent
+  console.log('=== TRANSACTION COMPLETED: Step 5 - Updating paymentIntent ===')
   const paymentIntentQuery = await db.collection('paymentIntents')
     .where('transactionId', '==', transactionId)
     .where('provider', '==', 'tradesafe')
@@ -348,9 +443,48 @@ async function handleTransactionCompleted(gigId: string, transactionId: string) 
       status: 'completed',
       completedAt: admin.firestore.FieldValue.serverTimestamp()
     })
+    console.log('PaymentIntent updated to completed')
   }
 
-  console.log('TradeSafe webhook: Transaction completed, gig marked complete:', gigId)
+  // Step 6: CRITICAL - Move funds from pendingBalance to walletBalance
+  console.log('=== TRANSACTION COMPLETED: Step 6 - Updating worker wallet ===')
+  if (workerId && releaseAmount > 0) {
+    const workerRef = db.collection('users').doc(workerId)
+    const workerDoc = await workerRef.get()
+
+    if (workerDoc.exists) {
+      const workerData = workerDoc.data()
+      const currentPending = workerData?.pendingBalance || 0
+      const currentWallet = workerData?.walletBalance || 0
+      const currentTotalEarnings = workerData?.totalEarnings || 0
+
+      // Move from pending to wallet
+      const newPending = Math.max(0, currentPending - releaseAmount)
+      const newWallet = currentWallet + releaseAmount
+      const newTotalEarnings = currentTotalEarnings + releaseAmount
+
+      await workerRef.update({
+        pendingBalance: newPending,
+        walletBalance: newWallet,
+        totalEarnings: newTotalEarnings,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+
+      console.log('Worker wallet updated:', {
+        workerId,
+        releaseAmount,
+        pendingBalance: { before: currentPending, after: newPending },
+        walletBalance: { before: currentWallet, after: newWallet },
+        totalEarnings: { before: currentTotalEarnings, after: newTotalEarnings }
+      })
+    } else {
+      console.warn('Worker not found:', workerId)
+    }
+  } else {
+    console.warn('Cannot update wallet - workerId:', workerId, 'releaseAmount:', releaseAmount)
+  }
+
+  console.log('=== TRANSACTION COMPLETED: COMPLETE ===')
 }
 
 /**
