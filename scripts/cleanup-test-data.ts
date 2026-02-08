@@ -65,7 +65,8 @@ const USER_WALLET_FIELDS = {
   walletBalance: 0,
   pendingBalance: 0,
   totalEarnings: 0,
-  totalWithdrawn: 0
+  totalWithdrawn: 0,
+  reviewCount:0
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

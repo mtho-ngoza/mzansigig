@@ -303,27 +303,56 @@ async function handlePaymentSuccess(gigId: string, transactionId: string, _balan
       // Update worker's pending balance (funds in escrow)
       console.log('=== PAYMENT SUCCESS: Step 6 - Updating worker pendingBalance ===')
       if (workerId) {
-        const workerRef = db.collection('users').doc(workerId)
-        const workerDoc = await workerRef.get()
+        try {
+          const workerRef = db.collection('users').doc(workerId)
+          const workerDoc = await workerRef.get()
 
-        if (workerDoc.exists) {
-          const workerData = workerDoc.data()
-          const currentPending = workerData?.pendingBalance || 0
-          const newPending = currentPending + escrowAmount
+          if (workerDoc.exists) {
+            const workerData = workerDoc.data()
+            const currentPending = workerData?.pendingBalance || 0
+            const currentWallet = workerData?.walletBalance || 0
+            const currentEarnings = workerData?.totalEarnings || 0
+            const newPending = currentPending + escrowAmount
 
-          await workerRef.update({
-            pendingBalance: newPending,
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-          })
-          console.log('Worker pendingBalance updated:', {
-            workerId,
-            previousBalance: currentPending,
-            addedAmount: escrowAmount,
-            newBalance: newPending
-          })
-        } else {
-          console.warn('Worker not found:', workerId)
+            console.log('Worker current state:', {
+              workerId,
+              currentPending,
+              currentWallet,
+              currentEarnings,
+              escrowAmount,
+              newPending
+            })
+
+            const updateData = {
+              pendingBalance: newPending,
+              updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            }
+            console.log('Attempting update with data:', JSON.stringify(updateData))
+
+            await workerRef.update(updateData)
+
+            // Verify the update by reading back
+            const verifyDoc = await workerRef.get()
+            const verifyData = verifyDoc.data()
+            console.log('Worker pendingBalance updated - VERIFIED:', {
+              workerId,
+              previousBalance: currentPending,
+              addedAmount: escrowAmount,
+              expectedNewBalance: newPending,
+              actualNewBalance: verifyData?.pendingBalance,
+              updateSuccess: verifyData?.pendingBalance === newPending
+            })
+          } else {
+            console.warn('Worker document NOT FOUND:', workerId)
+          }
+        } catch (updateError) {
+          console.error('=== PAYMENT SUCCESS: FAILED to update worker balance ===')
+          console.error('Error:', updateError)
+          console.error('WorkerId:', workerId)
+          console.error('EscrowAmount:', escrowAmount)
         }
+      } else {
+        console.warn('No workerId provided, skipping balance update')
       }
 
       console.log('=== PAYMENT SUCCESS: COMPLETE ===')
@@ -449,36 +478,62 @@ async function handleTransactionCompleted(gigId: string, transactionId: string) 
   // Step 6: CRITICAL - Move funds from pendingBalance to walletBalance
   console.log('=== TRANSACTION COMPLETED: Step 6 - Updating worker wallet ===')
   if (workerId && releaseAmount > 0) {
-    const workerRef = db.collection('users').doc(workerId)
-    const workerDoc = await workerRef.get()
+    try {
+      const workerRef = db.collection('users').doc(workerId)
+      const workerDoc = await workerRef.get()
 
-    if (workerDoc.exists) {
-      const workerData = workerDoc.data()
-      const currentPending = workerData?.pendingBalance || 0
-      const currentWallet = workerData?.walletBalance || 0
-      const currentTotalEarnings = workerData?.totalEarnings || 0
+      if (workerDoc.exists) {
+        const workerData = workerDoc.data()
+        const currentPending = workerData?.pendingBalance || 0
+        const currentWallet = workerData?.walletBalance || 0
+        const currentTotalEarnings = workerData?.totalEarnings || 0
 
-      // Move from pending to wallet
-      const newPending = Math.max(0, currentPending - releaseAmount)
-      const newWallet = currentWallet + releaseAmount
-      const newTotalEarnings = currentTotalEarnings + releaseAmount
+        // Move from pending to wallet
+        const newPending = Math.max(0, currentPending - releaseAmount)
+        const newWallet = currentWallet + releaseAmount
+        const newTotalEarnings = currentTotalEarnings + releaseAmount
 
-      await workerRef.update({
-        pendingBalance: newPending,
-        walletBalance: newWallet,
-        totalEarnings: newTotalEarnings,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      })
+        console.log('Worker current state:', {
+          workerId,
+          currentPending,
+          currentWallet,
+          currentTotalEarnings,
+          releaseAmount
+        })
 
-      console.log('Worker wallet updated:', {
-        workerId,
-        releaseAmount,
-        pendingBalance: { before: currentPending, after: newPending },
-        walletBalance: { before: currentWallet, after: newWallet },
-        totalEarnings: { before: currentTotalEarnings, after: newTotalEarnings }
-      })
-    } else {
-      console.warn('Worker not found:', workerId)
+        const updateData = {
+          pendingBalance: newPending,
+          walletBalance: newWallet,
+          totalEarnings: newTotalEarnings,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        }
+        console.log('Attempting wallet update with data:', JSON.stringify({
+          pendingBalance: newPending,
+          walletBalance: newWallet,
+          totalEarnings: newTotalEarnings
+        }))
+
+        await workerRef.update(updateData)
+
+        // Verify the update by reading back
+        const verifyDoc = await workerRef.get()
+        const verifyData = verifyDoc.data()
+        console.log('Worker wallet updated - VERIFIED:', {
+          workerId,
+          releaseAmount,
+          pendingBalance: { before: currentPending, after: newPending, actual: verifyData?.pendingBalance },
+          walletBalance: { before: currentWallet, after: newWallet, actual: verifyData?.walletBalance },
+          totalEarnings: { before: currentTotalEarnings, after: newTotalEarnings, actual: verifyData?.totalEarnings },
+          updateSuccess: verifyData?.walletBalance === newWallet
+        })
+      } else {
+        console.warn('Worker document NOT FOUND:', workerId)
+      }
+    } catch (updateError) {
+      console.error('=== TRANSACTION COMPLETED: FAILED to update worker wallet ===')
+      console.error('Error:', updateError)
+      console.error('WorkerId:', workerId)
+      console.error('ReleaseAmount:', releaseAmount)
     }
   } else {
     console.warn('Cannot update wallet - workerId:', workerId, 'releaseAmount:', releaseAmount)
