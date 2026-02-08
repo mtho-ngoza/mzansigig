@@ -139,7 +139,8 @@ export default function DisputeMediationDashboard() {
     }
   }
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount?: number) => {
+    if (typeof amount !== 'number') return '—'
     return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
       currency: 'ZAR'
@@ -183,7 +184,7 @@ export default function DisputeMediationDashboard() {
             <CardContent className="pt-6">
               <div className="text-center">
                 <p className="text-3xl font-bold text-green-600">
-                  {formatCurrency(disputes.reduce((sum, d) => sum + d.proposedRate, 0))}
+                  {formatCurrency(disputes.reduce((sum, d) => sum + (d.proposedRate ?? 0), 0))}
                 </p>
                 <p className="text-sm text-gray-600 mt-1">Total Value in Dispute</p>
               </div>

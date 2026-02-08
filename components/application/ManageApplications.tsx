@@ -366,7 +366,8 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
     }
   }
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount?: number) => {
+    if (typeof amount !== 'number') return '—'
     return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
       currency: 'ZAR'
@@ -552,7 +553,7 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
             const acceptedUnfunded = applications.filter(
               app => app.status === 'accepted' && (!app.paymentStatus || app.paymentStatus === 'unpaid')
             )
-            const totalOwed = acceptedUnfunded.reduce((sum, app) => sum + (app.agreedRate || app.proposedRate), 0)
+            const totalOwed = acceptedUnfunded.reduce((sum, app) => sum + (app.agreedRate ?? app.proposedRate ?? 0), 0)
 
             return acceptedUnfunded.length > 0 && (
               <Card className="mb-6 border-2 border-orange-300 bg-orange-50">
@@ -1062,13 +1063,13 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
         )}
 
         {/* Payment Dialog */}
-        {showPaymentDialog.isOpen && showPaymentDialog.application && (
+        {showPaymentDialog.isOpen && showPaymentDialog.application && (showPaymentDialog.application.agreedRate ?? showPaymentDialog.application.proposedRate) != null && (
           <PaymentDialog
             isOpen={showPaymentDialog.isOpen}
             gigId={showPaymentDialog.application.gigId}
             workerId={showPaymentDialog.application.applicantId}
             workerName={showPaymentDialog.application.applicantName}
-            amount={showPaymentDialog.application.agreedRate || showPaymentDialog.application.proposedRate}
+            amount={(showPaymentDialog.application.agreedRate ?? showPaymentDialog.application.proposedRate) as number}
             description={`Payment for "${showPaymentDialog.application.gigTitle}"`}
             onSuccess={async (payment) => {
               setShowPaymentDialog({ isOpen: false })

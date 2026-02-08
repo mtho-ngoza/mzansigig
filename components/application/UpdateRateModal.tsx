@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 
 interface UpdateRateModalProps {
   isOpen: boolean
-  currentRate: number
+  currentRate?: number
   gigBudget?: number
   updatedBy: 'worker' | 'employer'
   onSubmit: (newRate: number, note?: string) => Promise<void>
@@ -21,7 +21,7 @@ export default function UpdateRateModal({
   onSubmit,
   onCancel
 }: UpdateRateModalProps) {
-  const [newRate, setNewRate] = useState(currentRate.toString())
+  const [newRate, setNewRate] = useState(currentRate != null ? currentRate.toString() : '')
   const [note, setNote] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -40,7 +40,7 @@ export default function UpdateRateModal({
       setError('Rate cannot exceed R100,000')
       return
     }
-    if (rateValue === currentRate) {
+    if (currentRate != null && rateValue === currentRate) {
       setError('New rate must be different from current rate')
       return
     }
@@ -56,7 +56,8 @@ export default function UpdateRateModal({
     }
   }
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount?: number) => {
+    if (typeof amount !== 'number') return '—'
     return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
       currency: 'ZAR'

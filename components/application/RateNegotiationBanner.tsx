@@ -21,7 +21,8 @@ export default function RateNegotiationBanner({
   onMessage,
   isProcessing = false
 }: RateNegotiationBannerProps) {
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount?: number) => {
+    if (typeof amount !== 'number') return '—'
     return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
       currency: 'ZAR'

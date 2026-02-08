@@ -789,13 +789,18 @@ export class GigService {
     }
 
     // Get the current rate (last proposed or original)
-    const currentRate = application.lastRateUpdate?.amount || application.proposedRate;
+    const currentRate = application.lastRateUpdate?.amount ?? application.proposedRate;
 
     // Check who last proposed - the OTHER party must confirm
     const lastProposedBy = application.lastRateUpdate?.by || 'worker'; // Default to worker (initial proposal)
 
     if (lastProposedBy === confirmedBy) {
       throw new Error('You cannot confirm your own rate proposal. Wait for the other party to respond.');
+    }
+
+    // Ensure we actually have a rate to confirm (supports legacy/unfunded cases)
+    if (currentRate === undefined) {
+      throw new Error('No rate available to confirm');
     }
 
     // Get rate history and add confirmation entry

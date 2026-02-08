@@ -12,7 +12,7 @@ interface RateNegotiationQuickMessagesProps {
   recipientType: 'job-seeker' | 'employer'
   gigId: string
   gigTitle: string
-  currentRate: number
+  currentRate?: number
   viewerRole: 'worker' | 'employer'
   onConversationStart?: (conversationId: string) => void
   onClose?: () => void
@@ -52,12 +52,14 @@ export default function RateNegotiationQuickMessages({
 
   const templates = viewerRole === 'worker' ? WORKER_TEMPLATES : EMPLOYER_TEMPLATES
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount?: number) => {
+    if (typeof amount !== 'number') return '—'
     return new Intl.NumberFormat('en-ZA', { style: 'currency', currency: 'ZAR' }).format(amount)
   }
 
   const handleSelectTemplate = (template: typeof templates[0]) => {
-    const message = template.message.replace('{RATE}', currentRate.toString())
+    const rateText = currentRate != null ? currentRate.toString() : ''
+    const message = template.message.replace('{RATE}', rateText)
     setCustomMessage(message)
     setSelectedTemplate(template.label)
   }

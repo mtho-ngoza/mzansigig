@@ -168,7 +168,8 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
     }
   }
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount?: number) => {
+    if (typeof amount !== 'number') return '—'
     return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
       currency: 'ZAR'
