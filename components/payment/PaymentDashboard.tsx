@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -19,6 +19,11 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
   const { user } = useAuth()
   const { analytics, formatCurrency, refreshAnalytics } = usePayment()
   const [currentView, setCurrentView] = useState<'overview' | 'withdraw' | 'withdrawals' | 'history' | 'analytics'>('overview')
+
+  // Auto-refresh data when component mounts (user navigates to Payments)
+  useEffect(() => {
+    refreshAnalytics()
+  }, [refreshAnalytics])
 
   const renderViewContent = () => {
     switch (currentView) {
