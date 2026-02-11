@@ -518,11 +518,13 @@ export class GigService {
     status: GigApplication['status']
   ): Promise<void> {
     // If accepting, check that no other application is already accepted
+    let acceptingApplication: GigApplication | null = null;
     if (status === 'accepted') {
       const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
       if (!application) {
         throw new Error('Application not found');
       }
+      acceptingApplication = application;
 
       // Check that rate has been agreed upon before accepting
       // For backward compatibility: allow if rateStatus is undefined (older applications) or 'agreed'
@@ -552,7 +554,7 @@ export class GigService {
     // If accepted, assign worker and reject other applications
     // Note: Gig status remains 'open' until funded to allow backup applications
     if (status === 'accepted') {
-      const application = await FirestoreService.getById<GigApplication>('applications', applicationId);
+      const application = acceptingApplication; // Use prefetched application to avoid extra read (and ease testing)
       if (application) {
         // Assign worker to gig
         await this.updateGig(application.gigId, {

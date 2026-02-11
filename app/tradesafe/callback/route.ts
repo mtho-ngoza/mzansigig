@@ -276,7 +276,8 @@ async function handlePaymentSuccess(gigId: string, transactionId: string, _balan
       })
 
       if (escrowAmount === 0) {
-        console.warn('=== PAYMENT SUCCESS: WARNING - escrowAmount is 0 ===')
+        console.error('=== PAYMENT SUCCESS: CRITICAL - escrowAmount is 0, aborting payment processing ===')
+        throw new Error('Cannot process payment: no valid amount found (agreedRate, proposedRate, or budget required)')
       }
 
       // Update gig
