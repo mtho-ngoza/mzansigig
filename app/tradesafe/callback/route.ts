@@ -100,9 +100,22 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // User redirect callback - redirect to appropriate page
+    // User redirect callback (POST) - redirect to appropriate page
+    console.log('=== TRADESAFE USER REDIRECT (POST): Processing ===')
+    console.log('This is a user redirect, not a webhook')
+
     const action = params.get('action') || params.get('status') || ''
     const actionLower = action.toLowerCase()
+    const transactionId = params.get('transactionId') || params.get('id') || ''
+
+    console.log('Redirect params:', {
+      action,
+      status: params.get('status'),
+      transactionId,
+      reference: params.get('reference'),
+      method: params.get('method'),
+      reason: params.get('reason')
+    })
 
     // Build redirect URL with all params
     const redirectParams = params.toString()
@@ -113,20 +126,27 @@ export async function POST(request: NextRequest) {
                       actionLower === 'funds_deposited' ||
                       actionLower === 'funds_received'
 
+    console.log('isSuccess?', isSuccess, '(action:', actionLower, ')')
+
     const baseUrl = new URL(request.url).origin
 
     if (isSuccess) {
-      console.log('TradeSafe callback: Redirecting to success page')
+      const successUrl = `/payment/success?${redirectParams}`
+      console.log('=== TRADESAFE USER REDIRECT (POST): Redirecting to SUCCESS ===')
+      console.log('Redirect URL:', successUrl)
       // Use 303 See Other to force GET request
       return NextResponse.redirect(
-        new URL(`/payment/success?${redirectParams}`, baseUrl),
+        new URL(successUrl, baseUrl),
         { status: 303 }
       )
     } else {
-      console.log('TradeSafe callback: Redirecting to error page, action:', action)
+      const errorUrl = `/payment/error?${redirectParams}`
+      console.log('=== TRADESAFE USER REDIRECT (POST): Redirecting to ERROR ===')
+      console.log('Redirect URL:', errorUrl)
+      console.log('Reason:', params.get('reason') || action || 'unknown')
       // Use 303 See Other to force GET request
       return NextResponse.redirect(
-        new URL(`/payment/error?${redirectParams}`, baseUrl),
+        new URL(errorUrl, baseUrl),
         { status: 303 }
       )
     }
@@ -692,31 +712,51 @@ async function handleTransactionCancelled(gigId: string, transactionId: string) 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams
 
-  // Log the callback for debugging
-  console.log('TradeSafe GET callback received:', {
-    params: Object.fromEntries(params.entries()),
-    url: request.url
+  // Detailed logging for user redirect tracking
+  console.log('=== TRADESAFE USER REDIRECT: Received ===')
+  console.log('Full URL:', request.url)
+  console.log('All params:', Object.fromEntries(params.entries()))
+  console.log('Key params:', {
+    status: params.get('status'),
+    action: params.get('action'),
+    transactionId: params.get('transactionId') || params.get('id'),
+    reference: params.get('reference'),
+    method: params.get('method'),
+    reason: params.get('reason')
   })
 
   const action = params.get('action') || params.get('status') || ''
   const actionLower = action.toLowerCase()
   const redirectParams = params.toString()
 
+  console.log('=== TRADESAFE USER REDIRECT: Detection ===')
+  console.log('action/status value:', action)
+  console.log('actionLower:', actionLower)
+
   const isSuccess = actionLower === 'success' ||
                     actionLower === 'completed' ||
                     actionLower === 'funds_deposited' ||
                     actionLower === 'funds_received'
 
+  console.log('isSuccess?', isSuccess)
+
   const baseUrl = new URL(request.url).origin
 
   if (isSuccess) {
+    const successUrl = `/payment/success?${redirectParams}`
+    console.log('=== TRADESAFE USER REDIRECT: Redirecting to SUCCESS ===')
+    console.log('Redirect URL:', successUrl)
     return NextResponse.redirect(
-      new URL(`/payment/success?${redirectParams}`, baseUrl),
+      new URL(successUrl, baseUrl),
       { status: 303 }
     )
   } else {
+    const errorUrl = `/payment/error?${redirectParams}`
+    console.log('=== TRADESAFE USER REDIRECT: Redirecting to ERROR ===')
+    console.log('Redirect URL:', errorUrl)
+    console.log('Reason:', params.get('reason') || 'unknown')
     return NextResponse.redirect(
-      new URL(`/payment/error?${redirectParams}`, baseUrl),
+      new URL(errorUrl, baseUrl),
       { status: 303 }
     )
   }
