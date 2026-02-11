@@ -187,6 +187,58 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Create payment history records (outside transaction for simplicity)
+    console.log('=== APPROVE COMPLETION API: Creating payment history ===')
+    const gigTitle = gig.title || `Gig ${application.gigId}`
+    const platformCommission = escrowAmount * 0.10
+    const netAmount = escrowAmount - platformCommission
+
+    // Update existing pending earnings record to completed, or create new one
+    const pendingHistoryQuery = await db.collection('paymentHistory')
+      .where('userId', '==', workerId)
+      .where('gigId', '==', application.gigId)
+      .where('type', '==', 'earnings')
+      .where('status', '==', 'pending')
+      .limit(1)
+      .get()
+
+    if (!pendingHistoryQuery.empty) {
+      // Update existing pending record to completed with net amount
+      await pendingHistoryQuery.docs[0].ref.update({
+        status: 'completed',
+        amount: netAmount,
+        description: `Earnings from: ${gigTitle} (released - R${escrowAmount.toFixed(2)} minus 10% fee)`,
+        completedAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+      console.log('Updated existing payment history record to completed')
+    } else {
+      // Create new completed earnings record if pending not found
+      await db.collection('paymentHistory').add({
+        userId: workerId,
+        type: 'earnings',
+        amount: netAmount,
+        currency: 'ZAR',
+        status: 'completed',
+        gigId: application.gigId,
+        description: `Earnings from: ${gigTitle} (R${escrowAmount.toFixed(2)} minus 10% fee)`,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+      console.log('Created new completed payment history record')
+    }
+
+    // Create platform fee record for tracking
+    await db.collection('paymentHistory').add({
+      userId: workerId,
+      type: 'fees',
+      amount: -platformCommission,
+      currency: 'ZAR',
+      status: 'completed',
+      gigId: application.gigId,
+      description: `Platform fee (10%) for: ${gigTitle}`,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    })
+    console.log('Created platform fee history record')
+
     console.log('=== APPROVE COMPLETION API: SUCCESS ===')
 
     return NextResponse.json({

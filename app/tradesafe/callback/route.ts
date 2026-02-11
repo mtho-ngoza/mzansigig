@@ -380,8 +380,38 @@ async function handlePaymentSuccess(gigId: string, transactionId: string, _balan
         console.warn('No workerId provided, skipping balance update')
       }
 
+      // Create payment history records
+      console.log('=== PAYMENT SUCCESS: Step 7 - Creating payment history records ===')
+      const gigTitle = gigData?.title || `Gig ${gigId}`
+
+      // Create employer payment record (money out)
+      await db.collection('paymentHistory').add({
+        userId: gigData?.employerId,
+        type: 'payments',
+        amount: escrowAmount,
+        currency: 'ZAR',
+        status: 'completed',
+        gigId: gigId,
+        description: `Payment for: ${gigTitle}`,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+      console.log('Created employer payment history record')
+
+      // Create worker earnings record (pending in escrow)
+      await db.collection('paymentHistory').add({
+        userId: workerId,
+        type: 'earnings',
+        amount: escrowAmount,
+        currency: 'ZAR',
+        status: 'pending',
+        gigId: gigId,
+        description: `Earnings from: ${gigTitle} (in escrow)`,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+      console.log('Created worker earnings history record (pending)')
+
       // Update employer's pending balance (funds they have in escrow)
-      console.log('=== PAYMENT SUCCESS: Step 7 - Updating employer pendingBalance ===')
+      console.log('=== PAYMENT SUCCESS: Step 8 - Updating employer pendingBalance ===')
       const employerId = gigData?.employerId
       if (employerId) {
         try {
