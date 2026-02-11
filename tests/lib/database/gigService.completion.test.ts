@@ -9,10 +9,16 @@ import { PaymentService } from '@/lib/services/paymentService'
 import { ConfigService } from '@/lib/database/configService'
 import { Gig, GigApplication } from '@/types/gig'
 
+// Mock document snapshot
+const createMockDocSnapshot = (exists: boolean, data: Record<string, unknown> = {}) => ({
+  exists: () => exists,
+  data: () => data
+})
+
 // Mock transaction object
 const mockTransaction = {
   update: jest.fn(),
-  get: jest.fn(),
+  get: jest.fn().mockResolvedValue(createMockDocSnapshot(true, { pendingBalance: 1000, walletBalance: 0 })),
   set: jest.fn()
 }
 
@@ -344,8 +350,6 @@ describe('GigService - Completion Workflows', () => {
         .mockResolvedValueOnce(appWithoutPaymentId)
         .mockResolvedValueOnce(gigWithEscrow)
 
-      const { WalletService } = require('@/lib/services/walletService')
-
       await GigService.approveCompletion(mockApplicationId, mockEmployerId)
 
       // Application and gig should be marked completed
@@ -355,9 +359,11 @@ describe('GigService - Completion Workflows', () => {
       expect(PaymentService.getEscrowReleaseContext).not.toHaveBeenCalled()
       expect(PaymentService.releaseEscrowInTransaction).not.toHaveBeenCalled()
 
-      // WalletService SHOULD be called (fallback for TradeSafe)
-      expect(WalletService.releaseEscrowWithCommissionInTransaction).toHaveBeenCalled()
-      expect(WalletService.releaseEmployerEscrowInTransaction).toHaveBeenCalled()
+      // Wallet updates should happen via transaction.update (inlined for Firestore transaction rules)
+      // We verify transaction.get was called to read worker/employer docs
+      expect(mockTransaction.get).toHaveBeenCalled()
+      // And transaction.update was called multiple times (app, gig, worker wallet, employer wallet)
+      expect(mockTransaction.update.mock.calls.length).toBeGreaterThanOrEqual(4)
     })
 
     it('should NOT release escrow when both paymentId and escrowAmount are missing (unfunded/legacy)', async () => {

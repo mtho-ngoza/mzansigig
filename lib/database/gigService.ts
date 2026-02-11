@@ -1026,9 +1026,36 @@ export class GigService {
     })
 
     // Phase 2: Execute all writes atomically in a transaction
+    // IMPORTANT: Firestore requires all reads before all writes
     await runTransaction(db, async (transaction) => {
-      // Update application status
+      // === PHASE 2a: ALL READS FIRST ===
       const applicationRef = doc(db, 'applications', applicationId);
+      const gigRef = doc(db, 'gigs', application.gigId);
+      const workerRef = workerId ? doc(db, 'users', workerId) : null;
+      const employerRef = doc(db, 'users', employerId);
+
+      // Read worker doc if we need to release escrow
+      let workerDoc = null;
+      let employerDoc = null;
+
+      if (escrowAmount > 0 && workerId && !escrowContext) {
+        console.log('Reading worker and employer docs for escrow release...')
+        workerDoc = await transaction.get(workerRef!);
+        employerDoc = await transaction.get(employerRef);
+
+        if (!workerDoc.exists()) {
+          throw new Error('Worker not found for escrow release');
+        }
+
+        const workerData = workerDoc.data();
+        const currentPending = workerData?.pendingBalance || 0;
+        if (currentPending < escrowAmount) {
+          throw new Error(`Insufficient pending balance. Tried to release ${escrowAmount} but only ${currentPending} available`);
+        }
+      }
+
+      // === PHASE 2b: ALL WRITES ===
+      // Update application status
       transaction.update(applicationRef, {
         status: 'completed',
         paymentStatus: 'released',
@@ -1037,7 +1064,6 @@ export class GigService {
       console.log('Application status updated to completed')
 
       // Update gig status
-      const gigRef = doc(db, 'gigs', application.gigId);
       transaction.update(gigRef, {
         status: 'completed',
         paymentStatus: 'released',
@@ -1047,23 +1073,21 @@ export class GigService {
       console.log('Gig status updated to completed')
 
       // Increment worker's completedGigs counter
-      if (workerId) {
-        const workerRef = doc(db, 'users', workerId);
+      if (workerRef) {
         transaction.update(workerRef, {
           completedGigs: increment(1)
         });
         console.log('Worker completedGigs incremented')
       }
 
-      // Release escrow - either via payment context or directly via wallet service
+      // Release escrow - either via payment context or directly
       if (escrowContext) {
         console.log('Releasing escrow via PaymentService...')
         const { PaymentService } = await import('../services/paymentService');
         await PaymentService.releaseEscrowInTransaction(transaction, escrowContext);
-      } else if (escrowAmount > 0 && workerId) {
+      } else if (escrowAmount > 0 && workerId && workerRef) {
         // Fallback: Direct wallet update for TradeSafe payments without payment record
-        console.log('Releasing escrow directly via WalletService (TradeSafe fallback)...')
-        const { WalletService } = await import('../services/walletService');
+        console.log('Releasing escrow directly (TradeSafe fallback)...')
 
         // Calculate net amount (apply platform commission)
         // Using 10% commission as default - should match fee config
@@ -1076,22 +1100,34 @@ export class GigService {
           netAmount
         })
 
-        // Update worker wallet - move from pending to available
-        await WalletService.releaseEscrowWithCommissionInTransaction(
-          transaction,
-          workerId,
-          escrowAmount,
-          netAmount
-        );
+        // Update worker wallet - move from pending to available (already validated above)
+        transaction.update(workerRef, {
+          pendingBalance: increment(-escrowAmount),
+          walletBalance: increment(netAmount),
+          totalEarnings: increment(netAmount),
+          updatedAt: Timestamp.now()
+        });
         console.log('Worker wallet updated')
 
         // Update employer wallet - decrease pending balance
-        await WalletService.releaseEmployerEscrowInTransaction(
-          transaction,
-          employerId,
-          escrowAmount
-        );
-        console.log('Employer pending balance updated')
+        if (employerDoc?.exists()) {
+          const employerData = employerDoc.data();
+          const currentPending = employerData?.pendingBalance || 0;
+          const newPending = Math.max(0, currentPending - escrowAmount);
+
+          console.log('Releasing employer escrow:', {
+            employerId,
+            currentPending,
+            releaseAmount: escrowAmount,
+            newPending
+          })
+
+          transaction.update(employerRef, {
+            pendingBalance: newPending,
+            updatedAt: Timestamp.now()
+          });
+          console.log('Employer pending balance updated')
+        }
       } else {
         console.warn('No escrow to release - escrowAmount:', escrowAmount, 'workerId:', workerId)
       }
