@@ -22,7 +22,8 @@ jest.mock('firebase/firestore', () => ({
   runTransaction: jest.fn((db, callback) => callback(mockTransaction)),
   Timestamp: {
     now: jest.fn(() => ({ toDate: () => new Date() }))
-  }
+  },
+  increment: jest.fn((value) => ({ _increment: value }))
 }))
 
 // Mock firebase db
@@ -214,6 +215,26 @@ describe('GigService - Completion Workflows', () => {
       // Verify escrow context fetched and released in transaction
       expect(PaymentService.getEscrowReleaseContext).toHaveBeenCalledWith(mockPaymentId)
       expect(PaymentService.releaseEscrowInTransaction).toHaveBeenCalled()
+    })
+
+    it('should increment worker completedGigs counter on approval', async () => {
+      const { increment } = require('firebase/firestore')
+
+      jest.mocked(FirestoreService.getById)
+        .mockResolvedValueOnce(applicationWithCompletion)
+        .mockResolvedValueOnce(mockGig)
+
+      await GigService.approveCompletion(mockApplicationId, mockEmployerId)
+
+      // Verify increment was called with 1
+      expect(increment).toHaveBeenCalledWith(1)
+
+      // Verify transaction.update was called for the worker document
+      const updateCalls = mockTransaction.update.mock.calls
+      const workerUpdateCall = updateCalls.find(call =>
+        call[1] && call[1].completedGigs !== undefined
+      )
+      expect(workerUpdateCall).toBeDefined()
     })
 
     it('should reject if application not found', async () => {

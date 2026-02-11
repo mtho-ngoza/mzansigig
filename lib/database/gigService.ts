@@ -9,7 +9,7 @@ import {
   getCityCoordinates
 } from '@/lib/utils/locationUtils';
 import type { DocumentSnapshot, DocumentData } from 'firebase/firestore';
-import { doc, runTransaction, Timestamp } from 'firebase/firestore';
+import { doc, runTransaction, Timestamp, increment } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { ConfigService } from './configService';
 import { sanitizeGigText, normalizeSkills, validateBudget, GIG_TEXT_LIMITS } from '@/lib/utils/gigValidation';
@@ -1045,6 +1045,15 @@ export class GigService {
         updatedAt: Timestamp.now()
       });
       console.log('Gig status updated to completed')
+
+      // Increment worker's completedGigs counter
+      if (workerId) {
+        const workerRef = doc(db, 'users', workerId);
+        transaction.update(workerRef, {
+          completedGigs: increment(1)
+        });
+        console.log('Worker completedGigs incremented')
+      }
 
       // Release escrow - either via payment context or directly via wallet service
       if (escrowContext) {
