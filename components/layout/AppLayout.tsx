@@ -87,7 +87,7 @@ export function AppLayout({ children }: AppLayoutProps) {
   }
 
   // Routes that should use Next.js routing instead of state-based navigation
-  const routedPages = ['/terms', '/privacy', '/popia']
+  const routedPages = ['/terms', '/privacy', '/popia', '/payment/success', '/payment/error']
   const isRoutedPage = routedPages.includes(pathname)
 
   // For routed pages (like legal pages), render children directly
