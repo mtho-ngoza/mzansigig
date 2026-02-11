@@ -29,7 +29,8 @@ jest.mock('firebase/firestore', () => ({
   runTransaction: jest.fn((db, callback) => callback(mockTransaction)),
   Timestamp: {
     now: jest.fn(() => ({ toDate: () => new Date() }))
-  }
+  },
+  increment: jest.fn((value) => ({ _increment: value }))
 }))
 
 // Mock firebase db
