@@ -32,6 +32,11 @@ export default function EmployerPaymentDashboard({ onBack }: EmployerPaymentDash
   const [showPaymentDialog, setShowPaymentDialog] = useState(false)
   const [selectedObligation, setSelectedObligation] = useState<PendingObligation | null>(null)
 
+  // Auto-refresh analytics data when component mounts (user navigates to Payments)
+  useEffect(() => {
+    refreshAnalytics()
+  }, [refreshAnalytics])
+
   // Load pending payment obligations
   useEffect(() => {
     const loadPendingObligations = async () => {
