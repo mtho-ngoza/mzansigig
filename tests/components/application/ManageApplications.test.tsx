@@ -20,6 +20,13 @@ jest.mock('next/navigation', () => ({
 // Mock dependencies
 jest.mock('@/contexts/AuthContext')
 jest.mock('@/lib/database/gigService')
+jest.mock('@/lib/firebase', () => ({
+  auth: {
+    currentUser: {
+      getIdToken: jest.fn().mockResolvedValue('mock-id-token')
+    }
+  }
+}))
 
 const mockSuccess = jest.fn()
 const mockShowError = jest.fn()
@@ -167,6 +174,11 @@ describe('ManageApplications', () => {
 
   beforeEach(() => {
     jest.clearAllMocks()
+    // Mock fetch for API calls
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ success: true })
+    })
     ;(useAuth as jest.Mock).mockReturnValue({
       user: mockUser,
       loading: false
@@ -876,7 +888,7 @@ describe('ManageApplications', () => {
         })
       })
 
-      it('should call GigService.approveCompletion when confirmed', async () => {
+      it('should call approve-completion API when confirmed', async () => {
         ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
           if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
           return Promise.resolve([])
@@ -897,7 +909,10 @@ describe('ManageApplications', () => {
         fireEvent.click(screen.getByText('Approve & Release'))
 
         await waitFor(() => {
-          expect(GigService.approveCompletion).toHaveBeenCalledWith('app-funded-completion', 'employer-123')
+          expect(global.fetch).toHaveBeenCalledWith('/api/gigs/approve-completion', expect.objectContaining({
+            method: 'POST',
+            body: JSON.stringify({ applicationId: 'app-funded-completion' })
+          }))
         })
       })
 
@@ -927,7 +942,11 @@ describe('ManageApplications', () => {
       })
 
       it('should show error toast when approval fails', async () => {
-        ;(GigService.approveCompletion as jest.Mock).mockRejectedValue(new Error('Approval failed'))
+        // Mock fetch to fail for the approval API
+        global.fetch = jest.fn().mockResolvedValue({
+          ok: false,
+          json: () => Promise.resolve({ error: 'Approval failed', message: 'Approval failed' })
+        })
 
         ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
           if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
@@ -1108,7 +1127,7 @@ describe('ManageApplications', () => {
         fireEvent.click(screen.getByText('Approve & Release'))
 
         await waitFor(() => {
-          expect(GigService.approveCompletion).toHaveBeenCalled()
+          expect(global.fetch).toHaveBeenCalledWith('/api/gigs/approve-completion', expect.anything())
         })
 
         // Advance timers to trigger the review dialog (500ms delay)
@@ -1144,7 +1163,7 @@ describe('ManageApplications', () => {
         fireEvent.click(screen.getByText('Approve & Release'))
 
         await waitFor(() => {
-          expect(GigService.approveCompletion).toHaveBeenCalled()
+          expect(global.fetch).toHaveBeenCalledWith('/api/gigs/approve-completion', expect.anything())
         })
 
         jest.advanceTimersByTime(600)
@@ -1186,7 +1205,7 @@ describe('ManageApplications', () => {
         fireEvent.click(screen.getByText('Approve & Release'))
 
         await waitFor(() => {
-          expect(GigService.approveCompletion).toHaveBeenCalled()
+          expect(global.fetch).toHaveBeenCalledWith('/api/gigs/approve-completion', expect.anything())
         })
 
         jest.advanceTimersByTime(600)
@@ -1228,7 +1247,7 @@ describe('ManageApplications', () => {
         fireEvent.click(screen.getByText('Approve & Release'))
 
         await waitFor(() => {
-          expect(GigService.approveCompletion).toHaveBeenCalled()
+          expect(global.fetch).toHaveBeenCalledWith('/api/gigs/approve-completion', expect.anything())
         })
 
         jest.advanceTimersByTime(600)
@@ -1250,7 +1269,11 @@ describe('ManageApplications', () => {
 
       it('should not open review dialog when completion approval fails', async () => {
         jest.useFakeTimers()
-        ;(GigService.approveCompletion as jest.Mock).mockRejectedValue(new Error('Approval failed'))
+        // Mock fetch to fail for the approval API
+        global.fetch = jest.fn().mockResolvedValue({
+          ok: false,
+          json: () => Promise.resolve({ error: 'Approval failed', message: 'Approval failed' })
+        })
 
         ;(GigService.getApplicationsByGig as jest.Mock).mockImplementation((gigId: string) => {
           if (gigId === 'gig-1') return Promise.resolve([fundedAppWithCompletionRequest])
