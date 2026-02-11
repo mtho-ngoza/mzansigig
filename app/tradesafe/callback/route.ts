@@ -121,12 +121,16 @@ export async function POST(request: NextRequest) {
     const redirectParams = params.toString()
 
     // Check for success indicators
+    // TradeSafe sends: action=complete, reason=success for successful payments
+    const reason = (params.get('reason') || '').toLowerCase()
     const isSuccess = actionLower === 'success' ||
+                      actionLower === 'complete' ||
                       actionLower === 'completed' ||
                       actionLower === 'funds_deposited' ||
-                      actionLower === 'funds_received'
+                      actionLower === 'funds_received' ||
+                      reason === 'success'
 
-    console.log('isSuccess?', isSuccess, '(action:', actionLower, ')')
+    console.log('isSuccess?', isSuccess, '(action:', actionLower, ', reason:', reason, ')')
 
     const baseUrl = new URL(request.url).origin
 
@@ -733,12 +737,17 @@ export async function GET(request: NextRequest) {
   console.log('action/status value:', action)
   console.log('actionLower:', actionLower)
 
+  // Check for success indicators
+  // TradeSafe sends: action=complete, reason=success for successful payments
+  const reason = (params.get('reason') || '').toLowerCase()
   const isSuccess = actionLower === 'success' ||
+                    actionLower === 'complete' ||
                     actionLower === 'completed' ||
                     actionLower === 'funds_deposited' ||
-                    actionLower === 'funds_received'
+                    actionLower === 'funds_received' ||
+                    reason === 'success'
 
-  console.log('isSuccess?', isSuccess)
+  console.log('isSuccess?', isSuccess, '(reason:', reason, ')')
 
   const baseUrl = new URL(request.url).origin
 
