@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { GigService } from '@/lib/database/gigService'
 import { useAuth } from '@/contexts/AuthContext'
+import { auth } from '@/lib/firebase'
 import { GigApplication } from '@/types/gig'
 import { QuickMessageButton } from '@/components/messaging/QuickMessageButton'
 import { useToast } from '@/contexts/ToastContext'
@@ -383,7 +384,26 @@ export default function ManageApplications({ onBack, onMessageConversationStart 
 
     try {
       setProcessingCompletion(true)
-      await GigService.approveCompletion(approveCompletionDialog.applicationId, user.id)
+
+      // Call server-side API endpoint (uses admin SDK to bypass security rules)
+      const firebaseUser = auth.currentUser
+      if (!firebaseUser) {
+        throw new Error('Session expired. Please sign in again.')
+      }
+      const idToken = await firebaseUser.getIdToken()
+      const response = await fetch('/api/gigs/approve-completion', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ applicationId: approveCompletionDialog.applicationId })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.message || errorData.error || 'Failed to approve completion')
+      }
 
       // Get the application details before updating state
       const completedApplication = applications.find(app => app.id === approveCompletionDialog.applicationId)
