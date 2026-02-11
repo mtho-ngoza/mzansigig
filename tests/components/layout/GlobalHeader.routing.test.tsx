@@ -317,6 +317,68 @@ describe('GlobalHeader - Routing and Logout', () => {
     })
   })
 
+  describe('Browse Talent Navigation for Employers', () => {
+    it('should show Browse Talent button for employers', () => {
+      mockUseAuth.mockReturnValue({
+        user: mockEmployer,
+        logout: mockLogout,
+        isLoading: false,
+        isAuthenticated: true
+      } as any)
+
+      render(<GlobalHeader />)
+
+      expect(screen.getByText('Browse Talent')).toBeInTheDocument()
+    })
+
+    it('should navigate to /dashboard/browse-talent when clicking Browse Talent', async () => {
+      mockUseAuth.mockReturnValue({
+        user: mockEmployer,
+        logout: mockLogout,
+        isLoading: false,
+        isAuthenticated: true
+      } as any)
+
+      const onNavigateToDashboardView = jest.fn()
+
+      render(<GlobalHeader onNavigateToDashboardView={onNavigateToDashboardView} />)
+
+      const browseTalentButton = screen.getByText('Browse Talent')
+      fireEvent.click(browseTalentButton)
+
+      expect(onNavigateToDashboardView).toHaveBeenCalledWith('browse-talent')
+    })
+
+    it('should fallback to router.push when onNavigateToDashboardView not provided', async () => {
+      mockUseAuth.mockReturnValue({
+        user: mockEmployer,
+        logout: mockLogout,
+        isLoading: false,
+        isAuthenticated: true
+      } as any)
+
+      render(<GlobalHeader />)
+
+      const browseTalentButton = screen.getByText('Browse Talent')
+      fireEvent.click(browseTalentButton)
+
+      expect(mockPush).toHaveBeenCalledWith('/dashboard/browse-talent')
+    })
+
+    it('should not show Browse Talent button for job-seekers', () => {
+      mockUseAuth.mockReturnValue({
+        user: mockJobSeeker,
+        logout: mockLogout,
+        isLoading: false,
+        isAuthenticated: true
+      } as any)
+
+      render(<GlobalHeader />)
+
+      expect(screen.queryByText('Browse Talent')).not.toBeInTheDocument()
+    })
+  })
+
   describe('Auth Buttons for Non-Authenticated Users', () => {
     it('should show auth buttons when showAuthButtons is true (desktop view)', () => {
       mockUseAuth.mockReturnValue({

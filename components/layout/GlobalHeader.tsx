@@ -86,13 +86,28 @@ export function GlobalHeader({
                     {user.userType === 'employer' ? 'Browse Market' : 'Browse Gigs'}
                   </Button>
                   {user.userType === 'employer' && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={onShowPostGig}
-                    >
-                      Post a Gig
-                    </Button>
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          if (onNavigateToDashboardView) {
+                            onNavigateToDashboardView('browse-talent')
+                          } else {
+                            router.push('/dashboard/browse-talent')
+                          }
+                        }}
+                      >
+                        Browse Talent
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onShowPostGig}
+                      >
+                        Post a Gig
+                      </Button>
+                    </>
                   )}
                 </nav>
               )}
