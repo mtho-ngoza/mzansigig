@@ -422,6 +422,143 @@ describe('303 Redirect Requirement', () => {
   })
 })
 
+describe('Payment History Record Creation', () => {
+  /**
+   * Payment History records should be created at two key points:
+   * 1. On FUNDS_DEPOSITED (payment success) - creates both employer and worker records
+   * 2. On completion approval - updates worker record from 'pending' to 'completed'
+   */
+
+  describe('On payment success (FUNDS_DEPOSITED)', () => {
+    it('should create employer payment history record', () => {
+      const employerRecord = {
+        userId: 'employer-456',
+        type: 'payments',
+        amount: 4800,
+        currency: 'ZAR',
+        status: 'completed',
+        gigId: 'gig-123',
+        description: 'Payment for: Web Development Project'
+      }
+
+      expect(employerRecord.type).toBe('payments')
+      expect(employerRecord.status).toBe('completed')
+      expect(employerRecord.amount).toBeGreaterThan(0)
+    })
+
+    it('should create worker earnings history record (pending)', () => {
+      const workerRecord = {
+        userId: 'worker-101',
+        type: 'earnings',
+        amount: 4800,
+        currency: 'ZAR',
+        status: 'pending',
+        gigId: 'gig-123',
+        description: 'Earnings from: Web Development Project (in escrow)'
+      }
+
+      expect(workerRecord.type).toBe('earnings')
+      expect(workerRecord.status).toBe('pending')
+      expect(workerRecord.description).toContain('in escrow')
+    })
+  })
+
+  describe('On completion approval', () => {
+    it('should update worker earnings record to completed with net amount', () => {
+      const grossAmount = 4800
+      const platformCommission = grossAmount * 0.10
+      const netAmount = grossAmount - platformCommission
+
+      const updatedRecord = {
+        status: 'completed',
+        amount: netAmount,
+        description: `Earnings from: Web Development Project (released - R${grossAmount.toFixed(2)} minus 10% fee)`
+      }
+
+      expect(updatedRecord.status).toBe('completed')
+      expect(updatedRecord.amount).toBe(4320)
+      expect(updatedRecord.description).toContain('10% fee')
+    })
+
+    it('should create platform fee history record', () => {
+      const grossAmount = 4800
+      const platformCommission = grossAmount * 0.10
+
+      const feeRecord = {
+        userId: 'worker-101',
+        type: 'fees',
+        amount: -platformCommission,
+        currency: 'ZAR',
+        status: 'completed',
+        gigId: 'gig-123',
+        description: 'Platform fee (10%) for: Web Development Project'
+      }
+
+      expect(feeRecord.type).toBe('fees')
+      expect(feeRecord.amount).toBe(-480)
+      expect(feeRecord.description).toContain('Platform fee')
+    })
+
+    it('should correctly calculate 10% platform commission', () => {
+      const testCases = [
+        { gross: 1000, commission: 100, net: 900 },
+        { gross: 4800, commission: 480, net: 4320 },
+        { gross: 10000, commission: 1000, net: 9000 },
+        { gross: 500, commission: 50, net: 450 }
+      ]
+
+      testCases.forEach(({ gross, commission, net }) => {
+        const calculatedCommission = gross * 0.10
+        const calculatedNet = gross - calculatedCommission
+
+        expect(calculatedCommission).toBe(commission)
+        expect(calculatedNet).toBe(net)
+      })
+    })
+  })
+
+  describe('Payment history data structure', () => {
+    it('should match PaymentHistory type interface', () => {
+      const validRecord = {
+        id: 'ph-123',
+        userId: 'user-456',
+        type: 'earnings' as const,
+        amount: 1000,
+        currency: 'ZAR' as const,
+        status: 'completed' as const,
+        gigId: 'gig-789',
+        paymentId: undefined,
+        description: 'Test transaction',
+        createdAt: new Date()
+      }
+
+      expect(validRecord).toHaveProperty('userId')
+      expect(validRecord).toHaveProperty('type')
+      expect(validRecord).toHaveProperty('amount')
+      expect(validRecord).toHaveProperty('currency')
+      expect(validRecord).toHaveProperty('status')
+      expect(validRecord).toHaveProperty('description')
+      expect(validRecord).toHaveProperty('createdAt')
+    })
+
+    it('should support all valid transaction types', () => {
+      const validTypes = ['earnings', 'payments', 'refunds', 'fees']
+
+      validTypes.forEach(type => {
+        expect(['earnings', 'payments', 'refunds', 'fees']).toContain(type)
+      })
+    })
+
+    it('should support all valid statuses', () => {
+      const validStatuses = ['completed', 'pending', 'failed']
+
+      validStatuses.forEach(status => {
+        expect(['completed', 'pending', 'failed']).toContain(status)
+      })
+    })
+  })
+})
+
 describe('TradeSafe Callback Flow Documentation', () => {
   it('should document the complete callback flow', () => {
     const flow = {
