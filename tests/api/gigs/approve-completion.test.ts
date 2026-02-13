@@ -141,11 +141,6 @@ describe('/api/gigs/approve-completion logic', () => {
       expect(calculateEscrowAmount(0, 0, 0)).toBe(0)
     })
 
-    it('should handle undefined values', () => {
-      // In JS, undefined || 0 returns 0
-      const escrowAmount = undefined || 0 || 3000
-      expect(escrowAmount).toBe(3000)
-    })
   })
 
   describe('Platform Commission Calculation', () => {
