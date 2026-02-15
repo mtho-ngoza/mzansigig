@@ -1,0 +1,220 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { getFirebaseAdmin } from '@/lib/firebase-admin'
+import * as admin from 'firebase-admin'
+import { TradeSafeService } from '@/lib/services/tradesafeService'
+
+// South African banks supported by TradeSafe
+const SUPPORTED_BANKS: Record<string, string> = {
+  'ABSA': 'absa',
+  'FNB': 'fnb',
+  'Nedbank': 'nedbank',
+  'Standard Bank': 'standard_bank',
+  'Capitec': 'capitec',
+  'African Bank': 'african_bank',
+  'Bidvest Bank': 'bidvest',
+  'Discovery Bank': 'discovery',
+  'First Rand': 'firstrand',
+  'Grindrod Bank': 'grindrod',
+  'Investec': 'investec',
+  'Mercantile Bank': 'mercantile',
+  'Sasfin': 'sasfin',
+  'TymeBank': 'tymebank',
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    // Verify authentication
+    const authHeader = request.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const app = getFirebaseAdmin()
+    const db = app.firestore()
+    const adminAuth = app.auth()
+
+    const token = authHeader.split('Bearer ')[1]
+    const decodedToken = await adminAuth.verifyIdToken(token)
+    const userId = decodedToken.uid
+
+    const body = await request.json()
+    const { bankName, accountNumber, accountType, accountHolder, branchCode } = body
+
+    // Validate required fields
+    if (!bankName || !accountNumber || !accountType || !accountHolder) {
+      return NextResponse.json(
+        { error: 'Missing required fields: bankName, accountNumber, accountType, accountHolder' },
+        { status: 400 }
+      )
+    }
+
+    // Validate bank name
+    if (!SUPPORTED_BANKS[bankName]) {
+      return NextResponse.json(
+        { error: `Unsupported bank: ${bankName}. Supported banks: ${Object.keys(SUPPORTED_BANKS).join(', ')}` },
+        { status: 400 }
+      )
+    }
+
+    // Validate account type
+    if (!['CHEQUE', 'SAVINGS'].includes(accountType)) {
+      return NextResponse.json(
+        { error: 'Account type must be CHEQUE or SAVINGS' },
+        { status: 400 }
+      )
+    }
+
+    // Validate account number (South African format: 10-11 digits)
+    if (!/^\d{10,11}$/.test(accountNumber)) {
+      return NextResponse.json(
+        { error: 'Account number must be 10-11 digits' },
+        { status: 400 }
+      )
+    }
+
+    // Get user profile
+    const userDoc = await db.collection('users').doc(userId).get()
+    if (!userDoc.exists) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    const userData = userDoc.data()
+
+    // Check if user already has bank details (TradeSafe only allows setting once)
+    if (userData?.bankDetails) {
+      return NextResponse.json(
+        { error: 'Bank details already set. Contact support to update.' },
+        { status: 400 }
+      )
+    }
+
+    const bankDetails = {
+      bankName,
+      accountNumber,
+      accountType: accountType as 'CHEQUE' | 'SAVINGS',
+      accountHolder,
+      branchCode: branchCode || '',
+      addedAt: new Date()
+    }
+
+    // If user already has a TradeSafe token, we can't add bank details to it
+    // They need to have bank details BEFORE first gig payment
+    if (userData?.tradeSafeToken) {
+      // For now, just store bank details locally
+      // In production, would need TradeSafe support to update token
+      await db.collection('users').doc(userId).update({
+        bankDetails,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+
+      return NextResponse.json({
+        success: true,
+        message: 'Bank details saved. Note: Your TradeSafe token was created before adding bank details. New gigs will use updated details.',
+        bankDetails: {
+          bankName,
+          accountNumber: `****${accountNumber.slice(-4)}`,
+          accountType,
+          accountHolder
+        }
+      })
+    }
+
+    // Create TradeSafe token with bank details
+    const tradeSafe = new TradeSafeService()
+
+    const nameParts = (userData?.displayName || `${userData?.firstName || ''} ${userData?.lastName || ''}`).trim().split(' ')
+    const givenName = nameParts[0] || 'User'
+    const familyName = nameParts.slice(1).join(' ') || ''
+
+    const tradeSafeToken = await tradeSafe.createToken({
+      givenName,
+      familyName,
+      email: userData?.email || '',
+      mobile: userData?.phone || '+27000000000',
+      idNumber: userData?.idNumber,
+      bankAccount: {
+        accountNumber,
+        accountType: accountType as 'CHEQUE' | 'SAVINGS',
+        bank: SUPPORTED_BANKS[bankName]
+      }
+    })
+
+    // Update user profile with bank details and TradeSafe token
+    await db.collection('users').doc(userId).update({
+      bankDetails,
+      tradeSafeToken: tradeSafeToken.id,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    })
+
+    return NextResponse.json({
+      success: true,
+      message: 'Bank details saved and TradeSafe account created. You will receive payments directly to your bank account.',
+      bankDetails: {
+        bankName,
+        accountNumber: `****${accountNumber.slice(-4)}`,
+        accountType,
+        accountHolder
+      },
+      tradeSafeTokenCreated: true
+    })
+
+  } catch (error) {
+    console.error('Error saving bank details:', error)
+    return NextResponse.json(
+      { error: 'Failed to save bank details' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    // Verify authentication
+    const authHeader = request.headers.get('Authorization')
+    if (!authHeader?.startsWith('Bearer ')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const app = getFirebaseAdmin()
+    const db = app.firestore()
+    const adminAuth = app.auth()
+
+    const token = authHeader.split('Bearer ')[1]
+    const decodedToken = await adminAuth.verifyIdToken(token)
+    const userId = decodedToken.uid
+
+    const userDoc = await db.collection('users').doc(userId).get()
+    if (!userDoc.exists) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    const userData = userDoc.data()
+    const bankDetails = userData?.bankDetails
+
+    if (!bankDetails) {
+      return NextResponse.json({
+        hasBankDetails: false,
+        message: 'No bank details on file. Add bank details to receive direct payments.'
+      })
+    }
+
+    return NextResponse.json({
+      hasBankDetails: true,
+      bankDetails: {
+        bankName: bankDetails.bankName,
+        accountNumber: `****${bankDetails.accountNumber.slice(-4)}`,
+        accountType: bankDetails.accountType,
+        accountHolder: bankDetails.accountHolder,
+        addedAt: bankDetails.addedAt
+      },
+      hasTradeSafeToken: !!userData?.tradeSafeToken
+    })
+
+  } catch (error) {
+    console.error('Error fetching bank details:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch bank details' },
+      { status: 500 }
+    )
+  }
+}

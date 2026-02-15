@@ -8,6 +8,7 @@ import { WalletService } from '@/lib/services/walletService'
 import { PaymentService } from '@/lib/services/paymentService'
 import { PaymentHistory } from '@/types/payment'
 import TransactionHistory from './TransactionHistory'
+import BankDetailsForm from './BankDetailsForm'
 import { useSearchParams } from 'next/navigation'
 
 interface WalletBalance {
@@ -170,24 +171,18 @@ export default function WorkerEarningsDashboard({ onWithdrawalRequest }: WorkerE
             </div>
           </div>
 
-          {/* Withdrawal Button */}
-          <div className="mt-6 flex justify-end">
-            <Button
-              onClick={onWithdrawalRequest}
-              disabled={balance.walletBalance <= 0}
-              className="bg-primary-600 hover:bg-primary-700 text-white"
-            >
-              💰 Request Withdrawal
-            </Button>
+          {/* Info about direct payments */}
+          <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-sm text-blue-800">
+              Payments are sent directly to your bank account when gigs are completed.
+              Add your bank details below to receive payments.
+            </p>
           </div>
-
-          {balance.walletBalance <= 0 && (
-            <div className="mt-2 text-sm text-gray-500 text-right">
-              Minimum balance of R1 required to withdraw
-            </div>
-          )}
         </CardContent>
       </Card>
+
+      {/* Bank Details Form */}
+      <BankDetailsForm />
 
       {/* Recent Transactions */}
       <Card>

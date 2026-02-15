@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getFirebaseAdmin } from '@/lib/firebase-admin'
 import { verifyAuthToken } from '@/lib/auth/verifyToken'
 import * as admin from 'firebase-admin'
+import { TradeSafeService } from '@/lib/services/tradesafeService'
 
 /**
  * POST /api/gigs/approve-completion
@@ -91,6 +92,22 @@ export async function POST(request: NextRequest) {
 
     // Calculate escrow amount
     const escrowAmount = gig.escrowAmount || application.agreedRate || application.proposedRate || 0
+
+    // Get payment intent to find TradeSafe allocation ID
+    const paymentIntentQuery = await db.collection('paymentIntents')
+      .where('gigId', '==', application.gigId)
+      .where('status', '==', 'funded')
+      .limit(1)
+      .get()
+
+    const paymentIntent = paymentIntentQuery.empty ? null : paymentIntentQuery.docs[0].data()
+    const allocationId = paymentIntent?.allocationId
+
+    console.log('Payment intent:', {
+      found: !paymentIntentQuery.empty,
+      allocationId,
+      transactionId: paymentIntent?.transactionId
+    })
 
     console.log('Escrow release details:', {
       escrowAmount,
@@ -187,6 +204,33 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // Trigger TradeSafe payout if we have an allocation ID
+    let tradeSafePayoutTriggered = false
+    if (allocationId) {
+      try {
+        console.log('=== APPROVE COMPLETION API: Triggering TradeSafe payout ===')
+        const tradeSafe = new TradeSafeService()
+
+        // Accept delivery triggers immediate payout to seller's bank
+        const result = await tradeSafe.acceptDelivery(allocationId)
+        console.log('TradeSafe acceptDelivery result:', result)
+        tradeSafePayoutTriggered = true
+
+        // Update payment intent status
+        if (!paymentIntentQuery.empty) {
+          await paymentIntentQuery.docs[0].ref.update({
+            status: 'completed',
+            completedAt: admin.firestore.FieldValue.serverTimestamp()
+          })
+        }
+      } catch (tradeSafeError) {
+        // Log but don't fail - local records are already updated
+        console.error('TradeSafe payout error (non-blocking):', tradeSafeError)
+      }
+    } else {
+      console.log('No TradeSafe allocation ID - skipping direct payout')
+    }
+
     // Create payment history records (outside transaction for simplicity)
     console.log('=== APPROVE COMPLETION API: Creating payment history ===')
     const gigTitle = gig.title || `Gig ${application.gigId}`
@@ -243,7 +287,11 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Completion approved and escrow released'
+      message: tradeSafePayoutTriggered
+        ? 'Completion approved. Payment sent directly to worker\'s bank account.'
+        : 'Completion approved and escrow released to wallet.',
+      tradeSafePayout: tradeSafePayoutTriggered,
+      netAmount
     })
   } catch (error) {
     console.error('Approve completion error:', error)
