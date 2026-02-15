@@ -107,31 +107,28 @@ export async function POST(request: NextRequest) {
       'Discovery Bank': 'discovery', 'Investec': 'investec'
     }
 
-    // Worker must have bank details (enforced at application time)
-    if (!workerData.bankDetails?.bankName || !workerData.bankDetails?.accountNumber) {
-      return NextResponse.json(
-        { error: 'Worker must have bank details to receive payment. Please ask the worker to add their bank details.' },
-        { status: 400 }
-      )
-    }
+    // Bank details guaranteed by application process - get bank code
+    const bankCode = BANK_CODES[workerData.bankDetails?.bankName]
 
-    const bankCode = BANK_CODES[workerData.bankDetails.bankName]
-    if (!bankCode) {
-      return NextResponse.json(
-        { error: `Unsupported bank: ${workerData.bankDetails.bankName}` },
-        { status: 400 }
-      )
-    }
-
-    // Get or create worker's TradeSafe token (always with bank details)
+    // Get or create worker's TradeSafe token (with bank details for direct payout)
     let sellerToken = workerToken || workerData.tradeSafeToken
     if (!sellerToken) {
-      const tokenInput = {
+      const tokenInput: {
+        givenName: string
+        familyName: string
+        email: string
+        mobile: string
+        bankAccount?: { accountNumber: string; accountType: 'CHEQUE' | 'SAVINGS'; bank: string }
+      } = {
         givenName: workerData.displayName?.split(' ')[0] || workerData.firstName || 'Worker',
         familyName: workerData.displayName?.split(' ').slice(1).join(' ') || workerData.lastName || '',
         email: workerData.email,
-        mobile: workerData.phone || '+27000000000',
-        bankAccount: {
+        mobile: workerData.phone || '+27000000000'
+      }
+
+      // Include bank details if available and supported
+      if (workerData.bankDetails?.accountNumber && bankCode) {
+        tokenInput.bankAccount = {
           accountNumber: workerData.bankDetails.accountNumber,
           accountType: workerData.bankDetails.accountType || 'SAVINGS',
           bank: bankCode
