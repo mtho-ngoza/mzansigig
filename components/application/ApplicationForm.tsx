@@ -17,6 +17,7 @@ import {
   EQUIPMENT_OPTIONS,
   APPLICATION_AVAILABILITY_OPTIONS
 } from '@/lib/constants/formOptions'
+import BankDetailsForm from '@/components/wallet/BankDetailsForm'
 
 interface ApplicationFormProps {
   gig: Gig
@@ -34,12 +35,14 @@ interface ApplicationFormData {
 
 export default function ApplicationForm({ gig, onSuccess, onCancel }: ApplicationFormProps) {
   const { success, error: showError } = useToast()
-  const { user } = useAuth()
+  const { user, refreshUser } = useAuth()
   const { calculateGigFees } = usePayment()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errors, setErrors] = useState<Partial<ApplicationFormData>>({})
   const [warnings, setWarnings] = useState<Partial<Record<keyof ApplicationFormData, string>>>({})
   const [workerEarnings, setWorkerEarnings] = useState<number>(gig.budget)
+  const [showBankDetailsModal, setShowBankDetailsModal] = useState(false)
+  const [pendingSubmit, setPendingSubmit] = useState(false)
   const [formData, setFormData] = useState<ApplicationFormData>({
     message: '',
     proposedRate: gig.budget.toString(),
@@ -208,6 +211,13 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
       return
     }
 
+    // Check if worker has bank details - required for TradeSafe payout
+    if (!user.bankDetails?.bankName || !user.bankDetails?.accountNumber) {
+      setPendingSubmit(true)
+      setShowBankDetailsModal(true)
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -253,6 +263,20 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
       showError(errorMessage)
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  // Handle bank details saved - refresh user and continue with submission
+  const handleBankDetailsSaved = async () => {
+    setShowBankDetailsModal(false)
+    await refreshUser()
+    if (pendingSubmit) {
+      setPendingSubmit(false)
+      // Re-trigger form submission with a synthetic event
+      const form = document.querySelector('form') as HTMLFormElement
+      if (form) {
+        form.requestSubmit()
+      }
     }
   }
 
@@ -493,6 +517,34 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
           </form>
         </CardContent>
       </Card>
+
+      {/* Bank Details Modal - Required before applying */}
+      {showBankDetailsModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-4 border-b">
+              <h3 className="text-lg font-semibold">Bank Details Required</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Add your bank details to apply. This ensures you get paid directly when you complete work.
+              </p>
+            </div>
+            <div className="p-4">
+              <BankDetailsForm onSuccess={handleBankDetailsSaved} />
+            </div>
+            <div className="p-4 border-t flex justify-end">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowBankDetailsModal(false)
+                  setPendingSubmit(false)
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
