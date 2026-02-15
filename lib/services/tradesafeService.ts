@@ -294,38 +294,6 @@ export class TradeSafeService {
   }
 
   /**
-   * Update a token's bank account details
-   * Used when worker adds bank details after token was already created
-   */
-  async updateTokenBankAccount(
-    tokenId: string,
-    bankAccount: { accountNumber: string; accountType: 'CHEQUE' | 'SAVINGS'; bank: string }
-  ): Promise<TradeSafeToken> {
-    const mutation = `
-      mutation tokenUpdate($id: ID!, $input: TokenInput!) {
-        tokenUpdate(id: $id, input: $input) {
-          id
-          name
-        }
-      }
-    `
-
-    const variables = {
-      id: tokenId,
-      input: {
-        bankAccount: {
-          accountNumber: bankAccount.accountNumber,
-          accountType: bankAccount.accountType,
-          bank: bankAccount.bank
-        }
-      }
-    }
-
-    const data = await this.graphql<{ tokenUpdate: TradeSafeToken }>(mutation, variables)
-    return data.tokenUpdate
-  }
-
-  /**
    * Create an escrow transaction
    * This is the main function for creating a gig payment
    */
