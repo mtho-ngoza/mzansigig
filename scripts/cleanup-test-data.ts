@@ -66,8 +66,14 @@ const USER_WALLET_FIELDS = {
   pendingBalance: 0,
   totalEarnings: 0,
   totalWithdrawn: 0,
-  reviewCount:0
+  reviewCount: 0
 }
+
+// Fields to delete from users (TradeSafe tokens - recreated on next funding)
+const USER_FIELDS_TO_DELETE = [
+  'tradeSafeToken',
+  'tradeSafeTokenHasBankDetails' // Legacy field
+]
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function deleteCollection(db: any, collectionName: string): Promise<number> {
@@ -160,17 +166,24 @@ async function resetUserWallets(db: any): Promise<number> {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     chunk.forEach((doc: any) => {
-      batch.update(doc.ref, {
+      const updates: Record<string, unknown> = {
         ...USER_WALLET_FIELDS,
         updatedAt: firebaseAdmin.firestore.FieldValue.serverTimestamp()
+      }
+
+      // Delete TradeSafe fields (tokens will be recreated on next funding)
+      USER_FIELDS_TO_DELETE.forEach(field => {
+        updates[field] = firebaseAdmin.firestore.FieldValue.delete()
       })
+
+      batch.update(doc.ref, updates)
       count++
     })
 
     await batch.commit()
   }
 
-  console.log(`  users: ${count} wallet balances reset to 0`)
+  console.log(`  users: ${count} wallet balances reset, TradeSafe tokens cleared`)
   return count
 }
 
