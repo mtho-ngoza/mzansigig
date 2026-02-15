@@ -240,9 +240,9 @@ export async function POST(request: NextRequest) {
           allocationState: allocation?.state
         })
 
-        // Allocation must be in FUNDS_RECEIVED state before delivery flow can start
-        // In sandbox, funds may stay in DEPOSITED state
-        if (allocation?.state === 'FUNDS_RECEIVED') {
+        // Transaction must be in FUNDS_RECEIVED state before delivery flow can start
+        // Note: Transaction and Allocation have separate state machines
+        if (transaction?.state === 'FUNDS_RECEIVED') {
           // TradeSafe requires full delivery flow sequence:
           // 1. startDelivery - Worker starts delivering
           // 2. completeDelivery - Worker marks delivery complete
@@ -262,8 +262,9 @@ export async function POST(request: NextRequest) {
         } else {
           // Funds not yet fully received by TradeSafe
           // This can happen in sandbox or when payment is still processing
-          console.log('TradeSafe: Allocation not ready for payout', {
-            currentState: allocation?.state,
+          console.log('TradeSafe: Transaction not ready for payout', {
+            transactionState: transaction?.state,
+            allocationState: allocation?.state,
             requiredState: 'FUNDS_RECEIVED',
             note: 'Worker will receive payout when funds are fully processed by TradeSafe'
           })
