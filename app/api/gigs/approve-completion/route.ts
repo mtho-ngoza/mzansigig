@@ -228,9 +228,21 @@ export async function POST(request: NextRequest) {
         })
         const tradeSafe = new TradeSafeService()
 
-        // Accept delivery triggers immediate payout to seller's bank
-        const result = await tradeSafe.acceptDelivery(allocationId)
-        console.log('TradeSafe acceptDelivery result:', result)
+        // TradeSafe requires full delivery flow sequence:
+        // 1. startDelivery - Worker starts delivering
+        // 2. completeDelivery - Worker marks delivery complete
+        // 3. acceptDelivery - Buyer accepts, triggers immediate payout
+        console.log('TradeSafe: Starting delivery flow for allocation:', allocationId)
+
+        const startResult = await tradeSafe.startDelivery(allocationId)
+        console.log('TradeSafe startDelivery result:', startResult)
+
+        const completeResult = await tradeSafe.completeDelivery(allocationId)
+        console.log('TradeSafe completeDelivery result:', completeResult)
+
+        const acceptResult = await tradeSafe.acceptDelivery(allocationId)
+        console.log('TradeSafe acceptDelivery result:', acceptResult)
+
         tradeSafePayoutTriggered = true
 
         // Update payment intent status

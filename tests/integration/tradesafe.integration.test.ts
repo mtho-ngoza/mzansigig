@@ -16,16 +16,13 @@ import * as path from 'path'
 dotenv.config({ path: path.resolve(process.cwd(), '.env.local') })
 
 // Polyfill fetch for Node.js
-import fetch, { Response, Request, Headers } from 'node-fetch'
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const nodeFetch = require('node-fetch')
 if (!globalThis.fetch) {
-  // @ts-expect-error - polyfill
-  globalThis.fetch = fetch
-  // @ts-expect-error - polyfill
-  globalThis.Response = Response
-  // @ts-expect-error - polyfill
-  globalThis.Request = Request
-  // @ts-expect-error - polyfill
-  globalThis.Headers = Headers
+  globalThis.fetch = nodeFetch
+  globalThis.Response = nodeFetch.Response
+  globalThis.Request = nodeFetch.Request
+  globalThis.Headers = nodeFetch.Headers
 }
 
 import { TradeSafeService } from '@/lib/services/tradesafeService'
