@@ -83,7 +83,7 @@ async function seedFeeConfig() {
       const data = existingConfig.data()
       console.log('⚠️  Active fee configuration already exists')
       console.log(`   ID: ${existingConfig.id}`)
-      console.log(`   Platform Commission: ${data.platformCommissionPercent || data.workerCommissionPercentage}%`)
+      console.log(`   Platform Commission: ${data.platformCommissionPercent}%`)
       console.log(`   Created By: ${data.createdBy || 'unknown'}`)
       console.log('')
 

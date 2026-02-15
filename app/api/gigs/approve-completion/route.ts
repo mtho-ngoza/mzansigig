@@ -100,9 +100,8 @@ export async function POST(request: NextRequest) {
       .limit(1)
       .get()
 
-    // Support both new field (platformCommissionPercent) and legacy (workerCommissionPercentage)
     const configData = feeConfigQuery.empty ? null : feeConfigQuery.docs[0].data()
-    const platformCommissionPercent = configData?.platformCommissionPercent ?? configData?.workerCommissionPercentage ?? 10
+    const platformCommissionPercent = configData?.platformCommissionPercent ?? 10
 
     console.log('[PAYMENT_AUDIT] Fee config loaded:', {
       source: feeConfigQuery.empty ? 'default' : feeConfigQuery.docs[0].id,
