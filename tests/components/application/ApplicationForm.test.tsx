@@ -31,7 +31,13 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
     phone: '+27123456789',
     location: 'Cape Town',
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
+    bankDetails: {
+      bankName: 'FNB',
+      accountNumber: '1234567890',
+      accountType: 'SAVINGS' as const,
+      accountHolder: 'John Doe'
+    }
   }
 
   const mockGig: Gig = {
@@ -60,7 +66,7 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
   beforeEach(() => {
     jest.clearAllMocks()
 
-    ;(useAuth as jest.Mock).mockReturnValue({ user: mockUser })
+    ;(useAuth as jest.Mock).mockReturnValue({ user: mockUser, refreshUser: jest.fn() })
     ;(useToast as jest.Mock).mockReturnValue({
       success: mockSuccess,
       error: mockError
@@ -257,7 +263,7 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
         equipmentOwnership: 'fully-equipped' as const
       }
 
-      ;(useAuth as jest.Mock).mockReturnValue({ user: mockUserWithProfile })
+      ;(useAuth as jest.Mock).mockReturnValue({ user: mockUserWithProfile, refreshUser: jest.fn() })
       ;(GigService.hasUserApplied as jest.Mock).mockResolvedValue(false)
 
       render(<ApplicationForm gig={mockPhysicalGig} onSuccess={mockOnSuccess} />)
@@ -290,7 +296,7 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
         equipmentOwnership: 'partially-equipped' as const
       }
 
-      ;(useAuth as jest.Mock).mockReturnValue({ user: mockUserWithProfile })
+      ;(useAuth as jest.Mock).mockReturnValue({ user: mockUserWithProfile, refreshUser: jest.fn() })
       ;(GigService.hasUserApplied as jest.Mock).mockResolvedValue(false)
       ;(GigService.createApplication as jest.Mock).mockResolvedValue('app-123')
 
@@ -337,7 +343,7 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
         // No experienceYears or equipmentOwnership
       }
 
-      ;(useAuth as jest.Mock).mockReturnValue({ user: mockUserWithoutProfile })
+      ;(useAuth as jest.Mock).mockReturnValue({ user: mockUserWithoutProfile, refreshUser: jest.fn() })
       ;(GigService.hasUserApplied as jest.Mock).mockResolvedValue(false)
 
       render(<ApplicationForm gig={mockPhysicalGig} onSuccess={mockOnSuccess} />)
@@ -360,7 +366,7 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
         equipmentOwnership: 'fully-equipped' as const
       }
 
-      ;(useAuth as jest.Mock).mockReturnValue({ user: mockUserWithProfile })
+      ;(useAuth as jest.Mock).mockReturnValue({ user: mockUserWithProfile, refreshUser: jest.fn() })
       ;(GigService.hasUserApplied as jest.Mock).mockResolvedValue(false)
 
       render(<ApplicationForm gig={mockGig} onSuccess={mockOnSuccess} />)

@@ -44,7 +44,20 @@ jest.mock('@/contexts/PaymentContext', () => ({
 }))
 
 jest.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'worker-1', firstName: 'Test', lastName: 'User' } })
+  useAuth: () => ({
+    user: {
+      id: 'worker-1',
+      firstName: 'Test',
+      lastName: 'User',
+      bankDetails: {
+        bankName: 'FNB',
+        accountNumber: '1234567890',
+        accountType: 'SAVINGS' as const,
+        accountHolder: 'Test User'
+      }
+    },
+    refreshUser: jest.fn()
+  })
 }))
 
 jest.mock('@/contexts/ToastContext', () => ({
