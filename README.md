@@ -151,31 +151,60 @@ Empower all of Mzansi (South Africa) - from informal sector workers to professio
 - ⏰ **Funding Protection**: Auto-cancels accepted applications if not funded within configurable timeout (default 48 hours)
 - 🔄 **Smart Status Updates**: Gig status automatically changes to 'in-progress' when payment is funded
 
-#### Payment & Payout Model (Current Status)
+#### Payment & Payout Model
 
-**Payment Provider Status:**
-- ❌ **PayFast** - Application rejected (risk assessment)
-- ❌ **Paystack** - Application rejected (risk assessment - marketplace/escrow model flagged)
-- ✅ **TradeSafe** - Integrated (purpose-built for marketplace escrow)
+**Payment Provider:** TradeSafe (South Africa's bank-backed escrow service)
+- Standard Bank holds 35% stake (bank-backed credibility)
+- Purpose-built for marketplace escrow transactions
+- GraphQL API with sandbox/production environments
+- Supports: EFT, Ozow, Card (Visa/MC/Amex), SnapScan
 
-**Why TradeSafe?**
-TradeSafe is South Africa's longest-running digital escrow service, purpose-built for marketplace transactions:
-- Standard Bank has 35% stake (bank-backed credibility)
-- First escrow company in the world to offer public API
-- Handles escrow compliance - no need for marketplace approval from card networks
-- Supports: EFT, Ozow, Card (Visa/MC/Amex), SnapScan, PayJustNow (BNPL)
-- Split payments to multiple parties (providers, platform fees)
-- GraphQL API with sandbox environment
-
-**Proposed Flow (TradeSafe):**
+**Payment Flow:**
 ```
-Employer pays → TradeSafe holds in licensed escrow account
-             → Worker completes gig
-             → Client confirms completion (or auto-release after 7 days)
-             → TradeSafe releases to worker (minus platform fee)
+EMPLOYER                    MZANSIGIG                     TRADESAFE                 WORKER
+   |                            |                              |                       |
+   |--[1] Fund Gig------------->|                              |                       |
+   |                            |--[2] Create Tokens---------->|                       |
+   |                            |   (buyer, seller+bank, agent)|                       |
+   |                            |--[3] Create Transaction----->|                       |
+   |                            |<--Checkout URL---------------|                       |
+   |<--[4] Redirect to Pay------|                              |                       |
+   |--[5] Pay via TradeSafe-----|----------------------------->|                       |
+   |                            |<--[6] Webhook: FUNDS_RECEIVED|                       |
+   |                            |--[7] Update Status---------->|----[Notified]-------->|
+   |                            |   (gig: in-progress)         |                       |
+   |--[8] Approve Completion--->|                              |                       |
+   |                            |--[9] Delivery Flow---------->|                       |
+   |                            |   startDelivery              |                       |
+   |                            |   completeDelivery           |                       |
+   |                            |   acceptDelivery             |                       |
+   |                            |                              |--[10] Bank Payout---->|
+   |<--[11] Gig Complete--------|                              |<--[12] Funds in Bank--|
 ```
 
-**Key Advantage:** TradeSafe handles all escrow compliance and licensing - the platform doesn't need to be approved as a "marketplace" because we're using their licensed escrow infrastructure.
+**Fee Structure:**
+| Component | Value | Description |
+|-----------|-------|-------------|
+| Platform Commission | 10% | Deducted from worker earnings |
+| Minimum Gig | R100 | Minimum gig amount |
+| Maximum Gig | R100,000 | Maximum gig amount |
+
+**Example (R1,000 gig):**
+```
+Employer Pays:        R1,000.00
+Platform Fee (10%):    -R100.00
+─────────────────────────────────
+Worker Receives:        R900.00 (direct to bank account)
+```
+
+**Key Files:**
+| File | Responsibility |
+|------|----------------|
+| `lib/services/tradesafeService.ts` | TradeSafe GraphQL API wrapper |
+| `lib/constants/banks.ts` | Bank codes (single source of truth) |
+| `lib/services/feeConfigService.ts` | Fee configuration & calculation |
+| `app/api/payments/tradesafe/` | Payment API endpoints |
+| `app/api/gigs/approve-completion/` | Completion & payout trigger |
 
 **Resources:**
 - [TradeSafe Integration Docs](https://www.tradesafe.co.za/integration/)

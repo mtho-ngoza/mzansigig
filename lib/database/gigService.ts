@@ -1022,6 +1022,15 @@ export class GigService {
       escrowContext = await PaymentService.getEscrowReleaseContext(application.paymentId);
     }
 
+    // Pre-fetch fee config (before transaction to avoid async issues)
+    const { FeeConfigService } = await import('../services/feeConfigService');
+    const feeConfig = await FeeConfigService.getActiveFeeConfig();
+    const platformCommissionPercent = feeConfig.platformCommissionPercent;
+    console.log('[PAYMENT_AUDIT] Fee config loaded:', {
+      source: feeConfig.id,
+      platformCommissionPercent
+    });
+
     // Get the escrow amount - use gig.escrowAmount as source of truth
     const escrowAmount = gig.escrowAmount || application.agreedRate || application.proposedRate || 0;
     const workerId = application.applicantId;
@@ -1096,13 +1105,13 @@ export class GigService {
         // Fallback: Direct wallet update for TradeSafe payments without payment record
         console.log('Releasing escrow directly (TradeSafe fallback)...')
 
-        // Calculate net amount (apply platform commission)
-        // Using 10% commission as default - should match fee config
-        const platformCommission = escrowAmount * 0.10;
-        const netAmount = escrowAmount - platformCommission;
+        // Calculate net amount using fee config
+        const platformCommission = Math.round(escrowAmount * (platformCommissionPercent / 100) * 100) / 100;
+        const netAmount = Math.round((escrowAmount - platformCommission) * 100) / 100;
 
-        console.log('Fee calculation:', {
+        console.log('[PAYMENT_AUDIT] Fee calculation:', {
           grossAmount: escrowAmount,
+          platformCommissionPercent,
           platformCommission,
           netAmount
         })
