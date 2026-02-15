@@ -4,42 +4,32 @@ import React, { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/Button'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { PageHeader } from '@/components/layout/PageHeader'
-import { useAuth } from '@/contexts/AuthContext'
 import { usePayment } from '@/contexts/PaymentContext'
 import EarningsAnalytics from './EarningsAnalytics'
-import WithdrawalForm from './WithdrawalForm'
-import WithdrawalHistory from '../wallet/WithdrawalHistory'
 import PaymentHistory from './PaymentHistory'
+import BankDetailsForm from '../wallet/BankDetailsForm'
 
 interface PaymentDashboardProps {
   onBack?: () => void
 }
 
 export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
-  const { user } = useAuth()
   const { analytics, formatCurrency, refreshAnalytics } = usePayment()
-  const [currentView, setCurrentView] = useState<'overview' | 'withdraw' | 'withdrawals' | 'history' | 'analytics'>('overview')
+  const [currentView, setCurrentView] = useState<'overview' | 'bank-details' | 'history' | 'analytics'>('overview')
 
-  // Auto-refresh data when component mounts (user navigates to Payments)
+  // Auto-refresh data when component mounts
   useEffect(() => {
     refreshAnalytics()
   }, [refreshAnalytics])
 
   const renderViewContent = () => {
     switch (currentView) {
-      case 'withdraw':
+      case 'bank-details':
         return (
-          <WithdrawalForm
-            onSuccess={async () => {
-              await refreshAnalytics()
-              setCurrentView('overview')
-            }}
-            onCancel={() => setCurrentView('overview')}
-          />
+          <div className="max-w-md mx-auto">
+            <BankDetailsForm onSuccess={() => setCurrentView('overview')} />
+          </div>
         )
-
-      case 'withdrawals':
-        return <WithdrawalHistory />
 
       case 'history':
         return <PaymentHistory />
@@ -57,9 +47,9 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">Available Balance</p>
+                      <p className="text-sm font-medium text-gray-600">Total Received</p>
                       <p className="text-2xl font-bold text-green-600">
-                        {formatCurrency(analytics?.availableBalance || 0)}
+                        {formatCurrency(analytics?.totalEarnings || 0)}
                       </p>
                     </div>
                     <div className="text-3xl">💰</div>
@@ -114,29 +104,23 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
               </Card>
             </div>
 
+            {/* Bank Details Card */}
+            <BankDetailsForm />
+
             {/* Quick Actions */}
             <Card>
               <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <Button
                     variant="outline"
                     className="h-20 flex flex-col items-center justify-center space-y-2"
-                    onClick={() => setCurrentView('withdraw')}
+                    onClick={() => setCurrentView('bank-details')}
                   >
-                    <span className="text-2xl">💸</span>
-                    <span>Withdraw Funds</span>
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    className="h-20 flex flex-col items-center justify-center space-y-2"
-                    onClick={() => setCurrentView('withdrawals')}
-                  >
-                    <span className="text-2xl">💰</span>
-                    <span>My Withdrawals</span>
+                    <span className="text-2xl">🏦</span>
+                    <span>Bank Details</span>
                   </Button>
 
                   <Button
@@ -181,26 +165,25 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
             {/* Help Section */}
             <Card>
               <CardHeader>
-                <CardTitle>Payment Help</CardTitle>
+                <CardTitle>How Payments Work</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Payment Processing</h4>
+                    <h4 className="font-medium text-gray-900 mb-2">Escrow Protection</h4>
                     <ul className="text-sm text-gray-600 space-y-1">
-                      <li>• Payments are held in secure escrow</li>
-                      <li>• Funds released after work completion</li>
-                      <li>• Processing takes 1-3 business days</li>
-                      <li>• All major SA banks supported</li>
+                      <li>• Employer funds are held securely in escrow</li>
+                      <li>• Funds released when work is approved</li>
+                      <li>• Both parties protected by TradeSafe</li>
                     </ul>
                   </div>
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Withdrawal Options</h4>
+                    <h4 className="font-medium text-gray-900 mb-2">Direct Payments</h4>
                     <ul className="text-sm text-gray-600 space-y-1">
-                      <li>• Direct bank transfer (EFT)</li>
-                      <li>• Minimum withdrawal: R50</li>
-                      <li>• No withdrawal fees</li>
-                      <li>• Same-day processing Mon-Fri</li>
+                      <li>• Payments sent directly to your bank</li>
+                      <li>• Add your bank details to receive payments</li>
+                      <li>• All major SA banks supported</li>
+                      <li>• 10% platform fee on completed gigs</li>
                     </ul>
                   </div>
                 </div>
@@ -213,8 +196,7 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
 
   const getPageTitle = () => {
     switch (currentView) {
-      case 'withdraw': return 'Withdraw Funds'
-      case 'withdrawals': return 'My Withdrawals'
+      case 'bank-details': return 'Bank Details'
       case 'history': return 'Payment History'
       case 'analytics': return 'Earnings Analytics'
       default: return 'Payment Dashboard'
@@ -223,11 +205,10 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
 
   const getPageDescription = () => {
     switch (currentView) {
-      case 'withdraw': return 'Withdraw your earnings to your bank account'
-      case 'withdrawals': return 'View your pending and completed withdrawal requests'
+      case 'bank-details': return 'Manage your bank account for receiving payments'
       case 'history': return 'View all your payment and earning transactions'
       case 'analytics': return 'Detailed insights into your earnings and performance'
-      default: return 'Manage payments, earnings, and withdrawals'
+      default: return 'Track your earnings and payment history'
     }
   }
 
@@ -248,27 +229,6 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
     }
 
     return breadcrumbs
-  }
-
-  const getActions = () => {
-    const actions = []
-
-    if (currentView === 'overview') {
-      if (user?.userType === 'job-seeker') {
-        actions.push({
-          label: 'Withdraw Funds',
-          onClick: () => setCurrentView('withdraw'),
-          variant: 'primary' as const,
-          icon: (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-            </svg>
-          )
-        })
-      }
-    }
-
-    return actions
   }
 
   const getBackButton = () => {
@@ -292,7 +252,6 @@ export default function PaymentDashboard({ onBack }: PaymentDashboardProps) {
         description={getPageDescription()}
         breadcrumbs={getBreadcrumbs()}
         backButton={getBackButton()}
-        actions={getActions()}
       />
 
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">

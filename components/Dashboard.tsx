@@ -14,7 +14,6 @@ import ProfileManagement from './profile/ProfileManagement'
 import { MessagingHub } from '@/components/messaging'
 import PaymentDashboard from './payment/PaymentDashboard'
 import EmployerPaymentDashboard from './payment/EmployerPaymentDashboard'
-import WithdrawalApprovalDashboard from './admin/WithdrawalApprovalDashboard'
 import FeeConfigManager from './admin/FeeConfigManager'
 import PendingDocumentReview from './admin/PendingDocumentReview'
 import PlatformConfigDashboard from './admin/PlatformConfigDashboard'
@@ -22,7 +21,7 @@ import BrowseTalent from './BrowseTalent'
 import { isAdmin } from '@/lib/utils/adminAuth'
 import VerificationCenter from './safety/VerificationCenter'
 
-type DashboardView = 'dashboard' | 'post-gig' | 'manage-gigs' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments' | 'admin-withdrawals' | 'admin-fees' | 'admin-documents' | 'admin-platform-config' | 'browse-talent' | 'verification'
+type DashboardView = 'dashboard' | 'post-gig' | 'manage-gigs' | 'my-applications' | 'manage-applications' | 'profile' | 'messages' | 'payments' | 'admin-fees' | 'admin-documents' | 'admin-platform-config' | 'browse-talent' | 'verification'
 
 interface DashboardProps {
   onBrowseGigs?: () => void
@@ -249,33 +248,6 @@ export default function Dashboard({
     )
   }
 
-  // Show admin withdrawal approvals page if user is on that view
-  if (currentView === 'admin-withdrawals') {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <PageHeader
-          title="Withdrawal Approvals"
-          description="Review and approve worker withdrawal requests"
-          breadcrumbs={[{
-            label: 'Home',
-            onClick: onBrowseGigs || (() => {})
-          }, {
-            label: 'Dashboard',
-            onClick: () => handleViewChange('dashboard')
-          }, {
-            label: 'Withdrawal Approvals',
-            isCurrentPage: true
-          }]}
-          backButton={{
-            label: 'Back to Dashboard',
-            onClick: () => handleViewChange('dashboard')
-          }}
-        />
-        <WithdrawalApprovalDashboard />
-      </div>
-    )
-  }
-
   // Show admin fee configuration page if user is on that view
   if (currentView === 'admin-fees') {
     return (
@@ -456,13 +428,6 @@ export default function Dashboard({
                   {user && isAdmin(user) ? (
                     <>
                       <Button
-                        className="w-full"
-                        onClick={() => handleViewChange('admin-withdrawals')}
-                      >
-                        Withdrawal Approvals
-                      </Button>
-                      <Button
-                        variant="outline"
                         className="w-full"
                         onClick={() => handleViewChange('admin-documents')}
                       >
