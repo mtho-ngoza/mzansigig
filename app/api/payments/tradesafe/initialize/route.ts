@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { TradeSafeService } from '@/lib/services/tradesafeService'
 import { getFirebaseAdmin } from '@/lib/firebase-admin'
 import { verifyAuthToken } from '@/lib/auth/verifyToken'
+import { TRADESAFE_BANK_CODES } from '@/lib/constants/banks'
 import * as admin from 'firebase-admin'
 
 /**
@@ -98,16 +99,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Map bank names to TradeSafe UniversalBranchCode enum (UPPERCASE)
-    const BANK_CODES: Record<string, string> = {
-      'ABSA': 'ABSA', 'FNB': 'FNB', 'Nedbank': 'NEDBANK',
-      'Standard Bank': 'STANDARD_BANK', 'Capitec': 'CAPITEC',
-      'African Bank': 'AFRICAN_BANK', 'TymeBank': 'TYMEBANK',
-      'Discovery Bank': 'DISCOVERY', 'Investec': 'INVESTEC'
-    }
-
     // Bank details guaranteed by application process - get bank code
-    const bankCode = BANK_CODES[workerData.bankDetails?.bankName]
+    const bankCode = TRADESAFE_BANK_CODES[workerData.bankDetails?.bankName]
 
     // Always create new TradeSafe token with bank details for direct payout
     // This ensures the token has bank details attached (don't reuse old tokens)

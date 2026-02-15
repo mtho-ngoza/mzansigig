@@ -5,18 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
 import { auth } from '@/lib/firebase'
-
-const SUPPORTED_BANKS = [
-  'ABSA',
-  'FNB',
-  'Nedbank',
-  'Standard Bank',
-  'Capitec',
-  'African Bank',
-  'TymeBank',
-  'Discovery Bank',
-  'Investec'
-]
+import { SUPPORTED_BANKS } from '@/lib/constants/banks'
 
 interface BankDetails {
   bankName: string
