@@ -93,6 +93,22 @@ export async function POST(request: NextRequest) {
     // Calculate escrow amount
     const escrowAmount = gig.escrowAmount || application.agreedRate || application.proposedRate || 0
 
+    // Get platform commission from feeConfigs (single source of truth)
+    const feeConfigQuery = await db.collection('feeConfigs')
+      .where('isActive', '==', true)
+      .orderBy('createdAt', 'desc')
+      .limit(1)
+      .get()
+
+    // Support both new field (platformCommissionPercent) and legacy (workerCommissionPercentage)
+    const configData = feeConfigQuery.empty ? null : feeConfigQuery.docs[0].data()
+    const platformCommissionPercent = configData?.platformCommissionPercent ?? configData?.workerCommissionPercentage ?? 10
+
+    console.log('[PAYMENT_AUDIT] Fee config loaded:', {
+      source: feeConfigQuery.empty ? 'default' : feeConfigQuery.docs[0].id,
+      platformCommissionPercent
+    })
+
     // Get payment intent to find TradeSafe allocation ID
     const paymentIntentQuery = await db.collection('paymentIntents')
       .where('gigId', '==', application.gigId)
@@ -163,16 +179,16 @@ export async function POST(request: NextRequest) {
 
       // Release escrow if there's an amount
       if (escrowAmount > 0) {
-        // Calculate net amount (10% platform commission)
-        const platformCommission = escrowAmount * 0.10
-        const netAmount = escrowAmount - platformCommission
+        // Calculate net amount using fee config
+        const platformCommission = Math.round(escrowAmount * (platformCommissionPercent / 100) * 100) / 100
+        const netAmount = Math.round((escrowAmount - platformCommission) * 100) / 100
 
         console.log('[PAYMENT_AUDIT] Approve - Fee calculation:', {
           gigId: application.gigId,
           workerId,
           employerId,
           escrowAmount,
-          platformCommissionPercent: 10,
+          platformCommissionPercent,
           platformCommission,
           workerEarnings: netAmount,
           verifyCommission: `${((platformCommission / escrowAmount) * 100).toFixed(1)}%`
@@ -288,8 +304,8 @@ export async function POST(request: NextRequest) {
     // Create payment history records (outside transaction for simplicity)
     console.log('=== APPROVE COMPLETION API: Creating payment history ===')
     const gigTitle = gig.title || `Gig ${application.gigId}`
-    const platformCommission = escrowAmount * 0.10
-    const netAmount = escrowAmount - platformCommission
+    const platformCommission = Math.round(escrowAmount * (platformCommissionPercent / 100) * 100) / 100
+    const netAmount = Math.round((escrowAmount - platformCommission) * 100) / 100
 
     // Update existing pending earnings record to completed, or create new one
     const pendingHistoryQuery = await db.collection('paymentHistory')
@@ -343,8 +359,9 @@ export async function POST(request: NextRequest) {
       workerId,
       employerId,
       escrowAmount,
-      platformCommission: escrowAmount > 0 ? escrowAmount * 0.10 : 0,
-      workerEarnings: escrowAmount > 0 ? escrowAmount - (escrowAmount * 0.10) : 0,
+      platformCommissionPercent,
+      platformCommission,
+      workerEarnings: netAmount,
       tradeSafePayoutTriggered,
       allocationId: allocationId || 'N/A',
       status: 'APPROVED_PAYOUT_TRIGGERED',
