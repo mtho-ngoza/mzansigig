@@ -3,22 +3,22 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin'
 import * as admin from 'firebase-admin'
 import { TradeSafeService } from '@/lib/services/tradesafeService'
 
-// South African banks supported by TradeSafe
+// South African banks - maps display names to TradeSafe UniversalBranchCode enum (UPPERCASE)
 const SUPPORTED_BANKS: Record<string, string> = {
-  'ABSA': 'absa',
-  'FNB': 'fnb',
-  'Nedbank': 'nedbank',
-  'Standard Bank': 'standard_bank',
-  'Capitec': 'capitec',
-  'African Bank': 'african_bank',
-  'Bidvest Bank': 'bidvest',
-  'Discovery Bank': 'discovery',
-  'First Rand': 'firstrand',
-  'Grindrod Bank': 'grindrod',
-  'Investec': 'investec',
-  'Mercantile Bank': 'mercantile',
-  'Sasfin': 'sasfin',
-  'TymeBank': 'tymebank',
+  'ABSA': 'ABSA',
+  'FNB': 'FNB',
+  'Nedbank': 'NEDBANK',
+  'Standard Bank': 'STANDARD_BANK',
+  'Capitec': 'CAPITEC',
+  'African Bank': 'AFRICAN_BANK',
+  'Bidvest Bank': 'BIDVEST',
+  'Discovery Bank': 'DISCOVERY',
+  'First Rand': 'FIRSTRAND',
+  'Grindrod Bank': 'GRINDROD',
+  'Investec': 'INVESTEC',
+  'Mercantile Bank': 'MERCANTILE',
+  'Sasfin': 'SASFIN',
+  'TymeBank': 'TYMEBANK',
 }
 
 export async function POST(request: NextRequest) {
