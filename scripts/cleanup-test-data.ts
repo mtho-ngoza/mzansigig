@@ -71,8 +71,7 @@ const USER_WALLET_FIELDS = {
 
 // Fields to delete from users (TradeSafe tokens - recreated on next funding)
 const USER_FIELDS_TO_DELETE = [
-  'tradeSafeToken',
-  'tradeSafeTokenHasBankDetails' // Legacy field
+  'tradeSafeToken'
 ]
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
