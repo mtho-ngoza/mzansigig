@@ -5,37 +5,27 @@
  * for direct payout functionality.
  */
 
+import { TRADESAFE_BANK_CODES, SUPPORTED_BANKS } from '@/lib/constants/banks'
+
 describe('/api/user/bank-details logic', () => {
-  // Supported South African banks with TradeSafe UniversalBranchCode enum (UPPERCASE)
-  const SUPPORTED_BANKS: Record<string, string> = {
-    'ABSA': 'ABSA',
-    'FNB': 'FNB',
-    'Nedbank': 'NEDBANK',
-    'Standard Bank': 'STANDARD_BANK',
-    'Capitec': 'CAPITEC',
-    'African Bank': 'AFRICAN_BANK',
-    'TymeBank': 'TYMEBANK',
-    'Discovery Bank': 'DISCOVERY',
-    'Investec': 'INVESTEC'
-  }
 
   describe('Bank Name Validation', () => {
     const validateBankName = (bankName: string): { valid: boolean; code?: string; error?: string } => {
-      const code = SUPPORTED_BANKS[bankName]
+      const code = TRADESAFE_BANK_CODES[bankName]
       if (!code) {
         return {
           valid: false,
-          error: `Unsupported bank: ${bankName}. Supported banks: ${Object.keys(SUPPORTED_BANKS).join(', ')}`
+          error: `Unsupported bank: ${bankName}. Supported banks: ${SUPPORTED_BANKS.join(', ')}`
         }
       }
       return { valid: true, code }
     }
 
     it('should accept all supported South African banks', () => {
-      Object.keys(SUPPORTED_BANKS).forEach(bank => {
+      SUPPORTED_BANKS.forEach(bank => {
         const result = validateBankName(bank)
         expect(result.valid).toBe(true)
-        expect(result.code).toBe(SUPPORTED_BANKS[bank])
+        expect(result.code).toBe(TRADESAFE_BANK_CODES[bank])
       })
     })
 
@@ -261,7 +251,7 @@ describe('/api/user/bank-details logic', () => {
       }
 
       if (bankDetails) {
-        const bankCode = SUPPORTED_BANKS[bankDetails.bankName]
+        const bankCode = TRADESAFE_BANK_CODES[bankDetails.bankName]
         if (bankCode) {
           input.bankAccount = {
             accountNumber: bankDetails.accountNumber,

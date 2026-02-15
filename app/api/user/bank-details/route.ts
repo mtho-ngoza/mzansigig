@@ -2,24 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getFirebaseAdmin } from '@/lib/firebase-admin'
 import * as admin from 'firebase-admin'
 import { TradeSafeService } from '@/lib/services/tradesafeService'
-
-// South African banks - maps display names to TradeSafe UniversalBranchCode enum (UPPERCASE)
-const SUPPORTED_BANKS: Record<string, string> = {
-  'ABSA': 'ABSA',
-  'FNB': 'FNB',
-  'Nedbank': 'NEDBANK',
-  'Standard Bank': 'STANDARD_BANK',
-  'Capitec': 'CAPITEC',
-  'African Bank': 'AFRICAN_BANK',
-  'Bidvest Bank': 'BIDVEST',
-  'Discovery Bank': 'DISCOVERY',
-  'First Rand': 'FIRSTRAND',
-  'Grindrod Bank': 'GRINDROD',
-  'Investec': 'INVESTEC',
-  'Mercantile Bank': 'MERCANTILE',
-  'Sasfin': 'SASFIN',
-  'TymeBank': 'TYMEBANK',
-}
+import { TRADESAFE_BANK_CODES, SUPPORTED_BANKS } from '@/lib/constants/banks'
 
 export async function POST(request: NextRequest) {
   try {
@@ -49,9 +32,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate bank name
-    if (!SUPPORTED_BANKS[bankName]) {
+    if (!TRADESAFE_BANK_CODES[bankName]) {
       return NextResponse.json(
-        { error: `Unsupported bank: ${bankName}. Supported banks: ${Object.keys(SUPPORTED_BANKS).join(', ')}` },
+        { error: `Unsupported bank: ${bankName}. Supported banks: ${SUPPORTED_BANKS.join(', ')}` },
         { status: 400 }
       )
     }
@@ -135,7 +118,7 @@ export async function POST(request: NextRequest) {
       bankAccount: {
         accountNumber,
         accountType: accountType as 'CHEQUE' | 'SAVINGS',
-        bank: SUPPORTED_BANKS[bankName]
+        bank: TRADESAFE_BANK_CODES[bankName]
       }
     })
 
