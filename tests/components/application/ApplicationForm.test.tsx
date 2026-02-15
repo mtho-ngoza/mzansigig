@@ -70,9 +70,9 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
     })
 
     mockCalculateGigFees.mockResolvedValue({
-      netAmountToWorker: 4500,
-      platformFee: 500,
-      totalBudget: 5000
+      gigAmount: 5000,
+      platformCommission: 500,
+      workerEarnings: 4500
     })
   })
 

@@ -121,34 +121,24 @@ export interface WithdrawalRequest {
   rejectedBy?: string // Admin user ID who rejected
 }
 
+/**
+ * Payment Configuration
+ *
+ * Simplified fee structure for TradeSafe escrow payments.
+ * TradeSafe handles all payment processing - we only configure the platform commission.
+ */
 export interface PaymentConfig {
   id: string
-  // Fee structure (percentages)
-  platformFeePercentage: number // e.g., 5% - service fee taken by platform
-  paymentProcessingFeePercentage: number // e.g., 2.9% - payment processor fee
-  fixedTransactionFee: number // e.g., R2.50 - fixed fee per transaction
 
-  // Worker commission (what platform takes from worker earnings)
-  workerCommissionPercentage: number // e.g., 10% - commission taken from worker's earnings
+  // Platform commission - taken from worker earnings via TradeSafe agent fee
+  platformCommissionPercent: number // 10% - platform's revenue
 
-  // Payment amount limits
-  minimumGigAmount: number // R100 - minimum gig/payment value
-  minimumWithdrawal: number // R50
-  minimumMilestone: number // R50
-  maximumPaymentAmount: number // R100,000 - max per transaction
-  largePaymentThreshold: number // R10,000 - requires confirmation above this
+  // Gig amount limits
+  minimumGigAmount: number // R100 - minimum gig value
+  maximumGigAmount: number // R100,000 - maximum gig value
 
-  // Escrow settings
-  escrowReleaseDelayHours: number // 72 hours default
-  autoReleaseEnabled: boolean
-
-  // Supported providers
-  enabledProviders: string[]
-  defaultProvider: string
-
-  // South African specific
-  vatIncluded: boolean
-  vatPercentage: number // 15%
+  // Escrow auto-release (worker protection)
+  escrowAutoReleaseDays: number // 7 days - auto-release if employer doesn't respond
 
   // Configuration metadata
   isActive: boolean
@@ -157,17 +147,16 @@ export interface PaymentConfig {
   createdBy: string // admin user ID
 }
 
-// Fee breakdown interface for transparent calculations
+/**
+ * Fee Breakdown
+ *
+ * Simple breakdown showing what each party pays/receives.
+ * Employer pays the gig amount, worker receives 90% (after 10% platform commission).
+ */
 export interface FeeBreakdown {
-  grossAmount: number // Original amount before fees
-  platformFee: number // Platform service fee
-  processingFee: number // Payment processor fee
-  fixedFee: number // Fixed transaction fee
-  workerCommission: number // Commission taken from worker
-  totalEmployerFees: number // Total fees paid by employer
-  totalWorkerDeductions: number // Total deductions from worker
-  netAmountToWorker: number // Amount worker actually receives
-  totalEmployerCost: number // Total cost to employer
+  gigAmount: number           // What employer pays (the gig budget)
+  platformCommission: number  // Platform's cut (10% of gig amount)
+  workerEarnings: number      // What worker receives (90% of gig amount)
 }
 
 export interface PaymentAnalytics {

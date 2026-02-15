@@ -45,7 +45,7 @@ interface PaymentContextType extends PaymentState {
   refreshAnalytics: () => Promise<void>
 
   // Utility
-  calculateFees: (amount: number) => Promise<{ platformFee: number; processingFee: number; fixedFee: number; totalFees: number; netAmount: number }>
+  calculateFees: (amount: number) => Promise<{ platformCommission: number; workerEarnings: number }>
   calculateGigFees: (amount: number) => Promise<FeeBreakdown>
   formatCurrency: (amount: number) => string
 }

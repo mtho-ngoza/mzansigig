@@ -96,7 +96,7 @@ describe('GigService - Completion Workflows', () => {
     ;(PaymentService.getEscrowReleaseContext as jest.Mock).mockResolvedValue({
       paymentId: 'payment-111',
       paymentData: { amount: 1000, gigId: 'gig-123', workerId: 'worker-789' },
-      feeBreakdown: { netAmountToWorker: 900, workerCommission: 100 },
+      feeBreakdown: { workerEarnings: 900, platformCommission: 100 },
       paymentHistoryDocs: []
     })
     ;(PaymentService.releaseEscrowInTransaction as jest.Mock).mockResolvedValue(undefined)
@@ -118,7 +118,19 @@ describe('GigService - Completion Workflows', () => {
 
   describe('requestCompletionByWorker', () => {
     it('should successfully create completion request with 7-day auto-release', async () => {
-      jest.mocked(FirestoreService.getById).mockResolvedValue(mockApplication)
+      const workerWithBankDetails = {
+        id: mockWorkerId,
+        bankDetails: {
+          bankName: 'FNB',
+          accountNumber: '1234567890',
+          accountType: 'SAVINGS',
+          accountHolder: 'Test Worker'
+        }
+      }
+
+      jest.mocked(FirestoreService.getById)
+        .mockResolvedValueOnce(mockApplication) // Application lookup
+        .mockResolvedValueOnce(workerWithBankDetails) // Worker lookup
       jest.mocked(FirestoreService.update).mockResolvedValue()
 
       const beforeRequest = new Date()
@@ -197,6 +209,84 @@ describe('GigService - Completion Workflows', () => {
       ).rejects.toThrow('Completion has already been requested for this application')
 
       expect(FirestoreService.update).not.toHaveBeenCalled()
+    })
+
+    it('should reject if worker has no bank details', async () => {
+      // Worker without bank details
+      const workerWithoutBankDetails = { id: mockWorkerId, bankDetails: null }
+
+      jest.mocked(FirestoreService.getById)
+        .mockResolvedValueOnce(mockApplication) // Application lookup
+        .mockResolvedValueOnce(workerWithoutBankDetails) // Worker lookup
+
+      await expect(
+        GigService.requestCompletionByWorker(mockApplicationId, mockWorkerId)
+      ).rejects.toThrow('Bank details required')
+
+      expect(FirestoreService.update).not.toHaveBeenCalled()
+    })
+
+    it('should reject if worker bank details are incomplete (missing bankName)', async () => {
+      const workerWithIncompleteBankDetails = {
+        id: mockWorkerId,
+        bankDetails: { accountNumber: '1234567890' } // Missing bankName
+      }
+
+      jest.mocked(FirestoreService.getById)
+        .mockResolvedValueOnce(mockApplication)
+        .mockResolvedValueOnce(workerWithIncompleteBankDetails)
+
+      await expect(
+        GigService.requestCompletionByWorker(mockApplicationId, mockWorkerId)
+      ).rejects.toThrow('Bank details required')
+
+      expect(FirestoreService.update).not.toHaveBeenCalled()
+    })
+
+    it('should reject if worker bank details are incomplete (missing accountNumber)', async () => {
+      const workerWithIncompleteBankDetails = {
+        id: mockWorkerId,
+        bankDetails: { bankName: 'FNB' } // Missing accountNumber
+      }
+
+      jest.mocked(FirestoreService.getById)
+        .mockResolvedValueOnce(mockApplication)
+        .mockResolvedValueOnce(workerWithIncompleteBankDetails)
+
+      await expect(
+        GigService.requestCompletionByWorker(mockApplicationId, mockWorkerId)
+      ).rejects.toThrow('Bank details required')
+
+      expect(FirestoreService.update).not.toHaveBeenCalled()
+    })
+
+    it('should succeed when worker has valid bank details', async () => {
+      const workerWithBankDetails = {
+        id: mockWorkerId,
+        bankDetails: {
+          bankName: 'FNB',
+          accountNumber: '1234567890',
+          accountType: 'SAVINGS',
+          accountHolder: 'Test Worker'
+        }
+      }
+
+      jest.mocked(FirestoreService.getById)
+        .mockResolvedValueOnce(mockApplication) // Application lookup
+        .mockResolvedValueOnce(workerWithBankDetails) // Worker lookup
+      jest.mocked(FirestoreService.update).mockResolvedValue()
+
+      await GigService.requestCompletionByWorker(mockApplicationId, mockWorkerId)
+
+      expect(FirestoreService.update).toHaveBeenCalledWith(
+        'applications',
+        mockApplicationId,
+        expect.objectContaining({
+          completionRequestedBy: 'worker',
+          completionRequestedAt: expect.any(Date),
+          completionAutoReleaseAt: expect.any(Date)
+        })
+      )
     })
   })
 
@@ -774,13 +864,13 @@ describe('GigService - Completion Workflows', () => {
         .mockResolvedValueOnce({
           paymentId: 'payment-1',
           paymentData: { amount: 1000, gigId: 'gig-1', workerId: 'worker-789' },
-          feeBreakdown: { netAmountToWorker: 900, workerCommission: 100 },
+          feeBreakdown: { workerEarnings: 900, platformCommission: 100 },
           paymentHistoryDocs: []
         })
         .mockResolvedValueOnce({
           paymentId: 'payment-2',
           paymentData: { amount: 1000, gigId: 'gig-2', workerId: 'worker-789' },
-          feeBreakdown: { netAmountToWorker: 900, workerCommission: 100 },
+          feeBreakdown: { workerEarnings: 900, platformCommission: 100 },
           paymentHistoryDocs: []
         })
 
@@ -827,7 +917,7 @@ describe('GigService - Completion Workflows', () => {
       ;(PaymentService.getEscrowReleaseContext as jest.Mock).mockResolvedValue({
         paymentId: 'payment-2',
         paymentData: { amount: 1000, gigId: 'gig-2', workerId: 'worker-789' },
-        feeBreakdown: { netAmountToWorker: 900, workerCommission: 100 },
+        feeBreakdown: { workerEarnings: 900, platformCommission: 100 },
         paymentHistoryDocs: []
       })
 

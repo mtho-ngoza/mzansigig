@@ -366,12 +366,25 @@ export class TradeSafeService {
       }
     }
 
+    console.log('=== TRADESAFE createTransaction: Sending to API ===')
+    console.log('Parties being sent:', JSON.stringify(parties, null, 2))
+    console.log('Full variables:', JSON.stringify(variables, null, 2))
+    console.log('Agent fee config:', {
+      agentToken: input.agentToken ? 'SET' : 'NOT SET',
+      agentFeePercent: input.agentFeePercent,
+      feeType: 'PERCENT',
+      feeAllocation: 'SELLER (fee comes from seller portion)'
+    })
+
     const data = await this.graphql<{ transactionCreate: Transaction }>(mutation, variables)
 
-    console.log('TradeSafe transaction created:', {
+    console.log('=== TRADESAFE createTransaction: Response ===')
+    console.log('Transaction created:', {
       id: data.transactionCreate.id,
       state: data.transactionCreate.state,
-      value: input.value
+      inputValue: input.value,
+      allocationValue: data.transactionCreate.allocations?.[0]?.value,
+      parties: data.transactionCreate.parties
     })
 
     return data.transactionCreate

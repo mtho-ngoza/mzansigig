@@ -70,11 +70,9 @@ const mockUser = {
 }
 
 const mockFees = {
-  platformFee: 50,
-  processingFee: 25,
-  fixedFee: 5,
-  totalFees: 80,
-  netAmount: 420
+  gigAmount: 500,
+  platformCommission: 50,
+  workerEarnings: 450
 }
 
 const mockFormatCurrency = (amount: number) => `R${amount.toFixed(2)}`
@@ -187,10 +185,9 @@ describe('PaymentDialog', () => {
       })
 
       await waitFor(() => {
-        expect(screen.getByText('R50.00')).toBeInTheDocument() // Platform fee
-        expect(screen.getByText('R25.00')).toBeInTheDocument() // Processing fee
-        expect(screen.getByText('R5.00')).toBeInTheDocument() // Fixed fee
-        expect(screen.getByText('R580.00')).toBeInTheDocument() // Total (500 + 80)
+        expect(screen.getByText('-R50.00')).toBeInTheDocument() // Platform commission (10%)
+        expect(screen.getByText('R450.00')).toBeInTheDocument() // Worker receives
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0) // Employer pays exact gig amount
       })
     })
 
@@ -209,7 +206,7 @@ describe('PaymentDialog', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Worker Receives:')).toBeInTheDocument()
-        expect(screen.getByText('R420.00')).toBeInTheDocument() // netAmount
+        expect(screen.getByText('R450.00')).toBeInTheDocument() // workerEarnings
       })
     })
 
@@ -246,7 +243,7 @@ describe('PaymentDialog', () => {
 
       // Wait for fees to load
       await waitFor(() => {
-        expect(screen.getByText('R580.00')).toBeInTheDocument()
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0)
       }, { timeout: 3000 })
 
       // Navigate to provider selection
@@ -269,7 +266,7 @@ describe('PaymentDialog', () => {
 
       // Click pay button - this will trigger the API call
       // Note: The actual redirect (window.location.href) is not testable in jsdom
-      const payButton = screen.getByRole('button', { name: /Pay R580\.00/i })
+      const payButton = screen.getByRole('button', { name: /Pay R500\.00/i })
       await act(async () => {
         fireEvent.click(payButton)
       })
@@ -288,10 +285,10 @@ describe('PaymentDialog', () => {
         )
       }, { timeout: 3000 })
 
-      // Verify the amount sent includes fees (500 base + 80 fees = 580)
+      // Verify the amount sent is the exact gig amount (employer pays exact amount, platform takes commission)
       const fetchCall = mockFetch.mock.calls[0]
       const requestBody = JSON.parse(fetchCall[1].body)
-      expect(requestBody.amount).toBe(580) // Total amount including fees
+      expect(requestBody.amount).toBe(500) // Employer pays exact gig amount
       expect(requestBody.gigId).toBe('gig-123')
     })
 
@@ -302,7 +299,7 @@ describe('PaymentDialog', () => {
 
       // Wait for fees to load
       await waitFor(() => {
-        expect(screen.getByText('R580.00')).toBeInTheDocument()
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0)
       }, { timeout: 3000 })
 
       // Navigate to provider selection
@@ -355,7 +352,7 @@ describe('PaymentDialog', () => {
 
       // Wait for fees
       await waitFor(() => {
-        expect(screen.getByText('R580.00')).toBeInTheDocument()
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0)
       }, { timeout: 3000 })
 
       // Navigate through steps
@@ -376,7 +373,7 @@ describe('PaymentDialog', () => {
       }, { timeout: 3000 })
 
       // Pay button should be enabled and show correct amount
-      const payButton = screen.getByRole('button', { name: /Pay R580\.00/i })
+      const payButton = screen.getByRole('button', { name: /Pay R500\.00/i })
       expect(payButton).not.toBeDisabled()
     })
   })
@@ -387,7 +384,7 @@ describe('PaymentDialog', () => {
       renderPaymentDialog({}, { calculateFees })
 
       await waitFor(() => {
-        expect(screen.getByText('R580.00')).toBeInTheDocument()
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0)
       }, { timeout: 3000 })
 
       await act(async () => {
@@ -406,7 +403,7 @@ describe('PaymentDialog', () => {
       renderPaymentDialog({}, { calculateFees })
 
       await waitFor(() => {
-        expect(screen.getByText('R580.00')).toBeInTheDocument()
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0)
       }, { timeout: 3000 })
 
       await act(async () => {
@@ -424,7 +421,7 @@ describe('PaymentDialog', () => {
       renderPaymentDialog({}, { calculateFees })
 
       await waitFor(() => {
-        expect(screen.getByText('R580.00')).toBeInTheDocument()
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0)
       }, { timeout: 3000 })
 
       await act(async () => {
@@ -443,7 +440,7 @@ describe('PaymentDialog', () => {
       renderPaymentDialog({}, { calculateFees })
 
       await waitFor(() => {
-        expect(screen.getByText('R580.00')).toBeInTheDocument()
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0)
       }, { timeout: 3000 })
 
       await act(async () => {
@@ -471,7 +468,7 @@ describe('PaymentDialog', () => {
       renderPaymentDialog({}, { calculateFees })
 
       await waitFor(() => {
-        expect(screen.getByText('R580.00')).toBeInTheDocument()
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0)
       }, { timeout: 3000 })
 
       await act(async () => {
@@ -487,7 +484,7 @@ describe('PaymentDialog', () => {
 
   describe('Large Amount Confirmation', () => {
     it('should show large amount confirmation for amounts >= R10,000', async () => {
-      const largeFees = { ...mockFees, totalFees: 800, netAmount: 9200 }
+      const largeFees = { gigAmount: 10000, platformCommission: 1000, workerEarnings: 9000 }
       const calculateFees = jest.fn().mockResolvedValue(largeFees)
 
       renderPaymentDialog({ amount: 10000 }, { calculateFees })
@@ -506,7 +503,7 @@ describe('PaymentDialog', () => {
     })
 
     it('should allow confirming large amount and proceeding', async () => {
-      const largeFees = { ...mockFees, totalFees: 800, netAmount: 9200 }
+      const largeFees = { gigAmount: 10000, platformCommission: 1000, workerEarnings: 9000 }
       const calculateFees = jest.fn().mockResolvedValue(largeFees)
 
       renderPaymentDialog({ amount: 10000 }, { calculateFees })
@@ -569,7 +566,7 @@ describe('PaymentDialog', () => {
       renderPaymentDialog({}, { calculateFees })
 
       await waitFor(() => {
-        expect(screen.getByText('R580.00')).toBeInTheDocument()
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0)
       }, { timeout: 3000 })
 
       // Navigate to confirm
@@ -588,7 +585,7 @@ describe('PaymentDialog', () => {
       }, { timeout: 3000 })
 
       // Try to pay
-      const payButton = screen.getByRole('button', { name: /Pay R580\.00/i })
+      const payButton = screen.getByRole('button', { name: /Pay R500\.00/i })
       await act(async () => {
         fireEvent.click(payButton)
       })
@@ -605,7 +602,7 @@ describe('PaymentDialog', () => {
       renderPaymentDialog({}, { calculateFees }, { user: null })
 
       await waitFor(() => {
-        expect(screen.getByText('R580.00')).toBeInTheDocument()
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0)
       }, { timeout: 3000 })
 
       // Navigate to confirm
@@ -624,7 +621,7 @@ describe('PaymentDialog', () => {
       }, { timeout: 3000 })
 
       // Try to pay without auth
-      const payButton = screen.getByRole('button', { name: /Pay R580\.00/i })
+      const payButton = screen.getByRole('button', { name: /Pay R500\.00/i })
       await act(async () => {
         fireEvent.click(payButton)
       })
@@ -642,7 +639,7 @@ describe('PaymentDialog', () => {
       renderPaymentDialog({}, { calculateFees })
 
       await waitFor(() => {
-        expect(screen.getByText('R580.00')).toBeInTheDocument()
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0)
       }, { timeout: 3000 })
 
       await act(async () => {
@@ -667,7 +664,7 @@ describe('PaymentDialog', () => {
       renderPaymentDialog({}, { calculateFees })
 
       await waitFor(() => {
-        expect(screen.getByText('R580.00')).toBeInTheDocument()
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0)
       }, { timeout: 3000 })
 
       // Go to confirm
@@ -728,7 +725,7 @@ describe('PaymentDialog', () => {
       renderPaymentDialog({}, { calculateFees })
 
       await waitFor(() => {
-        expect(screen.getByText('R580.00')).toBeInTheDocument()
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0)
       }, { timeout: 3000 })
 
       await act(async () => {
@@ -752,7 +749,7 @@ describe('PaymentDialog', () => {
       renderPaymentDialog({}, { calculateFees })
 
       await waitFor(() => {
-        expect(screen.getByText('R580.00')).toBeInTheDocument()
+        expect(screen.getAllByText('R500.00').length).toBeGreaterThan(0)
       }, { timeout: 3000 })
 
       await act(async () => {

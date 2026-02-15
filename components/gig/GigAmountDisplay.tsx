@@ -11,6 +11,12 @@ interface GigAmountDisplayProps {
   className?: string
 }
 
+/**
+ * GigAmountDisplay
+ *
+ * Shows what workers will earn after platform commission.
+ * Simple display: Employer pays R1000, Worker gets R900 (after 10% commission)
+ */
 export default function GigAmountDisplay({
   budget,
   showBreakdown = false,
@@ -59,13 +65,16 @@ export default function GigAmountDisplay({
     )
   }
 
+  // Calculate commission percentage for display
+  const commissionPercent = Math.round((feeBreakdown.platformCommission / feeBreakdown.gigAmount) * 100)
+
   if (variant === 'compact') {
     return (
       <div className={`space-y-1 ${className}`}>
         <div className="flex justify-between items-center">
           <span className="text-sm text-gray-500">You&apos;ll earn:</span>
           <span className="font-semibold text-green-600">
-            {formatCurrency(feeBreakdown.netAmountToWorker)}
+            {formatCurrency(feeBreakdown.workerEarnings)}
           </span>
         </div>
         {showBreakdown && (
@@ -86,15 +95,15 @@ export default function GigAmountDisplay({
           <div className="mt-3 p-3 bg-gray-50 rounded-lg border text-xs space-y-2">
             <div className="flex justify-between text-gray-600">
               <span>Project Budget:</span>
-              <span>{formatCurrency(feeBreakdown.grossAmount)}</span>
+              <span>{formatCurrency(feeBreakdown.gigAmount)}</span>
             </div>
             <div className="flex justify-between text-red-600">
-              <span>Service Fee ({Math.round((feeBreakdown.workerCommission / feeBreakdown.grossAmount) * 100)}%):</span>
-              <span>-{formatCurrency(feeBreakdown.workerCommission)}</span>
+              <span>Service Fee ({commissionPercent}%):</span>
+              <span>-{formatCurrency(feeBreakdown.platformCommission)}</span>
             </div>
             <div className="border-t border-gray-300 pt-2 flex justify-between font-medium text-green-600">
               <span>Your Earnings:</span>
-              <span>{formatCurrency(feeBreakdown.netAmountToWorker)}</span>
+              <span>{formatCurrency(feeBreakdown.workerEarnings)}</span>
             </div>
           </div>
         )}
@@ -110,13 +119,13 @@ export default function GigAmountDisplay({
           <div>
             <h4 className="text-sm font-medium text-gray-700">Worker Earnings</h4>
             <p className="text-xl font-bold text-green-600">
-              {formatCurrency(feeBreakdown.netAmountToWorker)}
+              {formatCurrency(feeBreakdown.workerEarnings)}
             </p>
           </div>
           <div className="text-right">
             <p className="text-xs text-gray-500">Project Budget</p>
             <p className="text-sm font-medium text-gray-700">
-              {formatCurrency(feeBreakdown.grossAmount)}
+              {formatCurrency(feeBreakdown.gigAmount)}
             </p>
           </div>
         </div>
@@ -124,42 +133,29 @@ export default function GigAmountDisplay({
         <div className="space-y-2 text-xs">
           <div className="flex justify-between text-gray-600">
             <span>Project Budget:</span>
-            <span>{formatCurrency(feeBreakdown.grossAmount)}</span>
+            <span>{formatCurrency(feeBreakdown.gigAmount)}</span>
           </div>
           <div className="flex justify-between text-red-600">
-            <span>Service Fee ({Math.round((feeBreakdown.workerCommission / feeBreakdown.grossAmount) * 100)}%):</span>
-            <span>-{formatCurrency(feeBreakdown.workerCommission)}</span>
+            <span>Service Fee ({commissionPercent}%):</span>
+            <span>-{formatCurrency(feeBreakdown.platformCommission)}</span>
           </div>
           <div className="border-t border-gray-300 pt-2 flex justify-between font-medium text-green-600">
             <span>Your Net Earnings:</span>
-            <span>{formatCurrency(feeBreakdown.netAmountToWorker)}</span>
+            <span>{formatCurrency(feeBreakdown.workerEarnings)}</span>
           </div>
         </div>
       </div>
 
       <div className="bg-secondary-50 rounded-lg p-3 border border-secondary-200">
-        <h4 className="text-sm font-medium text-secondary-800 mb-2">Cost Breakdown for Employer</h4>
+        <h4 className="text-sm font-medium text-secondary-800 mb-2">Employer Payment</h4>
         <div className="space-y-1 text-xs text-secondary-700">
-          <div className="flex justify-between">
-            <span>Project Payment:</span>
-            <span>{formatCurrency(feeBreakdown.grossAmount)}</span>
+          <div className="flex justify-between font-medium">
+            <span>Total Payment:</span>
+            <span>{formatCurrency(feeBreakdown.gigAmount)}</span>
           </div>
-          <div className="flex justify-between">
-            <span>Platform Fee:</span>
-            <span>{formatCurrency(feeBreakdown.platformFee)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Processing Fee:</span>
-            <span>{formatCurrency(feeBreakdown.processingFee)}</span>
-          </div>
-          <div className="flex justify-between">
-            <span>Transaction Fee:</span>
-            <span>{formatCurrency(feeBreakdown.fixedFee)}</span>
-          </div>
-          <div className="border-t border-secondary-300 pt-1 flex justify-between font-medium">
-            <span>Total Employer Cost:</span>
-            <span>{formatCurrency(feeBreakdown.totalEmployerCost)}</span>
-          </div>
+          <p className="text-xs text-secondary-600 mt-2">
+            No additional fees - payment processing included via TradeSafe escrow.
+          </p>
         </div>
       </div>
     </div>

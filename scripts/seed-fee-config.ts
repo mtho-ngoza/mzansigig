@@ -2,7 +2,7 @@
 /**
  * Seed Fee Configuration Script
  *
- * Seeds the default fee configuration into Firestore for consistent values across all environments.
+ * Seeds the fee configuration into Firestore for TradeSafe payments.
  *
  * Usage:
  *   npm run seed:fee-config:dev   (seeds to kasigig-dev)
@@ -10,7 +10,6 @@
  *
  * Prerequisites:
  *   Must be authenticated with Firebase: gcloud auth application-default login
- *   OR set GOOGLE_APPLICATION_CREDENTIALS=path/to/service-account.json
  */
 
 const admin = require('firebase-admin')
@@ -43,41 +42,28 @@ try {
 
 const db = admin.firestore()
 
-// Default fee configuration for South African market
-const DEFAULT_FEE_CONFIG = {
-  // Platform fees (paid by employer)
-  platformFeePercentage: 5, // 5% platform service fee
-  paymentProcessingFeePercentage: 2.9, // 2.9% payment processing
-  fixedTransactionFee: 2.50, // R2.50 fixed fee per transaction
+/**
+ * Simplified Fee Configuration for TradeSafe
+ *
+ * Fee Model:
+ * - Employer pays: exact gig amount (no additional fees)
+ * - Platform takes: 10% commission from worker (via TradeSafe agent fee)
+ * - Worker receives: 90% of gig amount
+ */
+const FEE_CONFIG = {
+  // Platform commission - deducted from worker earnings via TradeSafe agent fee
+  platformCommissionPercent: 10, // 10% commission
 
-  // Worker commission (deducted from worker earnings)
-  workerCommissionPercentage: 10, // 10% commission from worker earnings
+  // Gig amount limits
+  minimumGigAmount: 100,    // R100 minimum
+  maximumGigAmount: 100000, // R100,000 maximum
 
-  // Payment amount limits
-  minimumGigAmount: 100, // R100 minimum gig/payment value
-  minimumWithdrawal: 50, // R50 minimum withdrawal
-  minimumMilestone: 50, // R50 minimum milestone
-  maximumPaymentAmount: 100000, // R100,000 max per transaction
-  largePaymentThreshold: 10000, // R10,000 requires confirmation
-
-  // Escrow settings
-  escrowReleaseDelayHours: 72, // 3 days default hold
-  autoReleaseEnabled: true,
-
-  // Payment providers
-  // Note: PayFast and Paystack applications were rejected (marketplace/escrow flagged as high-risk)
-  enabledProviders: ['tradesafe', 'ozow', 'yoco'],
-  defaultProvider: 'tradesafe',
-
-  // South African tax
-  vatIncluded: true,
-  vatPercentage: 15,
+  // Escrow auto-release (worker protection)
+  escrowAutoReleaseDays: 7, // Auto-release if employer doesn't respond in 7 days
 
   // Status
   isActive: true,
-
-  // Metadata
-  createdBy: 'system-seed',
+  createdBy: 'seed-script',
   createdAt: admin.firestore.FieldValue.serverTimestamp(),
   updatedAt: admin.firestore.FieldValue.serverTimestamp()
 }
@@ -97,15 +83,25 @@ async function seedFeeConfig() {
       const data = existingConfig.data()
       console.log('⚠️  Active fee configuration already exists')
       console.log(`   ID: ${existingConfig.id}`)
-      console.log(`   Platform Fee: ${data.platformFeePercentage}%`)
-      console.log(`   Worker Commission: ${data.workerCommissionPercentage}%`)
+      console.log(`   Platform Commission: ${data.platformCommissionPercent || data.workerCommissionPercentage}%`)
       console.log(`   Created By: ${data.createdBy || 'unknown'}`)
       console.log('')
-      console.log('✅ No changes needed - using existing configuration')
+
+      // Update to new simplified structure
+      console.log('📝 Updating to simplified structure...')
+      await existingConfig.ref.update({
+        platformCommissionPercent: FEE_CONFIG.platformCommissionPercent,
+        minimumGigAmount: FEE_CONFIG.minimumGigAmount,
+        maximumGigAmount: FEE_CONFIG.maximumGigAmount,
+        escrowAutoReleaseDays: FEE_CONFIG.escrowAutoReleaseDays,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+      console.log('✅ Configuration updated!')
+      displayConfig()
       return
     }
 
-    // Deactivate any existing configs (just in case)
+    // Deactivate any existing configs
     const allConfigs = await feeConfigsRef.get()
     const batch = db.batch()
     let deactivatedCount = 0
@@ -125,61 +121,33 @@ async function seedFeeConfig() {
       console.log(`📝 Deactivated ${deactivatedCount} old configuration(s)`)
     }
 
-    // Create the default fee configuration
-    const docRef = await feeConfigsRef.add(DEFAULT_FEE_CONFIG)
-
-    console.log('✅ Successfully seeded fee configuration!')
-    console.log('')
-    console.log('📋 Configuration Details:')
-    console.log('   Document ID:', docRef.id)
-    console.log('')
-    console.log('   Employer Fees:')
-    console.log(`   - Platform Fee: ${DEFAULT_FEE_CONFIG.platformFeePercentage}%`)
-    console.log(`   - Processing Fee: ${DEFAULT_FEE_CONFIG.paymentProcessingFeePercentage}%`)
-    console.log(`   - Fixed Fee: R${DEFAULT_FEE_CONFIG.fixedTransactionFee}`)
-    console.log('')
-    console.log('   Worker Deductions:')
-    console.log(`   - Commission: ${DEFAULT_FEE_CONFIG.workerCommissionPercentage}%`)
-    console.log('')
-    console.log('   Payment Limits:')
-    console.log(`   - Min Payment: R${DEFAULT_FEE_CONFIG.minimumGigAmount}`)
-    console.log(`   - Max Payment: R${DEFAULT_FEE_CONFIG.maximumPaymentAmount.toLocaleString()}`)
-    console.log(`   - Large Threshold: R${DEFAULT_FEE_CONFIG.largePaymentThreshold.toLocaleString()}`)
-    console.log(`   - Min Withdrawal: R${DEFAULT_FEE_CONFIG.minimumWithdrawal}`)
-    console.log(`   - Min Milestone: R${DEFAULT_FEE_CONFIG.minimumMilestone}`)
-    console.log('')
-    console.log('   Escrow Settings:')
-    console.log(`   - Release Delay: ${DEFAULT_FEE_CONFIG.escrowReleaseDelayHours} hours`)
-    console.log(`   - Auto Release: ${DEFAULT_FEE_CONFIG.autoReleaseEnabled ? 'Enabled' : 'Disabled'}`)
-    console.log('')
-    console.log('   Payment Providers:')
-    console.log(`   - Enabled: ${DEFAULT_FEE_CONFIG.enabledProviders.join(', ')}`)
-    console.log(`   - Default: ${DEFAULT_FEE_CONFIG.defaultProvider}`)
-    console.log('')
-    console.log('   Tax:')
-    console.log(`   - VAT Included: ${DEFAULT_FEE_CONFIG.vatIncluded ? 'Yes' : 'No'}`)
-    console.log(`   - VAT Percentage: ${DEFAULT_FEE_CONFIG.vatPercentage}%`)
-
-    // Example calculation
-    const exampleAmount = 1000
-    const platformFee = Math.round((exampleAmount * DEFAULT_FEE_CONFIG.platformFeePercentage) / 100 * 100) / 100
-    const processingFee = Math.round((exampleAmount * DEFAULT_FEE_CONFIG.paymentProcessingFeePercentage) / 100 * 100) / 100
-    const fixedFee = DEFAULT_FEE_CONFIG.fixedTransactionFee
-    const totalEmployerFees = platformFee + processingFee + fixedFee
-    const workerCommission = Math.round((exampleAmount * DEFAULT_FEE_CONFIG.workerCommissionPercentage) / 100 * 100) / 100
-    const netToWorker = exampleAmount - workerCommission
-    const totalEmployerCost = exampleAmount + totalEmployerFees
-
-    console.log('')
-    console.log('💡 Example: R1000 Gig')
-    console.log(`   Employer pays: R${totalEmployerCost.toFixed(2)} (R${exampleAmount} + R${totalEmployerFees.toFixed(2)} fees)`)
-    console.log(`   Worker receives: R${netToWorker.toFixed(2)} (R${exampleAmount} - R${workerCommission.toFixed(2)} commission)`)
-    console.log(`   Platform earns: R${(totalEmployerFees + workerCommission).toFixed(2)}`)
+    // Create the fee configuration
+    const docRef = await feeConfigsRef.add(FEE_CONFIG)
+    console.log('✅ Fee configuration created!')
+    console.log(`   Document ID: ${docRef.id}`)
+    displayConfig()
 
   } catch (error) {
     console.error('❌ Error seeding fee configuration:', error)
     throw error
   }
+}
+
+function displayConfig() {
+  console.log('')
+  console.log('┌──────────────────────────────────────────────────┐')
+  console.log('│          Fee Configuration (TradeSafe)           │')
+  console.log('├──────────────────────────────────────────────────┤')
+  console.log(`│ Platform Commission:  ${FEE_CONFIG.platformCommissionPercent}%                        │`)
+  console.log(`│ Minimum Gig Amount:   R${FEE_CONFIG.minimumGigAmount}                       │`)
+  console.log(`│ Maximum Gig Amount:   R${FEE_CONFIG.maximumGigAmount.toLocaleString()}                   │`)
+  console.log(`│ Escrow Auto-Release:  ${FEE_CONFIG.escrowAutoReleaseDays} days                       │`)
+  console.log('└──────────────────────────────────────────────────┘')
+  console.log('')
+  console.log('💡 Example: R1000 Gig')
+  console.log('   Employer pays:   R1,000 (exact gig amount)')
+  console.log('   Platform takes:  R100   (10% commission)')
+  console.log('   Worker receives: R900   (90% of gig amount)')
 }
 
 // Run the seeding

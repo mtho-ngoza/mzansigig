@@ -82,11 +82,8 @@ export default function PaymentDialog({
   const paymentType = 'fixed'
   const [step, setStep] = useState<'amount' | 'provider' | 'confirm' | 'large-amount-confirm' | 'processing'>('amount')
   const [fees, setFees] = useState<{
-    platformFee: number
-    processingFee: number
-    fixedFee: number
-    totalFees: number
-    netAmount: number
+    platformCommission: number
+    workerEarnings: number
   } | null>(null)
   const [largeAmountConfirmed, setLargeAmountConfirmed] = useState(false)
   const [paymentLimits, setPaymentLimits] = useState<PaymentLimits>(PAYMENT_LIMITS)
@@ -180,7 +177,7 @@ export default function PaymentDialog({
           },
           body: JSON.stringify({
             gigId,
-            amount: fees ? amount + fees.totalFees : amount,
+            amount: fees ? amount : amount,
             title: description || `Payment for gig work to ${workerName}`,
             description: `Funding gig ${gigId}`,
             workerId: workerId
@@ -256,28 +253,23 @@ export default function PaymentDialog({
                 </div>
                 {fees ? (
                   <>
-                    <div className="flex justify-between text-gray-600">
-                      <span>Platform Fee:</span>
-                      <span>{formatCurrency(fees.platformFee)}</span>
-                    </div>
-                    <div className="flex justify-between text-gray-600">
-                      <span>Processing Fee:</span>
-                      <span>{formatCurrency(fees.processingFee)}</span>
-                    </div>
-                    <div className="flex justify-between text-gray-600">
-                      <span>Transaction Fee:</span>
-                      <span>{formatCurrency(fees.fixedFee)}</span>
-                    </div>
                     <div className="border-t border-gray-300 pt-2">
                       <div className="flex justify-between font-medium">
-                        <span>Total Cost:</span>
-                        <span>{formatCurrency(amount + fees.totalFees)}</span>
+                        <span>You Pay:</span>
+                        <span>{formatCurrency(amount)}</span>
                       </div>
-                      <div className="flex justify-between text-green-600 text-xs mt-1">
+                      <div className="flex justify-between text-gray-600 text-sm mt-1">
+                        <span>Platform Commission ({Math.round((fees.platformCommission / amount) * 100)}%):</span>
+                        <span>-{formatCurrency(fees.platformCommission)}</span>
+                      </div>
+                      <div className="flex justify-between text-green-600 text-sm mt-1">
                         <span>Worker Receives:</span>
-                        <span>{formatCurrency(fees.netAmount)}</span>
+                        <span>{formatCurrency(fees.workerEarnings)}</span>
                       </div>
                     </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      No additional fees - TradeSafe escrow handles payment processing.
+                    </p>
                   </>
                 ) : (
                   <div className="animate-pulse space-y-2">
@@ -299,7 +291,7 @@ export default function PaymentDialog({
                 Select Payment Provider
               </h3>
               <p className="text-sm text-gray-600">
-                Choose how you&apos;d like to pay {fees ? formatCurrency(amount + fees.totalFees) : '...'}
+                Choose how you&apos;d like to pay {fees ? formatCurrency(amount) : '...'}
               </p>
             </div>
 
@@ -427,7 +419,7 @@ export default function PaymentDialog({
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Total Cost:</span>
-                  <span className="font-medium text-lg">{fees ? formatCurrency(amount + fees.totalFees) : '...'}</span>
+                  <span className="font-medium text-lg">{fees ? formatCurrency(amount) : '...'}</span>
                 </div>
               </div>
             </div>
@@ -583,7 +575,7 @@ export default function PaymentDialog({
                     disabled={isLoading || !fees}
                     className="flex-1 bg-green-600 hover:bg-green-700"
                   >
-                    {isLoading ? 'Processing...' : fees ? `Pay ${formatCurrency(amount + fees.totalFees)}` : 'Calculating...'}
+                    {isLoading ? 'Processing...' : fees ? `Pay ${formatCurrency(amount)}` : 'Calculating...'}
                   </Button>
                 </>
               ) : null}

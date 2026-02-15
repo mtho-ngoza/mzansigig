@@ -10,19 +10,20 @@ import { FeeConfigService } from '@/lib/services/feeConfigService'
 import { useAuth } from '@/contexts/AuthContext'
 
 interface FeeConfigFormData {
-  platformFeePercentage: string
-  paymentProcessingFeePercentage: string
-  fixedTransactionFee: string
-  workerCommissionPercentage: string
+  platformCommissionPercent: string
   minimumGigAmount: string
-  minimumWithdrawal: string
-  minimumMilestone: string
-  escrowReleaseDelayHours: string
-  vatPercentage: string
-  autoReleaseEnabled: boolean
-  vatIncluded: boolean
+  maximumGigAmount: string
+  escrowAutoReleaseDays: string
 }
 
+/**
+ * Fee Configuration Manager (Admin)
+ *
+ * Simplified for TradeSafe payments:
+ * - Platform commission (10%) - deducted from worker earnings
+ * - Gig amount limits
+ * - Escrow auto-release days
+ */
 export default function FeeConfigManager() {
   const { user } = useAuth()
   const { success: showSuccess, error: showError } = useToast()
@@ -34,17 +35,10 @@ export default function FeeConfigManager() {
   const [showCreateForm, setShowCreateForm] = useState(false)
 
   const [formData, setFormData] = useState<FeeConfigFormData>({
-    platformFeePercentage: '5',
-    paymentProcessingFeePercentage: '2.9',
-    fixedTransactionFee: '2.50',
-    workerCommissionPercentage: '10',
+    platformCommissionPercent: '10',
     minimumGigAmount: '100',
-    minimumWithdrawal: '50',
-    minimumMilestone: '50',
-    escrowReleaseDelayHours: '72',
-    vatPercentage: '15',
-    autoReleaseEnabled: true,
-    vatIncluded: true
+    maximumGigAmount: '100000',
+    escrowAutoReleaseDays: '7'
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -74,26 +68,9 @@ export default function FeeConfigManager() {
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {}
 
-    // Validate percentages
-    const platformFee = parseFloat(formData.platformFeePercentage)
-    if (isNaN(platformFee) || platformFee < 0 || platformFee > 50) {
-      newErrors.platformFeePercentage = 'Must be between 0% and 50%'
-    }
-
-    const processingFee = parseFloat(formData.paymentProcessingFeePercentage)
-    if (isNaN(processingFee) || processingFee < 0 || processingFee > 10) {
-      newErrors.paymentProcessingFeePercentage = 'Must be between 0% and 10%'
-    }
-
-    const workerCommission = parseFloat(formData.workerCommissionPercentage)
-    if (isNaN(workerCommission) || workerCommission < 0 || workerCommission > 30) {
-      newErrors.workerCommissionPercentage = 'Must be between 0% and 30%'
-    }
-
-    // Validate amounts
-    const fixedFee = parseFloat(formData.fixedTransactionFee)
-    if (isNaN(fixedFee) || fixedFee < 0 || fixedFee > 100) {
-      newErrors.fixedTransactionFee = 'Must be between R0 and R100'
+    const commission = parseFloat(formData.platformCommissionPercent)
+    if (isNaN(commission) || commission < 0 || commission > 50) {
+      newErrors.platformCommissionPercent = 'Must be between 0% and 50%'
     }
 
     const minGig = parseFloat(formData.minimumGigAmount)
@@ -101,11 +78,21 @@ export default function FeeConfigManager() {
       newErrors.minimumGigAmount = 'Must be between R10 and R10,000'
     }
 
+    const maxGig = parseFloat(formData.maximumGigAmount)
+    if (isNaN(maxGig) || maxGig < 1000 || maxGig > 1000000) {
+      newErrors.maximumGigAmount = 'Must be between R1,000 and R1,000,000'
+    }
+
+    const days = parseInt(formData.escrowAutoReleaseDays)
+    if (isNaN(days) || days < 1 || days > 30) {
+      newErrors.escrowAutoReleaseDays = 'Must be between 1 and 30 days'
+    }
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleInputChange = (field: keyof FeeConfigFormData, value: string | boolean) => {
+  const handleInputChange = (field: keyof FeeConfigFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
@@ -128,21 +115,10 @@ export default function FeeConfigManager() {
       setIsSubmitting(true)
 
       const configData = {
-        platformFeePercentage: parseFloat(formData.platformFeePercentage),
-        paymentProcessingFeePercentage: parseFloat(formData.paymentProcessingFeePercentage),
-        fixedTransactionFee: parseFloat(formData.fixedTransactionFee),
-        workerCommissionPercentage: parseFloat(formData.workerCommissionPercentage),
+        platformCommissionPercent: parseFloat(formData.platformCommissionPercent),
         minimumGigAmount: parseFloat(formData.minimumGigAmount),
-        minimumWithdrawal: parseFloat(formData.minimumWithdrawal),
-        minimumMilestone: parseFloat(formData.minimumMilestone),
-        maximumPaymentAmount: 100000, // R100,000 max per transaction
-        largePaymentThreshold: 10000, // R10,000 requires confirmation
-        escrowReleaseDelayHours: parseInt(formData.escrowReleaseDelayHours),
-        autoReleaseEnabled: formData.autoReleaseEnabled,
-        enabledProviders: ['tradesafe', 'ozow', 'yoco'],
-        defaultProvider: 'tradesafe',
-        vatIncluded: formData.vatIncluded,
-        vatPercentage: parseFloat(formData.vatPercentage),
+        maximumGigAmount: parseFloat(formData.maximumGigAmount),
+        escrowAutoReleaseDays: parseInt(formData.escrowAutoReleaseDays),
         isActive: true
       }
 
@@ -196,7 +172,7 @@ export default function FeeConfigManager() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Fee Configuration Management</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Fee Configuration</h1>
         <Button onClick={() => setShowCreateForm(true)}>
           Create New Configuration
         </Button>
@@ -209,32 +185,32 @@ export default function FeeConfigManager() {
             <CardTitle className="text-green-600">Active Configuration</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <p className="text-sm text-gray-500">Platform Fee</p>
-                <p className="font-semibold">{formatPercentage(activeConfig.platformFeePercentage)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Worker Commission</p>
-                <p className="font-semibold">{formatPercentage(activeConfig.workerCommissionPercentage)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Processing Fee</p>
-                <p className="font-semibold">{formatPercentage(activeConfig.paymentProcessingFeePercentage)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Fixed Fee</p>
-                <p className="font-semibold">{formatCurrency(activeConfig.fixedTransactionFee)}</p>
+                <p className="text-sm text-gray-500">Platform Commission</p>
+                <p className="font-semibold">{formatPercentage(activeConfig.platformCommissionPercent)}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-500">Min Gig Amount</p>
                 <p className="font-semibold">{formatCurrency(activeConfig.minimumGigAmount)}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500">Escrow Delay</p>
-                <p className="font-semibold">{activeConfig.escrowReleaseDelayHours}h</p>
+                <p className="text-sm text-gray-500">Max Gig Amount</p>
+                <p className="font-semibold">{formatCurrency(activeConfig.maximumGigAmount)}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Escrow Auto-Release</p>
+                <p className="font-semibold">{activeConfig.escrowAutoReleaseDays} days</p>
               </div>
             </div>
+
+            <div className="mt-4 p-3 bg-blue-50 rounded border border-blue-200">
+              <p className="text-sm text-blue-800">
+                <strong>Fee Model (TradeSafe):</strong> Employer pays exact gig amount.
+                Worker receives {100 - activeConfig.platformCommissionPercent}% after {activeConfig.platformCommissionPercent}% platform commission.
+              </p>
+            </div>
+
             <div className="mt-4 p-3 bg-gray-50 rounded">
               <p className="text-sm text-gray-600">
                 Last updated: {activeConfig.updatedAt.toLocaleDateString()} at {activeConfig.updatedAt.toLocaleTimeString()}
@@ -252,55 +228,29 @@ export default function FeeConfigManager() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Fee Percentages */}
               <div className="grid grid-cols-2 gap-4">
                 <Input
-                  label="Platform Fee (%)"
+                  label="Platform Commission (%)"
                   type="number"
                   step="0.1"
                   min="0"
                   max="50"
-                  value={formData.platformFeePercentage}
-                  onChange={(e) => handleInputChange('platformFeePercentage', e.target.value)}
-                  error={errors.platformFeePercentage}
+                  value={formData.platformCommissionPercent}
+                  onChange={(e) => handleInputChange('platformCommissionPercent', e.target.value)}
+                  error={errors.platformCommissionPercent}
                 />
                 <Input
-                  label="Worker Commission (%)"
+                  label="Escrow Auto-Release (days)"
                   type="number"
-                  step="0.1"
-                  min="0"
+                  min="1"
                   max="30"
-                  value={formData.workerCommissionPercentage}
-                  onChange={(e) => handleInputChange('workerCommissionPercentage', e.target.value)}
-                  error={errors.workerCommissionPercentage}
+                  value={formData.escrowAutoReleaseDays}
+                  onChange={(e) => handleInputChange('escrowAutoReleaseDays', e.target.value)}
+                  error={errors.escrowAutoReleaseDays}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Processing Fee (%)"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="10"
-                  value={formData.paymentProcessingFeePercentage}
-                  onChange={(e) => handleInputChange('paymentProcessingFeePercentage', e.target.value)}
-                  error={errors.paymentProcessingFeePercentage}
-                />
-                <Input
-                  label="Fixed Transaction Fee (ZAR)"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  max="100"
-                  value={formData.fixedTransactionFee}
-                  onChange={(e) => handleInputChange('fixedTransactionFee', e.target.value)}
-                  error={errors.fixedTransactionFee}
-                />
-              </div>
-
-              {/* Minimum Amounts */}
-              <div className="grid grid-cols-3 gap-4">
                 <Input
                   label="Min Gig Amount (ZAR)"
                   type="number"
@@ -311,64 +261,14 @@ export default function FeeConfigManager() {
                   error={errors.minimumGigAmount}
                 />
                 <Input
-                  label="Min Withdrawal (ZAR)"
+                  label="Max Gig Amount (ZAR)"
                   type="number"
-                  min="10"
-                  max="1000"
-                  value={formData.minimumWithdrawal}
-                  onChange={(e) => handleInputChange('minimumWithdrawal', e.target.value)}
+                  min="1000"
+                  max="1000000"
+                  value={formData.maximumGigAmount}
+                  onChange={(e) => handleInputChange('maximumGigAmount', e.target.value)}
+                  error={errors.maximumGigAmount}
                 />
-                <Input
-                  label="Min Milestone (ZAR)"
-                  type="number"
-                  min="10"
-                  max="1000"
-                  value={formData.minimumMilestone}
-                  onChange={(e) => handleInputChange('minimumMilestone', e.target.value)}
-                />
-              </div>
-
-              {/* Other Settings */}
-              <div className="grid grid-cols-2 gap-4">
-                <Input
-                  label="Escrow Release Delay (hours)"
-                  type="number"
-                  min="0"
-                  max="720"
-                  value={formData.escrowReleaseDelayHours}
-                  onChange={(e) => handleInputChange('escrowReleaseDelayHours', e.target.value)}
-                />
-                <Input
-                  label="VAT Percentage (%)"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="30"
-                  value={formData.vatPercentage}
-                  onChange={(e) => handleInputChange('vatPercentage', e.target.value)}
-                />
-              </div>
-
-              {/* Checkboxes */}
-              <div className="space-y-3">
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.autoReleaseEnabled}
-                    onChange={(e) => handleInputChange('autoReleaseEnabled', e.target.checked)}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm">Enable automatic escrow release</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.vatIncluded}
-                    onChange={(e) => handleInputChange('vatIncluded', e.target.checked)}
-                    className="rounded border-gray-300"
-                  />
-                  <span className="text-sm">VAT included in prices</span>
-                </label>
               </div>
 
               <div className="flex space-x-4">
@@ -396,7 +296,7 @@ export default function FeeConfigManager() {
       {/* All Configurations */}
       <Card>
         <CardHeader>
-          <CardTitle>All Configurations</CardTitle>
+          <CardTitle>Configuration History</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -410,16 +310,16 @@ export default function FeeConfigManager() {
                 <div className="flex justify-between items-start">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
                     <div>
-                      <p className="text-xs text-gray-500">Platform Fee</p>
-                      <p className="text-sm font-medium">{formatPercentage(config.platformFeePercentage)}</p>
+                      <p className="text-xs text-gray-500">Commission</p>
+                      <p className="text-sm font-medium">{formatPercentage(config.platformCommissionPercent)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Worker Commission</p>
-                      <p className="text-sm font-medium">{formatPercentage(config.workerCommissionPercentage)}</p>
+                      <p className="text-xs text-gray-500">Min Gig</p>
+                      <p className="text-sm font-medium">{formatCurrency(config.minimumGigAmount)}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-gray-500">Fixed Fee</p>
-                      <p className="text-sm font-medium">{formatCurrency(config.fixedTransactionFee)}</p>
+                      <p className="text-xs text-gray-500">Auto-Release</p>
+                      <p className="text-sm font-medium">{config.escrowAutoReleaseDays} days</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Created</p>

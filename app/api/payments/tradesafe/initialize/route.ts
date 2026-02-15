@@ -149,9 +149,31 @@ export async function POST(request: NextRequest) {
     // Get platform token for agent fees
     const platformToken = await tradeSafe.getApiProfile()
 
-    // Get platform fee from config (default 10%)
-    const configDoc = await db.collection('config').doc('platform').get()
-    const platformFee = configDoc.exists ? (configDoc.data()?.platformFeePercent || 10) : 10
+    // Get platform commission from feeConfigs (single source of truth)
+    // This becomes the TradeSafe agent fee - platform's revenue
+    const feeConfigQuery = await db.collection('feeConfigs')
+      .where('isActive', '==', true)
+      .orderBy('createdAt', 'desc')
+      .limit(1)
+      .get()
+
+    // Default to 10% if no config found
+    // Support both new field (platformCommissionPercent) and legacy (workerCommissionPercentage)
+    const configData = feeConfigQuery.empty ? null : feeConfigQuery.docs[0].data()
+    const platformFee = configData?.platformCommissionPercent ?? configData?.workerCommissionPercentage ?? 10
+
+    // Calculate expected amounts for audit
+    const expectedCommission = Math.round(amount * (platformFee / 100) * 100) / 100
+    const expectedWorkerEarnings = amount - expectedCommission
+
+    console.log('[PAYMENT_AUDIT] Initialize - Fee config:', {
+      source: feeConfigQuery.empty ? 'default' : feeConfigQuery.docs[0].id,
+      platformCommissionPercent: platformFee,
+      gigId,
+      amount,
+      expectedCommission,
+      expectedWorkerEarnings
+    })
 
     // Create TradeSafe transaction
     console.log('=== TRADESAFE INITIALIZE: Step 1 - Creating transaction ===')
@@ -216,13 +238,18 @@ export async function POST(request: NextRequest) {
 
     const paymentIntentRef = await db.collection('paymentIntents').add(paymentIntentData)
 
-    console.log('=== TRADESAFE INITIALIZE: Step 4 - Payment intent stored ===')
-    console.log('PaymentIntent stored:', {
+    console.log('[PAYMENT_AUDIT] Initialize - Payment intent created:', {
       paymentIntentId: paymentIntentRef.id,
       gigId,
-      transactionId: transaction.id
+      transactionId: transaction.id,
+      allocationId: transaction.allocations[0]?.id,
+      employerId,
+      workerId,
+      escrowAmount: amount,
+      platformCommissionPercent: platformFee,
+      expectedCommission: Math.round(amount * (platformFee / 100) * 100) / 100,
+      expectedWorkerEarnings: amount - Math.round(amount * (platformFee / 100) * 100) / 100
     })
-    console.log('NOTE: We store gigId in paymentIntent, lookup by transactionId to get gigId')
 
     // Return checkout URL for redirect
     return NextResponse.json({
