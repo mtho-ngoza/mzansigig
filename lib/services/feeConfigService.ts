@@ -70,13 +70,12 @@ export class FeeConfigService {
       const docData = querySnapshot.docs[0]
       const data = docData.data()
 
-      // Handle migration from old field names
       return {
         id: docData.id,
-        platformCommissionPercent: data.platformCommissionPercent ?? data.workerCommissionPercentage ?? 10,
+        platformCommissionPercent: data.platformCommissionPercent ?? 10,
         minimumGigAmount: data.minimumGigAmount ?? 100,
-        maximumGigAmount: data.maximumGigAmount ?? data.maximumPaymentAmount ?? 100000,
-        escrowAutoReleaseDays: data.escrowAutoReleaseDays ?? Math.round((data.escrowReleaseDelayHours ?? 168) / 24),
+        maximumGigAmount: data.maximumGigAmount ?? 100000,
+        escrowAutoReleaseDays: data.escrowAutoReleaseDays ?? 7,
         isActive: data.isActive ?? true,
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
@@ -165,9 +164,9 @@ export class FeeConfigService {
         const data = docSnapshot.data()
         return {
           id: docSnapshot.id,
-          platformCommissionPercent: data.platformCommissionPercent ?? data.workerCommissionPercentage ?? 10,
+          platformCommissionPercent: data.platformCommissionPercent ?? 10,
           minimumGigAmount: data.minimumGigAmount ?? 100,
-          maximumGigAmount: data.maximumGigAmount ?? data.maximumPaymentAmount ?? 100000,
+          maximumGigAmount: data.maximumGigAmount ?? 100000,
           escrowAutoReleaseDays: data.escrowAutoReleaseDays ?? 7,
           isActive: data.isActive ?? false,
           createdAt: data.createdAt?.toDate() || new Date(),

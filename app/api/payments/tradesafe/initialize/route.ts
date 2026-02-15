@@ -166,9 +166,8 @@ export async function POST(request: NextRequest) {
       .get()
 
     // Default to 10% if no config found
-    // Support both new field (platformCommissionPercent) and legacy (workerCommissionPercentage)
     const configData = feeConfigQuery.empty ? null : feeConfigQuery.docs[0].data()
-    const platformFee = configData?.platformCommissionPercent ?? configData?.workerCommissionPercentage ?? 10
+    const platformFee = configData?.platformCommissionPercent ?? 10
 
     // Calculate expected amounts for audit
     const expectedCommission = Math.round(amount * (platformFee / 100) * 100) / 100
