@@ -259,7 +259,7 @@ export default function BankDetailsForm({ onSuccess }: BankDetailsFormProps) {
                   name="accountType"
                   value="SAVINGS"
                   checked={formData.accountType === 'SAVINGS'}
-                  onChange={(e) => setFormData({ ...formData, accountType: 'SAVINGS' })}
+                  onChange={() => setFormData({ ...formData, accountType: 'SAVINGS' })}
                   className="mr-2"
                 />
                 Savings
@@ -270,7 +270,7 @@ export default function BankDetailsForm({ onSuccess }: BankDetailsFormProps) {
                   name="accountType"
                   value="CHEQUE"
                   checked={formData.accountType === 'CHEQUE'}
-                  onChange={(e) => setFormData({ ...formData, accountType: 'CHEQUE' })}
+                  onChange={() => setFormData({ ...formData, accountType: 'CHEQUE' })}
                   className="mr-2"
                 />
                 Cheque
