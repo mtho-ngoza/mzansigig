@@ -15,7 +15,6 @@ import * as admin from 'firebase-admin'
  *   title: string
  *   description?: string
  *   workerId: string
- *   workerToken?: string (TradeSafe token - will be created if not provided)
  * }
  *
  * @returns { checkoutUrl: string, transactionId: string }
@@ -23,7 +22,7 @@ import * as admin from 'firebase-admin'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { gigId, amount, title, description, workerId, workerToken } = body
+    const { gigId, amount, title, description, workerId } = body
 
     // Validate required fields
     if (!gigId || !amount || !title || !workerId) {
@@ -99,51 +98,49 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Map bank names to TradeSafe bank codes
+    // Map bank names to TradeSafe UniversalBranchCode enum (UPPERCASE)
     const BANK_CODES: Record<string, string> = {
-      'ABSA': 'absa', 'FNB': 'fnb', 'Nedbank': 'nedbank',
-      'Standard Bank': 'standard_bank', 'Capitec': 'capitec',
-      'African Bank': 'african_bank', 'TymeBank': 'tymebank',
-      'Discovery Bank': 'discovery', 'Investec': 'investec'
+      'ABSA': 'ABSA', 'FNB': 'FNB', 'Nedbank': 'NEDBANK',
+      'Standard Bank': 'STANDARD_BANK', 'Capitec': 'CAPITEC',
+      'African Bank': 'AFRICAN_BANK', 'TymeBank': 'TYMEBANK',
+      'Discovery Bank': 'DISCOVERY', 'Investec': 'INVESTEC'
     }
 
     // Bank details guaranteed by application process - get bank code
     const bankCode = BANK_CODES[workerData.bankDetails?.bankName]
 
-    // Get or create worker's TradeSafe token (with bank details for direct payout)
-    let sellerToken = workerToken || workerData.tradeSafeToken
-    if (!sellerToken) {
-      const tokenInput: {
-        givenName: string
-        familyName: string
-        email: string
-        mobile: string
-        bankAccount?: { accountNumber: string; accountType: 'CHEQUE' | 'SAVINGS'; bank: string }
-      } = {
-        givenName: workerData.displayName?.split(' ')[0] || workerData.firstName || 'Worker',
-        familyName: workerData.displayName?.split(' ').slice(1).join(' ') || workerData.lastName || '',
-        email: workerData.email,
-        mobile: workerData.phone || '+27000000000'
-      }
-
-      // Include bank details if available and supported
-      if (workerData.bankDetails?.accountNumber && bankCode) {
-        tokenInput.bankAccount = {
-          accountNumber: workerData.bankDetails.accountNumber,
-          accountType: workerData.bankDetails.accountType || 'SAVINGS',
-          bank: bankCode
-        }
-      }
-
-      const token = await tradeSafe.createToken(tokenInput)
-      sellerToken = token.id
-
-      // Store token in user profile
-      await db.collection('users').doc(workerId).update({
-        tradeSafeToken: sellerToken,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      })
+    // Always create new TradeSafe token with bank details for direct payout
+    // This ensures the token has bank details attached (don't reuse old tokens)
+    const tokenInput: {
+      givenName: string
+      familyName: string
+      email: string
+      mobile: string
+      bankAccount?: { accountNumber: string; accountType: 'CHEQUE' | 'SAVINGS'; bank: string }
+    } = {
+      givenName: workerData.displayName?.split(' ')[0] || workerData.firstName || 'Worker',
+      familyName: workerData.displayName?.split(' ').slice(1).join(' ') || workerData.lastName || '',
+      email: workerData.email,
+      mobile: workerData.phone || '+27000000000'
     }
+
+    // Include bank details (required - enforced at application time)
+    if (workerData.bankDetails?.accountNumber && bankCode) {
+      tokenInput.bankAccount = {
+        accountNumber: workerData.bankDetails.accountNumber,
+        accountType: workerData.bankDetails.accountType || 'SAVINGS',
+        bank: bankCode
+      }
+    }
+
+    const workerTokenResult = await tradeSafe.createToken(tokenInput)
+    const sellerToken = workerTokenResult.id
+
+    // Store token in user profile
+    await db.collection('users').doc(workerId).update({
+      tradeSafeToken: sellerToken,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    })
 
     // Get platform token for agent fees
     const platformToken = await tradeSafe.getApiProfile()
