@@ -43,7 +43,7 @@ export interface GigApplication {
   applicantId: string
   applicantName: string
   message?: string // Optional brief message from applicant
-  proposedRate?: number // Initial rate proposed by worker (optional to support legacy/unfunded cases)
+  proposedRate?: number // Initial rate proposed by worker
   gigBudget?: number // Original gig budget (denormalized for easy access)
   employerId?: string // ID of the gig employer (for efficient queries)
 

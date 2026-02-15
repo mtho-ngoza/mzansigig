@@ -77,15 +77,6 @@ export class WalletService {
   }
 
   /**
-   * Debit worker's wallet when withdrawal is processed
-   * @deprecated Use debitWalletAtomic instead to prevent race conditions
-   */
-  static async debitWallet(userId: string, amount: number): Promise<void> {
-    // Redirect to atomic version to prevent race conditions
-    return this.debitWalletAtomic(userId, amount)
-  }
-
-  /**
    * Update pending balance when payment goes into escrow
    * Uses transaction to prevent race conditions
    */
@@ -209,7 +200,7 @@ export class WalletService {
   }
 
   /**
-   * Initialize wallet fields for existing users (migration helper)
+   * Initialize wallet fields for a user
    */
   static async initializeWallet(userId: string): Promise<void> {
     const userRef = doc(db, 'users', userId)

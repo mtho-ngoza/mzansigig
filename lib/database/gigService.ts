@@ -527,7 +527,6 @@ export class GigService {
       acceptingApplication = application;
 
       // Check that rate has been agreed upon before accepting
-      // For backward compatibility: allow if rateStatus is undefined (older applications) or 'agreed'
       if (application.rateStatus && application.rateStatus !== 'agreed') {
         throw new Error('Cannot accept application until rate is agreed. Please confirm the rate first.');
       }
@@ -801,7 +800,7 @@ export class GigService {
       throw new Error('You cannot confirm your own rate proposal. Wait for the other party to respond.');
     }
 
-    // Ensure we actually have a rate to confirm (supports legacy/unfunded cases)
+    // Ensure we have a rate to confirm
     if (currentRate === undefined) {
       throw new Error('No rate available to confirm');
     }
@@ -909,8 +908,7 @@ export class GigService {
 
     // If rate is not yet agreed, confirm it first (supports explicit rate override when provided)
     if (application.rateStatus !== 'agreed') {
-      // Determine an effective rate to confirm. This guards against legacy/edge cases
-      // where proposedRate or lastRateUpdate may be missing in the stored document.
+      // Determine effective rate - use provided rate or fall back to existing rates
       let effectiveRate = rate;
       if (effectiveRate === undefined) {
         effectiveRate = application.proposedRate ?? application.agreedRate;

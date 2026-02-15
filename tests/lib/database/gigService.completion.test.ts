@@ -456,8 +456,8 @@ describe('GigService - Completion Workflows', () => {
       expect(mockTransaction.update.mock.calls.length).toBeGreaterThanOrEqual(4)
     })
 
-    it('should NOT release escrow when both paymentId and escrowAmount are missing (unfunded/legacy)', async () => {
-      // Legacy or unfunded apps have neither paymentId nor escrowAmount
+    it('should NOT release escrow when both paymentId and escrowAmount are missing', async () => {
+      // Unfunded applications have neither paymentId nor escrowAmount
       const appWithoutPaymentId: GigApplication = {
         ...applicationWithCompletion,
         paymentId: undefined,
