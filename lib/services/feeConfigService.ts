@@ -18,42 +18,33 @@ const COLLECTIONS = {
   FEE_CONFIGS: 'feeConfigs'
 } as const
 
-// Default fee configuration for South African market
+/**
+ * Default Fee Configuration
+ *
+ * Simplified for TradeSafe escrow payments:
+ * - Platform takes 10% commission from worker earnings (via TradeSafe agent fee)
+ * - Employer pays exactly the gig amount (no additional fees)
+ * - Worker receives 90% of gig amount
+ */
 export const DEFAULT_FEE_CONFIG: Omit<PaymentConfig, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'> = {
-  // Platform fees (paid by employer)
-  platformFeePercentage: 5, // 5% platform service fee
-  paymentProcessingFeePercentage: 2.9, // 2.9% payment processing
-  fixedTransactionFee: 2.50, // R2.50 fixed fee per transaction
+  // Platform commission - deducted from worker earnings via TradeSafe agent fee
+  platformCommissionPercent: 10,
 
-  // Worker commission (deducted from worker earnings)
-  workerCommissionPercentage: 10, // 10% commission from worker earnings
+  // Gig amount limits
+  minimumGigAmount: 100,    // R100 minimum
+  maximumGigAmount: 100000, // R100,000 maximum
 
-  // Payment amount limits
-  minimumGigAmount: 100, // R100 minimum gig/payment value
-  minimumWithdrawal: 50, // R50 minimum withdrawal
-  minimumMilestone: 50, // R50 minimum milestone
-  maximumPaymentAmount: 100000, // R100,000 max per transaction
-  largePaymentThreshold: 10000, // R10,000 requires confirmation
-
-  // Escrow settings
-  escrowReleaseDelayHours: 72, // 3 days default hold
-  autoReleaseEnabled: true,
-
-  // Payment providers
-  // Note: PayFast and Paystack applications were rejected (marketplace/escrow flagged as high-risk)
-  enabledProviders: ['tradesafe', 'ozow', 'yoco'],
-  defaultProvider: 'tradesafe',
-
-  // South African tax
-  vatIncluded: true,
-  vatPercentage: 15,
+  // Escrow auto-release (worker protection)
+  escrowAutoReleaseDays: 7, // Auto-release if employer doesn't respond in 7 days
 
   // Status
   isActive: true
 }
 
 export class FeeConfigService {
-  // Get the active fee configuration
+  /**
+   * Get the active fee configuration
+   */
   static async getActiveFeeConfig(): Promise<PaymentConfig> {
     try {
       const q = query(
@@ -66,9 +57,7 @@ export class FeeConfigService {
       const querySnapshot = await getDocs(q)
 
       if (querySnapshot.empty) {
-        // Return default config if none exists in database
-        // Run 'npm run seed:prod' or 'npm run seed:dev' to seed the database
-        console.warn('⚠️  No fee config found in database. Using default config. Run seed script to persist.')
+        console.warn('⚠️  No fee config found in database. Using default config.')
         return {
           id: 'default',
           ...DEFAULT_FEE_CONFIG,
@@ -78,16 +67,23 @@ export class FeeConfigService {
         }
       }
 
-      const doc = querySnapshot.docs[0]
+      const docData = querySnapshot.docs[0]
+      const data = docData.data()
+
+      // Handle migration from old field names
       return {
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        updatedAt: doc.data().updatedAt?.toDate() || new Date()
-      } as PaymentConfig
+        id: docData.id,
+        platformCommissionPercent: data.platformCommissionPercent ?? data.workerCommissionPercentage ?? 10,
+        minimumGigAmount: data.minimumGigAmount ?? 100,
+        maximumGigAmount: data.maximumGigAmount ?? data.maximumPaymentAmount ?? 100000,
+        escrowAutoReleaseDays: data.escrowAutoReleaseDays ?? Math.round((data.escrowReleaseDelayHours ?? 168) / 24),
+        isActive: data.isActive ?? true,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date(),
+        createdBy: data.createdBy || 'system'
+      }
     } catch (error) {
       console.error('Error fetching active fee config:', error)
-      // Return default config as fallback
       return {
         id: 'default',
         ...DEFAULT_FEE_CONFIG,
@@ -98,13 +94,14 @@ export class FeeConfigService {
     }
   }
 
-  // Create new fee configuration
+  /**
+   * Create new fee configuration
+   */
   static async createFeeConfig(
     configData: Omit<PaymentConfig, 'id' | 'createdAt' | 'updatedAt' | 'createdBy'>,
     createdBy: string
   ): Promise<PaymentConfig> {
     try {
-      // If this config is being set as active, deactivate all others
       if (configData.isActive) {
         await this.deactivateAllConfigs()
       }
@@ -129,14 +126,15 @@ export class FeeConfigService {
     }
   }
 
-  // Update existing fee configuration
+  /**
+   * Update existing fee configuration
+   */
   static async updateFeeConfig(
     configId: string,
     updates: Partial<Omit<PaymentConfig, 'id' | 'createdAt' | 'createdBy'>>,
     updatedBy: string
   ): Promise<void> {
     try {
-      // If this config is being set as active, deactivate all others
       if (updates.isActive) {
         await this.deactivateAllConfigs()
       }
@@ -152,7 +150,9 @@ export class FeeConfigService {
     }
   }
 
-  // Get all fee configurations (for admin)
+  /**
+   * Get all fee configurations (for admin)
+   */
   static async getAllFeeConfigs(): Promise<PaymentConfig[]> {
     try {
       const q = query(
@@ -161,19 +161,29 @@ export class FeeConfigService {
       )
 
       const querySnapshot = await getDocs(q)
-      return querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date(),
-        updatedAt: doc.data().updatedAt?.toDate() || new Date()
-      } as PaymentConfig))
+      return querySnapshot.docs.map(docSnapshot => {
+        const data = docSnapshot.data()
+        return {
+          id: docSnapshot.id,
+          platformCommissionPercent: data.platformCommissionPercent ?? data.workerCommissionPercentage ?? 10,
+          minimumGigAmount: data.minimumGigAmount ?? 100,
+          maximumGigAmount: data.maximumGigAmount ?? data.maximumPaymentAmount ?? 100000,
+          escrowAutoReleaseDays: data.escrowAutoReleaseDays ?? 7,
+          isActive: data.isActive ?? false,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+          createdBy: data.createdBy || 'unknown'
+        }
+      })
     } catch (error) {
       console.error('Error fetching fee configs:', error)
       return []
     }
   }
 
-  // Deactivate all configurations (helper for setting new active config)
+  /**
+   * Deactivate all configurations
+   */
   private static async deactivateAllConfigs(): Promise<void> {
     try {
       const q = query(
@@ -196,41 +206,29 @@ export class FeeConfigService {
     }
   }
 
-  // Calculate detailed fee breakdown
-  static calculateFeeBreakdown(
-    grossAmount: number,
-    config: PaymentConfig
-  ): FeeBreakdown {
-    // Employer-side fees (added to the gross amount)
-    const platformFee = Math.round((grossAmount * config.platformFeePercentage) / 100 * 100) / 100
-    const processingFee = Math.round((grossAmount * config.paymentProcessingFeePercentage) / 100 * 100) / 100
-    const fixedFee = config.fixedTransactionFee
-
-    // Total employer fees
-    const totalEmployerFees = platformFee + processingFee + fixedFee
-
-    // Worker-side deductions (taken from the gross amount)
-    const workerCommission = Math.round((grossAmount * config.workerCommissionPercentage) / 100 * 100) / 100
-    const totalWorkerDeductions = workerCommission
-
-    // Final amounts
-    const netAmountToWorker = grossAmount - totalWorkerDeductions
-    const totalEmployerCost = grossAmount + totalEmployerFees
+  /**
+   * Calculate fee breakdown for a gig amount
+   *
+   * Simple calculation:
+   * - Employer pays: gigAmount
+   * - Platform takes: gigAmount * 10%
+   * - Worker receives: gigAmount * 90%
+   */
+  static calculateFeeBreakdown(gigAmount: number, config: PaymentConfig): FeeBreakdown {
+    const commission = config.platformCommissionPercent / 100
+    const platformCommission = Math.round(gigAmount * commission * 100) / 100
+    const workerEarnings = Math.round((gigAmount - platformCommission) * 100) / 100
 
     return {
-      grossAmount,
-      platformFee,
-      processingFee,
-      fixedFee,
-      workerCommission,
-      totalEmployerFees,
-      totalWorkerDeductions,
-      netAmountToWorker,
-      totalEmployerCost
+      gigAmount,
+      platformCommission,
+      workerEarnings
     }
   }
 
-  // Format currency for South African market
+  /**
+   * Format currency for South African Rand
+   */
   static formatCurrency(amount: number): string {
     return new Intl.NumberFormat('en-ZA', {
       style: 'currency',
@@ -239,31 +237,15 @@ export class FeeConfigService {
     }).format(amount)
   }
 
-  // Validate fee configuration
+  /**
+   * Validate fee configuration
+   */
   static validateFeeConfig(config: Partial<PaymentConfig>): string[] {
     const errors: string[] = []
 
-    if (config.platformFeePercentage !== undefined) {
-      if (config.platformFeePercentage < 0 || config.platformFeePercentage > 50) {
-        errors.push('Platform fee percentage must be between 0% and 50%')
-      }
-    }
-
-    if (config.paymentProcessingFeePercentage !== undefined) {
-      if (config.paymentProcessingFeePercentage < 0 || config.paymentProcessingFeePercentage > 10) {
-        errors.push('Payment processing fee percentage must be between 0% and 10%')
-      }
-    }
-
-    if (config.workerCommissionPercentage !== undefined) {
-      if (config.workerCommissionPercentage < 0 || config.workerCommissionPercentage > 30) {
-        errors.push('Worker commission percentage must be between 0% and 30%')
-      }
-    }
-
-    if (config.fixedTransactionFee !== undefined) {
-      if (config.fixedTransactionFee < 0 || config.fixedTransactionFee > 100) {
-        errors.push('Fixed transaction fee must be between R0 and R100')
+    if (config.platformCommissionPercent !== undefined) {
+      if (config.platformCommissionPercent < 0 || config.platformCommissionPercent > 50) {
+        errors.push('Platform commission must be between 0% and 50%')
       }
     }
 
@@ -273,15 +255,15 @@ export class FeeConfigService {
       }
     }
 
-    if (config.maximumPaymentAmount !== undefined) {
-      if (config.maximumPaymentAmount < 1000 || config.maximumPaymentAmount > 1000000) {
-        errors.push('Maximum payment amount must be between R1,000 and R1,000,000')
+    if (config.maximumGigAmount !== undefined) {
+      if (config.maximumGigAmount < 1000 || config.maximumGigAmount > 1000000) {
+        errors.push('Maximum gig amount must be between R1,000 and R1,000,000')
       }
     }
 
-    if (config.largePaymentThreshold !== undefined) {
-      if (config.largePaymentThreshold < 100 || config.largePaymentThreshold > 100000) {
-        errors.push('Large payment threshold must be between R100 and R100,000')
+    if (config.escrowAutoReleaseDays !== undefined) {
+      if (config.escrowAutoReleaseDays < 1 || config.escrowAutoReleaseDays > 30) {
+        errors.push('Escrow auto-release must be between 1 and 30 days')
       }
     }
 

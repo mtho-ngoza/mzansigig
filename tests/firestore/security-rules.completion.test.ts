@@ -78,13 +78,27 @@ describe('Firestore Security Rules - Completion Requests', () => {
     ;(PaymentService.releaseEscrowInTransaction as jest.Mock).mockResolvedValue(undefined)
   })
 
+  // Mock worker with bank details for completion requests
+  const mockWorkerWithBankDetails = {
+    id: mockWorkerId,
+    bankDetails: {
+      bankName: 'FNB',
+      accountNumber: '1234567890',
+      accountType: 'SAVINGS'
+    }
+  }
+
   describe('Worker Completion Request Permissions', () => {
     it('should allow worker to request completion on their funded application', async () => {
       // This tests the fix for: "Request Completion" Firestore permissions error
       // Workers need to update completionRequestedAt, completionRequestedBy, completionAutoReleaseAt
       // on applications where status = 'funded'
 
-      jest.mocked(FirestoreService.getById).mockResolvedValue(mockFundedApplication)
+      jest.mocked(FirestoreService.getById).mockImplementation((collection: string) => {
+        if (collection === 'applications') return Promise.resolve(mockFundedApplication)
+        if (collection === 'users') return Promise.resolve(mockWorkerWithBankDetails)
+        return Promise.resolve(null)
+      })
       jest.mocked(FirestoreService.update).mockResolvedValue()
 
       await GigService.requestCompletionByWorker(mockApplicationId, mockWorkerId)
@@ -260,7 +274,11 @@ describe('Firestore Security Rules - Completion Requests', () => {
         // No completionRequestedAt - fresh application
       }
 
-      jest.mocked(FirestoreService.getById).mockResolvedValue(freshFundedApplication)
+      jest.mocked(FirestoreService.getById).mockImplementation((collection: string) => {
+        if (collection === 'applications') return Promise.resolve(freshFundedApplication)
+        if (collection === 'users') return Promise.resolve(mockWorkerWithBankDetails)
+        return Promise.resolve(null)
+      })
       jest.mocked(FirestoreService.update).mockResolvedValue()
 
       await GigService.requestCompletionByWorker('fresh-app-123', mockWorkerId)

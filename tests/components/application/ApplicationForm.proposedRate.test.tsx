@@ -63,7 +63,7 @@ jest.mock('@/lib/database/gigService', () => ({
 jest.mock('@/components/gig/GigAmountDisplay', () => {
   const StubDefault = ({ budget, className }: any) => <div className={className}>{budget}</div>;
   const WorkerEarningsDisplay = ({ feeBreakdown, className }: any) => (
-    <div className={className}>{feeBreakdown?.netAmountToWorker ?? ''}</div>
+    <div className={className}>{feeBreakdown?.workerEarnings ?? ''}</div>
   );
   return {
     __esModule: true,
@@ -112,14 +112,14 @@ describe('ApplicationForm - Proposed Rate stability', () => {
 
   beforeEach(() => {
     // Provide a safe default for any unexpected fee calculations
-    mockCalculateGigFees.mockResolvedValue({ netAmountToWorker: 0 })
+    mockCalculateGigFees.mockResolvedValue({ workerEarnings: 0 })
   })
 
   it("does not overwrite user's typed proposedRate when fee calc resolves later", async () => {
     const gig = makeGig({ budget: 1500 })
 
     // Make fee calculation async and resolve to a different net amount
-    mockCalculateGigFees.mockResolvedValueOnce({ netAmountToWorker: 1234 })
+    mockCalculateGigFees.mockResolvedValueOnce({ workerEarnings: 1234 })
 
     render(<ApplicationForm gig={gig} />)
 
@@ -144,7 +144,7 @@ describe('ApplicationForm - Proposed Rate stability', () => {
 
   it('resets prefill guards on gig change and still respects subsequent user edits', async () => {
     // Set up mock BEFORE initial render so the effect captures it
-    mockCalculateGigFees.mockResolvedValueOnce({ netAmountToWorker: 800 })
+    mockCalculateGigFees.mockResolvedValueOnce({ workerEarnings: 800 })
 
     const { rerender } = render(<ApplicationForm gig={makeGig({ id: 'gig-a', budget: 1000 })} />)
 
@@ -167,7 +167,7 @@ describe('ApplicationForm - Proposed Rate stability', () => {
     expect(input.value).toBe('900')
 
     // Set up mock for the new gig BEFORE rerender
-    mockCalculateGigFees.mockResolvedValueOnce({ netAmountToWorker: 1800 })
+    mockCalculateGigFees.mockResolvedValueOnce({ workerEarnings: 1800 })
 
     // Trigger another calculation (new gig)
     const newGig = makeGig({ id: 'gig-b', budget: 2000 })
@@ -189,7 +189,7 @@ describe('ApplicationForm - Proposed Rate stability', () => {
     expect(input.value).toBe('1900')
 
     // Another calculation resolves later (shouldn't happen in normal use, but tests race condition protection)
-    mockCalculateGigFees.mockResolvedValueOnce({ netAmountToWorker: 1700 })
+    mockCalculateGigFees.mockResolvedValueOnce({ workerEarnings: 1700 })
     await act(async () => {
       jest.runOnlyPendingTimers()
       await Promise.resolve()

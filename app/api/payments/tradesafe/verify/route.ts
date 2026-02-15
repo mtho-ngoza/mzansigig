@@ -159,11 +159,15 @@ export async function POST(request: NextRequest) {
                 pendingBalance: newPending,
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
               })
-              console.log('Worker pendingBalance updated:', {
+              console.log('[PAYMENT_AUDIT] Verify - Escrow funded, worker pending updated:', {
+                gigId,
                 workerId,
-                previousBalance: currentPending,
-                addedAmount: paymentData.amount,
-                newBalance: newPending
+                employerId: paymentData.employerId,
+                transactionId,
+                escrowAmount: paymentData.amount,
+                previousPending: currentPending,
+                newPending,
+                status: 'ESCROW_FUNDED'
               })
             }
           }

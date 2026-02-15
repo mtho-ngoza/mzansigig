@@ -90,7 +90,12 @@ describe('MyApplications', () => {
     userType: 'job-seeker' as const,
     phone: '+27123456789',
     location: 'Johannesburg',
-    createdAt: new Date()
+    createdAt: new Date(),
+    bankDetails: {
+      bankName: 'FNB',
+      accountNumber: '1234567890',
+      accountType: 'SAVINGS' as const
+    }
   }
 
   const pendingApplication = {

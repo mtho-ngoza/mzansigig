@@ -150,11 +150,13 @@ export async function POST(request: NextRequest) {
         break
     }
 
-    console.log('TradeSafe delivery action:', {
+    console.log('[PAYMENT_AUDIT] Complete - Delivery action processed:', {
       gigId,
       action,
       allocationId,
-      state: result?.state
+      state: result?.state,
+      status: action === 'accept' ? 'RELEASE_TRIGGERED' : action.toUpperCase(),
+      timestamp: new Date().toISOString()
     })
 
     return NextResponse.json({

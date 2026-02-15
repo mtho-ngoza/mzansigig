@@ -167,10 +167,15 @@ export async function POST(request: NextRequest) {
         const platformCommission = escrowAmount * 0.10
         const netAmount = escrowAmount - platformCommission
 
-        console.log('Fee calculation:', {
-          grossAmount: escrowAmount,
+        console.log('[PAYMENT_AUDIT] Approve - Fee calculation:', {
+          gigId: application.gigId,
+          workerId,
+          employerId,
+          escrowAmount,
+          platformCommissionPercent: 10,
           platformCommission,
-          netAmount
+          workerEarnings: netAmount,
+          verifyCommission: `${((platformCommission / escrowAmount) * 100).toFixed(1)}%`
         })
 
         // Update worker wallet
@@ -208,7 +213,19 @@ export async function POST(request: NextRequest) {
     let tradeSafePayoutTriggered = false
     if (allocationId) {
       try {
-        console.log('=== APPROVE COMPLETION API: Triggering TradeSafe payout ===')
+        // Get worker bank details for audit log
+        const workerDocForLog = await db.collection('users').doc(workerId).get()
+        const workerBankData = workerDocForLog.data()?.bankDetails
+
+        console.log('[PAYMENT_AUDIT] Approve - Triggering TradeSafe payout:', {
+          gigId: application.gigId,
+          allocationId,
+          escrowAmount,
+          workerId,
+          workerBankDetails: workerBankData
+            ? `${workerBankData.bankName} ****${workerBankData.accountNumber?.slice(-4)}`
+            : 'NOT_FOUND'
+        })
         const tradeSafe = new TradeSafeService()
 
         // Accept delivery triggers immediate payout to seller's bank
@@ -283,7 +300,19 @@ export async function POST(request: NextRequest) {
     })
     console.log('Created platform fee history record')
 
-    console.log('=== APPROVE COMPLETION API: SUCCESS ===')
+    console.log('[PAYMENT_AUDIT] Approve - COMPLETION SUCCESS:', {
+      gigId: application.gigId,
+      applicationId,
+      workerId,
+      employerId,
+      escrowAmount,
+      platformCommission: escrowAmount > 0 ? escrowAmount * 0.10 : 0,
+      workerEarnings: escrowAmount > 0 ? escrowAmount - (escrowAmount * 0.10) : 0,
+      tradeSafePayoutTriggered,
+      allocationId: allocationId || 'N/A',
+      status: 'APPROVED_PAYOUT_TRIGGERED',
+      timestamp: new Date().toISOString()
+    })
 
     return NextResponse.json({
       success: true,

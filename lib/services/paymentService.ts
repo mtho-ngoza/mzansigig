@@ -432,8 +432,8 @@ export class PaymentService {
       // Calculate fee breakdown to get net amount for worker
       const feeConfig = await this.getActiveFeeConfig()
       const feeBreakdown = FeeConfigService.calculateFeeBreakdown(grossAmount, feeConfig)
-      const netAmountToWorker = feeBreakdown.netAmountToWorker
-      const platformCommission = feeBreakdown.workerCommission
+      const netAmountToWorker = feeBreakdown.workerEarnings
+      const platformCommission = feeBreakdown.platformCommission
 
       console.log(`Releasing escrow: gross=${grossAmount}, commission=${platformCommission}, net=${netAmountToWorker}`)
 
@@ -508,7 +508,7 @@ export class PaymentService {
   static async getEscrowReleaseContext(paymentId: string): Promise<{
     paymentId: string
     paymentData: { amount: number; gigId: string; workerId: string; employerId: string }
-    feeBreakdown: { netAmountToWorker: number; workerCommission: number }
+    feeBreakdown: { workerEarnings: number; platformCommission: number }
     paymentHistoryDocs: Array<{ id: string; type: string }>
   }> {
     const paymentDoc = await getDoc(doc(db, COLLECTIONS.PAYMENTS, paymentId))
@@ -540,8 +540,8 @@ export class PaymentService {
       paymentId,
       paymentData: { amount: grossAmount, gigId, workerId, employerId },
       feeBreakdown: {
-        netAmountToWorker: feeBreakdown.netAmountToWorker,
-        workerCommission: feeBreakdown.workerCommission
+        workerEarnings: feeBreakdown.workerEarnings,
+        platformCommission: feeBreakdown.platformCommission
       },
       paymentHistoryDocs
     }
@@ -556,13 +556,13 @@ export class PaymentService {
     context: {
       paymentId: string
       paymentData: { amount: number; gigId: string; workerId: string; employerId?: string }
-      feeBreakdown: { netAmountToWorker: number; workerCommission: number }
+      feeBreakdown: { workerEarnings: number; platformCommission: number }
       paymentHistoryDocs: Array<{ id: string; type: string }>
     }
   ): Promise<void> {
     const { paymentId, paymentData, feeBreakdown, paymentHistoryDocs } = context
     const { amount: grossAmount, gigId, workerId, employerId } = paymentData
-    const { netAmountToWorker, workerCommission: platformCommission } = feeBreakdown
+    const { workerEarnings: netAmountToWorker, platformCommission } = feeBreakdown
 
     console.log('=== RELEASE ESCROW IN TRANSACTION ===')
     console.log('paymentId:', paymentId)
@@ -1210,21 +1210,15 @@ export class PaymentService {
     return FeeConfigService.calculateFeeBreakdown(gigAmount, config)
   }
 
-  // Legacy method for backward compatibility
+  // Simplified fee calculation
   static async calculateFees(amount: number): Promise<{
-    platformFee: number
-    processingFee: number
-    fixedFee: number
-    totalFees: number
-    netAmount: number
+    platformCommission: number
+    workerEarnings: number
   }> {
     const breakdown = await this.calculateGigFees(amount)
     return {
-      platformFee: breakdown.platformFee,
-      processingFee: breakdown.processingFee,
-      fixedFee: breakdown.fixedFee,
-      totalFees: breakdown.totalEmployerFees,
-      netAmount: breakdown.netAmountToWorker
+      platformCommission: breakdown.platformCommission,
+      workerEarnings: breakdown.workerEarnings
     }
   }
 

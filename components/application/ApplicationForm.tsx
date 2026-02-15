@@ -72,10 +72,10 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
         // If this effect is stale (gig changed or unmounted), ignore result
         if (canceled || currentGigId !== gig.id) return
 
-        setWorkerEarnings(breakdown.netAmountToWorker)
+        setWorkerEarnings(breakdown.workerEarnings)
         // Prefill only once per gig load and do not override if user has edited
         if (!initialRatePrefilled.current && !userHasEditedRate.current) {
-          const net = Number(breakdown?.netAmountToWorker)
+          const net = Number(breakdown?.workerEarnings)
           if (Number.isFinite(net) && net > 0) {
             setFormData(prev => ({
               ...prev,

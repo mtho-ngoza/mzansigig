@@ -15,6 +15,7 @@ import RateNegotiationBanner, { RateStatusBadge } from '@/components/application
 import RateNegotiationQuickMessages from '@/components/application/RateNegotiationQuickMessages'
 import { sanitizeForDisplay } from '@/lib/utils/textSanitization'
 import ReviewPrompt from '@/components/review/ReviewPrompt'
+import BankDetailsForm from '@/components/wallet/BankDetailsForm'
 
 interface MyApplicationsProps {
   onBack?: () => void
@@ -63,6 +64,11 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
     application?: ApplicationWithGig
   }>({ isOpen: false })
   const [reviewedApplications, setReviewedApplications] = useState<Set<string>>(new Set())
+  const [showBankDetailsModal, setShowBankDetailsModal] = useState<{
+    isOpen: boolean
+    applicationId: string
+    gigTitle: string
+  }>({ isOpen: false, applicationId: '', gigTitle: '' })
 
   useEffect(() => {
     const loadApplications = async () => {
@@ -213,6 +219,16 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
   }
 
   const handleRequestCompletionClick = (applicationId: string, gigTitle: string) => {
+    // Check if user has bank details - required for TradeSafe payout
+    if (!user?.bankDetails?.bankName || !user?.bankDetails?.accountNumber) {
+      setShowBankDetailsModal({
+        isOpen: true,
+        applicationId,
+        gigTitle
+      })
+      return
+    }
+
     setCompletionRequestDialog({
       isOpen: true,
       applicationId,
@@ -1092,6 +1108,56 @@ export default function MyApplications({ onBack, onBrowseGigs, onMessageConversa
                   success('Thanks for your review!')
                 }}
               />
+            </div>
+          </div>
+        )}
+
+        {/* Bank Details Required Modal */}
+        {showBankDetailsModal.isOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 overflow-y-auto">
+            <div className="max-w-md w-full my-8">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <svg className="w-6 h-6 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    Bank Details Required
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4">
+                    <p className="text-sm text-orange-800 mb-2">
+                      <strong>Before you can request completion</strong>, you need to add your bank account details.
+                    </p>
+                    <p className="text-sm text-orange-700">
+                      TradeSafe will pay you directly to your bank account when the employer approves your work.
+                    </p>
+                  </div>
+
+                  <BankDetailsForm
+                    onSuccess={() => {
+                      // After successful bank details save, proceed to completion request
+                      setShowBankDetailsModal({ isOpen: false, applicationId: '', gigTitle: '' })
+                      setCompletionRequestDialog({
+                        isOpen: true,
+                        applicationId: showBankDetailsModal.applicationId,
+                        gigTitle: showBankDetailsModal.gigTitle
+                      })
+                      success('Bank details saved! You can now request completion.')
+                    }}
+                  />
+
+                  <div className="mt-4 flex justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowBankDetailsModal({ isOpen: false, applicationId: '', gigTitle: '' })}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
         )}

@@ -230,8 +230,8 @@ export interface PaymentLimits {
  */
 export const PAYMENT_LIMITS: PaymentLimits = {
   MIN: DEFAULT_FEE_CONFIG.minimumGigAmount,
-  MAX_SINGLE: DEFAULT_FEE_CONFIG.maximumPaymentAmount,
-  LARGE_AMOUNT_THRESHOLD: DEFAULT_FEE_CONFIG.largePaymentThreshold
+  MAX_SINGLE: DEFAULT_FEE_CONFIG.maximumGigAmount,
+  LARGE_AMOUNT_THRESHOLD: 10000 // R10,000 - hardcoded as this is a UI concern
 }
 
 /**
@@ -243,8 +243,8 @@ export async function getPaymentLimits(): Promise<PaymentLimits> {
     const config = await FeeConfigService.getActiveFeeConfig()
     return {
       MIN: config.minimumGigAmount ?? PAYMENT_LIMITS.MIN,
-      MAX_SINGLE: config.maximumPaymentAmount ?? PAYMENT_LIMITS.MAX_SINGLE,
-      LARGE_AMOUNT_THRESHOLD: config.largePaymentThreshold ?? PAYMENT_LIMITS.LARGE_AMOUNT_THRESHOLD
+      MAX_SINGLE: config.maximumGigAmount ?? PAYMENT_LIMITS.MAX_SINGLE,
+      LARGE_AMOUNT_THRESHOLD: PAYMENT_LIMITS.LARGE_AMOUNT_THRESHOLD
     }
   } catch {
     // Return defaults if config service fails

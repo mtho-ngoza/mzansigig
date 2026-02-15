@@ -34,22 +34,17 @@ jest.mock('@/lib/database/gigService')
 jest.mock('@/lib/services/feeConfigService', () => ({
   FeeConfigService: {
     getActiveFeeConfig: jest.fn().mockResolvedValue({
-      platformFeePercentage: 5,
-      paymentProcessingFeePercentage: 2.9,
-      fixedTransactionFee: 2.5,
-      workerCommissionPercentage: 10,
-      minimumWithdrawal: 50
+      // Simplified TradeSafe model
+      platformCommissionPercent: 10,
+      minimumGigAmount: 100,
+      maximumGigAmount: 100000,
+      escrowAutoReleaseDays: 7,
+      isActive: true
     }),
     calculateFeeBreakdown: jest.fn((amount) => ({
-      grossAmount: amount,
-      platformFee: amount * 0.05,
-      processingFee: amount * 0.029,
-      fixedFee: 2.5,
-      workerCommission: amount * 0.1,
-      totalEmployerFees: amount * 0.079 + 2.5,
-      totalWorkerDeductions: amount * 0.1,
-      netAmountToWorker: amount * 0.9,
-      totalEmployerCost: amount * 1.079 + 2.5
+      gigAmount: amount,
+      platformCommission: amount * 0.1,  // 10% platform commission
+      workerEarnings: amount * 0.9       // Worker gets 90%
     }))
   }
 }))

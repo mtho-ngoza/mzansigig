@@ -955,6 +955,13 @@ export class GigService {
       throw new Error('Completion has already been requested for this application');
     }
 
+    // CRITICAL: Verify worker has bank details before allowing completion request
+    // TradeSafe requires bank details to pay out directly to the worker
+    const worker = await FirestoreService.getById<{ bankDetails?: { bankName: string; accountNumber: string } }>('users', workerId);
+    if (!worker?.bankDetails?.bankName || !worker?.bankDetails?.accountNumber) {
+      throw new Error('Bank details required. Please add your bank account details in your profile before requesting completion. TradeSafe pays directly to your bank account.');
+    }
+
     // Set completion request with auto-release window (configurable)
     const now = new Date();
     const escrowAutoReleaseDays = await ConfigService.getValue('escrowAutoReleaseDays').catch(() => 7);

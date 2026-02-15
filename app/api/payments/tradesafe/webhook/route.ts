@@ -36,10 +36,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
     }
 
-    console.log('TradeSafe webhook received:', {
+    console.log('[PAYMENT_AUDIT] Webhook - Event received:', {
       event: event.event,
       transactionId: event.transactionId,
-      state: event.state
+      state: event.state,
+      timestamp: new Date().toISOString()
     })
 
     // Get Firebase admin
@@ -115,7 +116,11 @@ async function handlePaymentSuccess(
   transactionId: string,
   amount: number
 ) {
-  console.log('TradeSafe: Processing payment success for gig:', gigId)
+  console.log('[PAYMENT_AUDIT] Webhook - Payment success (escrow funded):', {
+    gigId,
+    transactionId,
+    status: 'ESCROW_FUNDED'
+  })
 
   // Update payment intent status
   await db.collection('paymentIntents').doc(paymentIntentId).update({
@@ -179,10 +184,13 @@ async function handleTransactionCompleted(
   // Note: Wallet updates not needed - TradeSafe handles actual payouts
   // The worker receives funds directly to their bank account via TradeSafe
 
-  console.log('TradeSafe: Transaction completed, funds released to worker:', {
+  console.log('[PAYMENT_AUDIT] Webhook - PAYOUT COMPLETE - Funds released to worker bank:', {
     gigId,
     workerId,
-    amount
+    escrowAmount: amount,
+    transactionId,
+    status: 'WORKER_PAID',
+    timestamp: new Date().toISOString()
   })
 }
 

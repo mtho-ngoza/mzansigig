@@ -7,7 +7,6 @@
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import GigAmountDisplay from '@/components/gig/GigAmountDisplay'
-import { PaymentProvider } from '@/contexts/PaymentContext'
 
 // Mock the PaymentContext
 const mockCalculateGigFees = jest.fn()
@@ -22,16 +21,11 @@ jest.mock('@/contexts/PaymentContext', () => ({
 }))
 
 describe('GigAmountDisplay', () => {
+  // Simplified TradeSafe fee model: 10% commission
   const mockFeeBreakdown = {
-    grossAmount: 294,
-    platformFee: 2.94,
-    processingFee: 2.94,
-    fixedFee: 2.48,
-    workerCommission: 5.88,
-    totalEmployerFees: 8.36,
-    totalWorkerDeductions: 5.88,
-    netAmountToWorker: 288.12,
-    totalEmployerCost: 302.36
+    gigAmount: 294,
+    platformCommission: 29.4,  // 10% of 294
+    workerEarnings: 264.6      // 90% of 294
   }
 
   beforeEach(() => {
@@ -45,7 +39,7 @@ describe('GigAmountDisplay', () => {
 
       await waitFor(() => {
         expect(screen.getByText("You'll earn:")).toBeInTheDocument()
-        expect(screen.getByText('R288.12')).toBeInTheDocument()
+        expect(screen.getByText('R264.60')).toBeInTheDocument()
       })
     })
 
@@ -69,7 +63,7 @@ describe('GigAmountDisplay', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Project Budget:')).toBeInTheDocument()
-        expect(screen.getByText('Service Fee (2%):')).toBeInTheDocument()
+        expect(screen.getByText('Service Fee (10%):')).toBeInTheDocument()
         expect(screen.getByText('Your Earnings:')).toBeInTheDocument()
         expect(screen.getByText('Hide breakdown')).toBeInTheDocument()
       })
@@ -85,9 +79,8 @@ describe('GigAmountDisplay', () => {
       fireEvent.click(screen.getByText('Show breakdown'))
 
       await waitFor(() => {
-        // 5.88 / 294 * 100 = 2%
-        expect(screen.getByText('Service Fee (2%):')).toBeInTheDocument()
-        expect(screen.getByText('-R5.88')).toBeInTheDocument()
+        expect(screen.getByText('Service Fee (10%):')).toBeInTheDocument()
+        expect(screen.getByText('-R29.40')).toBeInTheDocument()
       })
     })
 
@@ -95,7 +88,7 @@ describe('GigAmountDisplay', () => {
       render(<GigAmountDisplay budget={294} variant="compact" showBreakdown={false} />)
 
       await waitFor(() => {
-        expect(screen.getByText('R288.12')).toBeInTheDocument()
+        expect(screen.getByText('R264.60')).toBeInTheDocument()
       })
 
       expect(screen.queryByText('Show breakdown')).not.toBeInTheDocument()
@@ -108,8 +101,7 @@ describe('GigAmountDisplay', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Worker Earnings')).toBeInTheDocument()
-        // Multiple R288.12 values exist in detailed view
-        const earningsValues = screen.getAllByText('R288.12')
+        const earningsValues = screen.getAllByText('R264.60')
         expect(earningsValues.length).toBeGreaterThan(0)
       })
     })
@@ -122,29 +114,25 @@ describe('GigAmountDisplay', () => {
       })
     })
 
-    it('should display employer cost breakdown', async () => {
+    it('should display employer payment section with TradeSafe message', async () => {
       render(<GigAmountDisplay budget={294} variant="detailed" />)
 
       await waitFor(() => {
-        expect(screen.getByText('Cost Breakdown for Employer')).toBeInTheDocument()
-        expect(screen.getByText('Platform Fee:')).toBeInTheDocument()
-        expect(screen.getByText('Processing Fee:')).toBeInTheDocument()
-        expect(screen.getByText('Transaction Fee:')).toBeInTheDocument()
-        expect(screen.getByText('Total Employer Cost:')).toBeInTheDocument()
+        expect(screen.getByText('Employer Payment')).toBeInTheDocument()
+        expect(screen.getByText('Total Payment:')).toBeInTheDocument()
+        expect(screen.getByText(/No additional fees.*TradeSafe/)).toBeInTheDocument()
       })
     })
   })
 
   describe('loading state', () => {
     it('should show loading skeleton while fetching fees', async () => {
-      // Make the mock take longer to resolve
       mockCalculateGigFees.mockImplementation(() => new Promise(resolve => {
         setTimeout(() => resolve(mockFeeBreakdown), 100)
       }))
 
       render(<GigAmountDisplay budget={294} variant="compact" />)
 
-      // Should show loading skeleton initially
       expect(document.querySelector('.animate-pulse')).toBeInTheDocument()
     })
   })
@@ -156,32 +144,30 @@ describe('GigAmountDisplay', () => {
       render(<GigAmountDisplay budget={294} variant="compact" />)
 
       await waitFor(() => {
-        // Should show the raw budget as fallback
         expect(screen.getByText('R294.00')).toBeInTheDocument()
       })
     })
   })
 
   describe('different commission rates', () => {
-    it('should display correct earnings for 10% commission', async () => {
-      const tenPercentFees = {
-        ...mockFeeBreakdown,
-        workerCommission: 29.4,
-        totalWorkerDeductions: 29.4,
-        netAmountToWorker: 264.6
+    it('should display correct earnings for 15% commission', async () => {
+      const fifteenPercentFees = {
+        gigAmount: 294,
+        platformCommission: 44.1,  // 15%
+        workerEarnings: 249.9      // 85%
       }
-      mockCalculateGigFees.mockResolvedValue(tenPercentFees)
+      mockCalculateGigFees.mockResolvedValue(fifteenPercentFees)
 
       render(<GigAmountDisplay budget={294} variant="compact" showBreakdown={true} />)
 
       await waitFor(() => {
-        expect(screen.getByText('R264.60')).toBeInTheDocument()
+        expect(screen.getByText('R249.90')).toBeInTheDocument()
       })
 
       fireEvent.click(screen.getByText('Show breakdown'))
 
       await waitFor(() => {
-        expect(screen.getByText('Service Fee (10%):')).toBeInTheDocument()
+        expect(screen.getByText('Service Fee (15%):')).toBeInTheDocument()
       })
     })
   })
