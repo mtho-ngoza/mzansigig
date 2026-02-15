@@ -228,22 +228,46 @@ export async function POST(request: NextRequest) {
         })
         const tradeSafe = new TradeSafeService()
 
-        // TradeSafe requires full delivery flow sequence:
-        // 1. startDelivery - Worker starts delivering
-        // 2. completeDelivery - Worker marks delivery complete
-        // 3. acceptDelivery - Buyer accepts, triggers immediate payout
-        console.log('TradeSafe: Starting delivery flow for allocation:', allocationId)
+        // Get current transaction/allocation state
+        const transactionId = paymentIntent?.transactionId
+        const transaction = transactionId ? await tradeSafe.getTransaction(transactionId) : null
+        const allocation = transaction?.allocations?.[0]
 
-        const startResult = await tradeSafe.startDelivery(allocationId)
-        console.log('TradeSafe startDelivery result:', startResult)
+        console.log('TradeSafe current state:', {
+          transactionId,
+          transactionState: transaction?.state,
+          allocationId,
+          allocationState: allocation?.state
+        })
 
-        const completeResult = await tradeSafe.completeDelivery(allocationId)
-        console.log('TradeSafe completeDelivery result:', completeResult)
+        // Allocation must be in FUNDS_RECEIVED state before delivery flow can start
+        // In sandbox, funds may stay in DEPOSITED state
+        if (allocation?.state === 'FUNDS_RECEIVED') {
+          // TradeSafe requires full delivery flow sequence:
+          // 1. startDelivery - Worker starts delivering
+          // 2. completeDelivery - Worker marks delivery complete
+          // 3. acceptDelivery - Buyer accepts, triggers immediate payout
+          console.log('TradeSafe: Starting delivery flow for allocation:', allocationId)
 
-        const acceptResult = await tradeSafe.acceptDelivery(allocationId)
-        console.log('TradeSafe acceptDelivery result:', acceptResult)
+          const startResult = await tradeSafe.startDelivery(allocationId)
+          console.log('TradeSafe startDelivery result:', startResult)
 
-        tradeSafePayoutTriggered = true
+          const completeResult = await tradeSafe.completeDelivery(allocationId)
+          console.log('TradeSafe completeDelivery result:', completeResult)
+
+          const acceptResult = await tradeSafe.acceptDelivery(allocationId)
+          console.log('TradeSafe acceptDelivery result:', acceptResult)
+
+          tradeSafePayoutTriggered = true
+        } else {
+          // Funds not yet fully received by TradeSafe
+          // This can happen in sandbox or when payment is still processing
+          console.log('TradeSafe: Allocation not ready for payout', {
+            currentState: allocation?.state,
+            requiredState: 'FUNDS_RECEIVED',
+            note: 'Worker will receive payout when funds are fully processed by TradeSafe'
+          })
+        }
 
         // Update payment intent status
         if (!paymentIntentQuery.empty) {
