@@ -107,20 +107,43 @@ export async function POST(request: NextRequest) {
 
     const nameParts = (userData?.displayName || `${userData?.firstName || ''} ${userData?.lastName || ''}`).trim().split(' ')
     const givenName = nameParts[0] || 'User'
-    const familyName = nameParts.slice(1).join(' ') || ''
+    const familyName = nameParts.slice(1).join(' ') || 'User'
+    const email = userData?.email
+    const mobile = userData?.phone || '+27000000000'
 
-    const tradeSafeToken = await tradeSafe.createToken({
+    // Validate required fields for TradeSafe
+    if (!email) {
+      return NextResponse.json(
+        { error: 'Email is required for TradeSafe account creation' },
+        { status: 400 }
+      )
+    }
+
+    const tokenInput = {
       givenName,
       familyName,
-      email: userData?.email || '',
-      mobile: userData?.phone || '+27000000000',
-      idNumber: userData?.idNumber,
+      email,
+      mobile,
       bankAccount: {
         accountNumber,
         accountType: accountType as 'CHEQUE' | 'SAVINGS',
         bank: TRADESAFE_BANK_CODES[bankName]
       }
+    }
+
+    console.log('[BANK_DETAILS] Creating TradeSafe token with:', {
+      givenName,
+      familyName,
+      email,
+      mobile,
+      bankAccount: {
+        accountNumber: `****${accountNumber.slice(-4)}`,
+        accountType,
+        bank: TRADESAFE_BANK_CODES[bankName]
+      }
     })
+
+    const tradeSafeToken = await tradeSafe.createToken(tokenInput)
 
     // Update user profile with bank details and TradeSafe token
     await db.collection('users').doc(userId).update({
