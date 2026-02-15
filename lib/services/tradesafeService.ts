@@ -16,6 +16,12 @@ export interface TradeSafeConfig {
 export interface TradeSafeToken {
   id: string
   name: string
+  bankAccount?: {
+    accountNumber: string
+    accountType: string
+    bank: string
+    bankName: string
+  } | null
 }
 
 export interface TokenCreateInput {
@@ -245,6 +251,12 @@ export class TradeSafeService {
         tokenCreate(input: $input) {
           id
           name
+          bankAccount {
+            accountNumber
+            accountType
+            bank
+            bankName
+          }
         }
       }
     `
