@@ -268,7 +268,12 @@ export class TradeSafeService {
       }
     }
 
+    console.log('[TRADESAFE] createToken request:', JSON.stringify(variables, null, 2))
+
     const data = await this.graphql<{ tokenCreate: TradeSafeToken }>(mutation, variables)
+
+    console.log('[TRADESAFE] createToken response:', data.tokenCreate)
+
     return data.tokenCreate
   }
 
