@@ -96,6 +96,16 @@ export interface User {
   pendingBalance?: number // Funds held in escrow
   totalEarnings?: number // Lifetime earnings
   totalWithdrawn?: number // Total amount withdrawn
+  // TradeSafe integration
+  tradeSafeToken?: string // TradeSafe token ID for escrow transactions
+  bankDetails?: {
+    bankName: string
+    accountNumber: string
+    accountType: 'CHEQUE' | 'SAVINGS'
+    accountHolder: string
+    branchCode?: string
+    addedAt: Date
+  }
   // Legal consents (POPIA compliance - audit trail)
   consents?: {
     terms: { accepted: boolean; acceptedAt: Date; version: string }

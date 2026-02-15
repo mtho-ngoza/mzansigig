@@ -102,13 +102,41 @@ export async function POST(request: NextRequest) {
     // Get or create worker's TradeSafe token
     let sellerToken = workerToken || workerData.tradeSafeToken
     if (!sellerToken) {
-      // Create new token for worker
-      const token = await tradeSafe.createToken({
+      // Map bank names to TradeSafe bank codes
+      const BANK_CODES: Record<string, string> = {
+        'ABSA': 'absa', 'FNB': 'fnb', 'Nedbank': 'nedbank',
+        'Standard Bank': 'standard_bank', 'Capitec': 'capitec',
+        'African Bank': 'african_bank', 'TymeBank': 'tymebank',
+        'Discovery Bank': 'discovery', 'Investec': 'investec'
+      }
+
+      // Create new token for worker - include bank details if available
+      const tokenInput: {
+        givenName: string
+        familyName: string
+        email: string
+        mobile: string
+        bankAccount?: { accountNumber: string; accountType: 'CHEQUE' | 'SAVINGS'; bank: string }
+      } = {
         givenName: workerData.displayName?.split(' ')[0] || 'Worker',
         familyName: workerData.displayName?.split(' ').slice(1).join(' ') || '',
         email: workerData.email,
         mobile: workerData.phone || '+27000000000'
-      })
+      }
+
+      // Include bank details for direct payout if worker has them
+      if (workerData.bankDetails?.bankName && workerData.bankDetails?.accountNumber) {
+        const bankCode = BANK_CODES[workerData.bankDetails.bankName]
+        if (bankCode) {
+          tokenInput.bankAccount = {
+            accountNumber: workerData.bankDetails.accountNumber,
+            accountType: workerData.bankDetails.accountType || 'SAVINGS',
+            bank: bankCode
+          }
+        }
+      }
+
+      const token = await tradeSafe.createToken(tokenInput)
       sellerToken = token.id
 
       // Store token in user profile
