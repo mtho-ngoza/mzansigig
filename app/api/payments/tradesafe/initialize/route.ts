@@ -102,6 +102,15 @@ export async function POST(request: NextRequest) {
     // Bank details guaranteed by application process - get bank code
     const bankCode = TRADESAFE_BANK_CODES[workerData.bankDetails?.bankName]
 
+    console.log('[PAYMENT_AUDIT] Worker bank details check:', {
+      workerId,
+      hasBankDetails: !!workerData.bankDetails,
+      bankName: workerData.bankDetails?.bankName,
+      bankCode,
+      hasAccountNumber: !!workerData.bankDetails?.accountNumber,
+      accountType: workerData.bankDetails?.accountType
+    })
+
     // Always create new TradeSafe token with bank details for direct payout
     // This ensures the token has bank details attached (don't reuse old tokens)
     const tokenInput: {
@@ -124,6 +133,16 @@ export async function POST(request: NextRequest) {
         accountType: workerData.bankDetails.accountType || 'SAVINGS',
         bank: bankCode
       }
+      console.log('[PAYMENT_AUDIT] Bank account INCLUDED in token:', {
+        accountNumber: `****${workerData.bankDetails.accountNumber.slice(-4)}`,
+        accountType: tokenInput.bankAccount.accountType,
+        bank: bankCode
+      })
+    } else {
+      console.warn('[PAYMENT_AUDIT] Bank account NOT included in token:', {
+        reason: !workerData.bankDetails?.accountNumber ? 'No account number' : 'Bank code not found',
+        bankName: workerData.bankDetails?.bankName
+      })
     }
 
     const workerTokenResult = await tradeSafe.createToken(tokenInput)
