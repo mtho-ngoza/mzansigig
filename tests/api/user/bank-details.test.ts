@@ -6,17 +6,17 @@
  */
 
 describe('/api/user/bank-details logic', () => {
-  // Supported South African banks with TradeSafe codes
+  // Supported South African banks with TradeSafe UniversalBranchCode enum (UPPERCASE)
   const SUPPORTED_BANKS: Record<string, string> = {
-    'ABSA': 'absa',
-    'FNB': 'fnb',
-    'Nedbank': 'nedbank',
-    'Standard Bank': 'standard_bank',
-    'Capitec': 'capitec',
-    'African Bank': 'african_bank',
-    'TymeBank': 'tymebank',
-    'Discovery Bank': 'discovery',
-    'Investec': 'investec'
+    'ABSA': 'ABSA',
+    'FNB': 'FNB',
+    'Nedbank': 'NEDBANK',
+    'Standard Bank': 'STANDARD_BANK',
+    'Capitec': 'CAPITEC',
+    'African Bank': 'AFRICAN_BANK',
+    'TymeBank': 'TYMEBANK',
+    'Discovery Bank': 'DISCOVERY',
+    'Investec': 'INVESTEC'
   }
 
   describe('Bank Name Validation', () => {
@@ -46,9 +46,9 @@ describe('/api/user/bank-details logic', () => {
     })
 
     it('should return correct TradeSafe bank codes', () => {
-      expect(validateBankName('FNB').code).toBe('fnb')
-      expect(validateBankName('Standard Bank').code).toBe('standard_bank')
-      expect(validateBankName('ABSA').code).toBe('absa')
+      expect(validateBankName('FNB').code).toBe('FNB')
+      expect(validateBankName('Standard Bank').code).toBe('STANDARD_BANK')
+      expect(validateBankName('ABSA').code).toBe('ABSA')
     })
   })
 
@@ -307,7 +307,7 @@ describe('/api/user/bank-details logic', () => {
       expect(input.bankAccount).toBeDefined()
       expect(input.bankAccount?.accountNumber).toBe('1234567890')
       expect(input.bankAccount?.accountType).toBe('SAVINGS')
-      expect(input.bankAccount?.bank).toBe('fnb')
+      expect(input.bankAccount?.bank).toBe('FNB')
     })
 
     it('should not include bank account for unsupported bank', () => {
