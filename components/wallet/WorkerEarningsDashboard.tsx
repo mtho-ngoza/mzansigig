@@ -18,11 +18,7 @@ interface WalletBalance {
   totalWithdrawn: number
 }
 
-interface WorkerEarningsDashboardProps {
-  onWithdrawalRequest?: () => void
-}
-
-export default function WorkerEarningsDashboard({ onWithdrawalRequest }: WorkerEarningsDashboardProps) {
+export default function WorkerEarningsDashboard() {
   const { user } = useAuth()
   const searchParams = useSearchParams()
   const [balance, setBalance] = useState<WalletBalance>({

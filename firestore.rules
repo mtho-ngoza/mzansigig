@@ -77,6 +77,8 @@ service cloud.firestore {
                       (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['rating', 'reviewCount', 'updatedAt'])) ||
                       // OR wallet balance updates during escrow release (pendingBalance, walletBalance, totalEarnings)
                       (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pendingBalance', 'walletBalance', 'totalEarnings', 'updatedAt'])) ||
+                      // OR TradeSafe token and completedGigs updates (server-side payment processing)
+                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['tradeSafeToken', 'completedGigs', 'updatedAt'])) ||
                       // OR admin can update userType
                       isAdmin()
                     );
@@ -92,6 +94,13 @@ service cloud.firestore {
       // Subcollection: Emergency contacts (private)
       match /emergencyContacts/{contactId} {
         allow read, write: if isOwner(userId);
+      }
+
+      // Subcollection: Bank details for TradeSafe payouts (private)
+      // NOTE: Currently bank details are stored in user doc and managed via Admin SDK.
+      // This subcollection is reserved for future migration to field-level security.
+      match /bankDetails/{detailId} {
+        allow read, write: if isOwner(userId) || isAdmin();
       }
     }
 

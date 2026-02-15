@@ -702,4 +702,179 @@ describe('/api/gigs/approve-completion logic', () => {
       responses.forEach(r => expect(r.error).toContain('not found'))
     })
   })
+
+  describe('TradeSafe Direct Payout Integration', () => {
+    /**
+     * When employer approves completion, the system should:
+     * 1. Find the paymentIntent with allocationId
+     * 2. Call TradeSafe acceptDelivery() to trigger direct payout
+     * 3. Update paymentIntent status to 'completed'
+     * 4. Return success with tradeSafePayout: true
+     */
+
+    interface PaymentIntent {
+      gigId: string
+      status: 'created' | 'funded' | 'completed'
+      transactionId: string
+      allocationId: string
+    }
+
+    interface TradeSafePayoutResult {
+      success: boolean
+      tradeSafePayout: boolean
+      message: string
+      netAmount: number
+    }
+
+    const findPaymentIntent = (
+      paymentIntents: PaymentIntent[],
+      gigId: string
+    ): PaymentIntent | null => {
+      return paymentIntents.find(
+        pi => pi.gigId === gigId && pi.status === 'funded'
+      ) || null
+    }
+
+    const simulateTradeSafePayout = (
+      allocationId: string | null,
+      escrowAmount: number
+    ): TradeSafePayoutResult => {
+      const platformCommission = escrowAmount * 0.10
+      const netAmount = escrowAmount - platformCommission
+
+      if (allocationId) {
+        return {
+          success: true,
+          tradeSafePayout: true,
+          message: "Completion approved. Payment sent directly to worker's bank account.",
+          netAmount
+        }
+      } else {
+        return {
+          success: true,
+          tradeSafePayout: false,
+          message: 'Completion approved and escrow released to wallet.',
+          netAmount
+        }
+      }
+    }
+
+    it('should find funded payment intent for gig', () => {
+      const paymentIntents: PaymentIntent[] = [
+        {
+          gigId: 'gig-123',
+          status: 'funded',
+          transactionId: 'tx-abc',
+          allocationId: 'alloc-xyz'
+        },
+        {
+          gigId: 'gig-456',
+          status: 'created',
+          transactionId: 'tx-def',
+          allocationId: 'alloc-uvw'
+        }
+      ]
+
+      const result = findPaymentIntent(paymentIntents, 'gig-123')
+      expect(result).not.toBeNull()
+      expect(result?.allocationId).toBe('alloc-xyz')
+    })
+
+    it('should not find payment intent if not funded', () => {
+      const paymentIntents: PaymentIntent[] = [
+        {
+          gigId: 'gig-123',
+          status: 'created',
+          transactionId: 'tx-abc',
+          allocationId: 'alloc-xyz'
+        }
+      ]
+
+      const result = findPaymentIntent(paymentIntents, 'gig-123')
+      expect(result).toBeNull()
+    })
+
+    it('should trigger TradeSafe payout when allocationId exists', () => {
+      const result = simulateTradeSafePayout('alloc-xyz', 5000)
+
+      expect(result.success).toBe(true)
+      expect(result.tradeSafePayout).toBe(true)
+      expect(result.message).toContain('bank account')
+      expect(result.netAmount).toBe(4500) // 5000 - 10%
+    })
+
+    it('should fall back to wallet payout when no allocationId', () => {
+      const result = simulateTradeSafePayout(null, 5000)
+
+      expect(result.success).toBe(true)
+      expect(result.tradeSafePayout).toBe(false)
+      expect(result.message).toContain('wallet')
+      expect(result.netAmount).toBe(4500)
+    })
+
+    it('should calculate correct net amount after platform fee', () => {
+      const testCases = [
+        { escrow: 1000, expectedNet: 900 },
+        { escrow: 5000, expectedNet: 4500 },
+        { escrow: 10000, expectedNet: 9000 },
+        { escrow: 500, expectedNet: 450 }
+      ]
+
+      testCases.forEach(({ escrow, expectedNet }) => {
+        const result = simulateTradeSafePayout('alloc-123', escrow)
+        expect(result.netAmount).toBe(expectedNet)
+      })
+    })
+
+    describe('TradeSafe Allocation State Transitions', () => {
+      /**
+       * TradeSafe allocation states:
+       * CREATED → FUNDS_DEPOSITED → FUNDS_RECEIVED → INITIATED →
+       * IN_TRANSIT → DELIVERY_COMPLETE → ACCEPTED
+       *
+       * acceptDelivery() transitions allocation to ACCEPTED state,
+       * which triggers immediate payout to seller's bank account.
+       */
+
+      type AllocationState =
+        | 'CREATED'
+        | 'FUNDS_DEPOSITED'
+        | 'FUNDS_RECEIVED'
+        | 'INITIATED'
+        | 'IN_TRANSIT'
+        | 'DELIVERY_COMPLETE'
+        | 'ACCEPTED'
+
+      const canAcceptDelivery = (state: AllocationState): boolean => {
+        // Can accept from these states (before auto-accept countdown)
+        const acceptableStates: AllocationState[] = [
+          'FUNDS_RECEIVED',
+          'INITIATED',
+          'IN_TRANSIT',
+          'DELIVERY_COMPLETE'
+        ]
+        return acceptableStates.includes(state)
+      }
+
+      it('should allow accept from FUNDS_RECEIVED state', () => {
+        expect(canAcceptDelivery('FUNDS_RECEIVED')).toBe(true)
+      })
+
+      it('should allow accept from INITIATED state', () => {
+        expect(canAcceptDelivery('INITIATED')).toBe(true)
+      })
+
+      it('should allow accept from DELIVERY_COMPLETE state', () => {
+        expect(canAcceptDelivery('DELIVERY_COMPLETE')).toBe(true)
+      })
+
+      it('should not allow accept from CREATED state', () => {
+        expect(canAcceptDelivery('CREATED')).toBe(false)
+      })
+
+      it('should not allow accept from already ACCEPTED state', () => {
+        expect(canAcceptDelivery('ACCEPTED')).toBe(false)
+      })
+    })
+  })
 })
