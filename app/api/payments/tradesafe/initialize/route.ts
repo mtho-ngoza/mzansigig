@@ -99,17 +99,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Map bank names to TradeSafe bank codes
+    const BANK_CODES: Record<string, string> = {
+      'ABSA': 'absa', 'FNB': 'fnb', 'Nedbank': 'nedbank',
+      'Standard Bank': 'standard_bank', 'Capitec': 'capitec',
+      'African Bank': 'african_bank', 'TymeBank': 'tymebank',
+      'Discovery Bank': 'discovery', 'Investec': 'investec'
+    }
+
     // Get or create worker's TradeSafe token
     let sellerToken = workerToken || workerData.tradeSafeToken
-    if (!sellerToken) {
-      // Map bank names to TradeSafe bank codes
-      const BANK_CODES: Record<string, string> = {
-        'ABSA': 'absa', 'FNB': 'fnb', 'Nedbank': 'nedbank',
-        'Standard Bank': 'standard_bank', 'Capitec': 'capitec',
-        'African Bank': 'african_bank', 'TymeBank': 'tymebank',
-        'Discovery Bank': 'discovery', 'Investec': 'investec'
-      }
 
+    // Check if worker has bank details
+    const hasBankDetails = workerData.bankDetails?.bankName && workerData.bankDetails?.accountNumber
+    const bankCode = hasBankDetails ? BANK_CODES[workerData.bankDetails.bankName] : null
+
+    if (!sellerToken) {
       // Create new token for worker - include bank details if available
       const tokenInput: {
         givenName: string
@@ -118,32 +123,57 @@ export async function POST(request: NextRequest) {
         mobile: string
         bankAccount?: { accountNumber: string; accountType: 'CHEQUE' | 'SAVINGS'; bank: string }
       } = {
-        givenName: workerData.displayName?.split(' ')[0] || 'Worker',
-        familyName: workerData.displayName?.split(' ').slice(1).join(' ') || '',
+        givenName: workerData.displayName?.split(' ')[0] || workerData.firstName || 'Worker',
+        familyName: workerData.displayName?.split(' ').slice(1).join(' ') || workerData.lastName || '',
         email: workerData.email,
         mobile: workerData.phone || '+27000000000'
       }
 
       // Include bank details for direct payout if worker has them
-      if (workerData.bankDetails?.bankName && workerData.bankDetails?.accountNumber) {
-        const bankCode = BANK_CODES[workerData.bankDetails.bankName]
-        if (bankCode) {
-          tokenInput.bankAccount = {
-            accountNumber: workerData.bankDetails.accountNumber,
-            accountType: workerData.bankDetails.accountType || 'SAVINGS',
-            bank: bankCode
-          }
+      if (hasBankDetails && bankCode) {
+        tokenInput.bankAccount = {
+          accountNumber: workerData.bankDetails.accountNumber,
+          accountType: workerData.bankDetails.accountType || 'SAVINGS',
+          bank: bankCode
         }
       }
 
       const token = await tradeSafe.createToken(tokenInput)
       sellerToken = token.id
 
-      // Store token in user profile
+      // Store token in user profile (mark if bank details were included)
       await db.collection('users').doc(workerId).update({
         tradeSafeToken: sellerToken,
+        tradeSafeTokenHasBankDetails: hasBankDetails && bankCode ? true : false,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       })
+    } else if (hasBankDetails && bankCode && !workerData.tradeSafeTokenHasBankDetails) {
+      // Token exists but was created without bank details - update it now
+      console.log('[PAYMENT_AUDIT] Updating existing TradeSafe token with bank details:', {
+        workerId,
+        tokenId: sellerToken,
+        bankName: workerData.bankDetails.bankName
+      })
+
+      try {
+        await tradeSafe.updateTokenBankAccount(sellerToken, {
+          accountNumber: workerData.bankDetails.accountNumber,
+          accountType: workerData.bankDetails.accountType || 'SAVINGS',
+          bank: bankCode
+        })
+
+        // Mark token as having bank details
+        await db.collection('users').doc(workerId).update({
+          tradeSafeTokenHasBankDetails: true,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        })
+
+        console.log('[PAYMENT_AUDIT] TradeSafe token updated with bank details successfully')
+      } catch (updateError) {
+        console.error('Failed to update TradeSafe token with bank details:', updateError)
+        // Continue anyway - the token exists, just without bank details
+        // Worker will receive payout to TradeSafe wallet instead
+      }
     }
 
     // Get platform token for agent fees
