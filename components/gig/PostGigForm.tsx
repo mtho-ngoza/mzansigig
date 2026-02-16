@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { GigService } from '@/lib/database/gigService'
 import { useAuth } from '@/contexts/AuthContext'
+import { isProfileComplete } from '@/lib/auth/firebase'
 import { useToast } from '@/contexts/ToastContext'
 import LocationAutocomplete from '@/components/location/LocationAutocomplete'
 import { Gig } from '@/types/gig'
@@ -369,6 +370,11 @@ export default function PostGigForm({ editGig, onSuccess, onCancel }: PostGigFor
 
     if (!user) {
       showError('You must be logged in to post a gig')
+      return
+    }
+
+    if (!isProfileComplete(user)) {
+      showError('Please complete your profile with ID number before posting a gig')
       return
     }
 

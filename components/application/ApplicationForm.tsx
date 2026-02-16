@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/Card'
 import { Input } from '@/components/ui/Input'
 import { GigService } from '@/lib/database/gigService'
 import { useAuth } from '@/contexts/AuthContext'
+import { isProfileComplete } from '@/lib/auth/firebase'
 import { Gig } from '@/types/gig'
 import { useToast } from '@/contexts/ToastContext'
 import { usePayment } from '@/contexts/PaymentContext'
@@ -204,6 +205,11 @@ export default function ApplicationForm({ gig, onSuccess, onCancel }: Applicatio
 
     if (!user) {
       showError('You must be logged in to apply for a gig')
+      return
+    }
+
+    if (!isProfileComplete(user)) {
+      showError('Please complete your profile with ID number before applying')
       return
     }
 

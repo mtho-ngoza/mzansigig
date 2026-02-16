@@ -18,6 +18,15 @@ import { auth, db } from '../firebase';
 import { User, LoginCredentials, RegisterData } from '@/types/auth';
 import { encryptData, hashData } from '@/lib/utils/encryption';
 
+/**
+ * Check if a user profile has all required fields for platform actions
+ * Required: phone, location, userType, idNumber
+ */
+export function isProfileComplete(user: User | null): boolean {
+  if (!user) return false;
+  return !!(user.phone && user.location && user.userType && user.idNumber);
+}
+
 export class FirebaseAuthService {
   static async signUp(data: RegisterData): Promise<User> {
     try {
@@ -183,7 +192,7 @@ export class FirebaseAuthService {
 
       if (userDoc.exists()) {
         const existingUser = userDoc.data() as User;
-        const needsCompletion = !existingUser.phone || !existingUser.location || !existingUser.userType;
+        const needsCompletion = !existingUser.phone || !existingUser.location || !existingUser.userType || !existingUser.idNumber;
         return { user: existingUser, needsProfileCompletion: needsCompletion };
       }
 

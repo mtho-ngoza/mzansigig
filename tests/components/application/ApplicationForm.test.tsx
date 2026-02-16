@@ -30,6 +30,7 @@ describe('ApplicationForm - Duplicate Application Prevention', () => {
     userType: 'job-seeker' as const,
     phone: '+27123456789',
     location: 'Cape Town',
+    idNumber: '8001015009082',
     createdAt: new Date(),
     updatedAt: new Date(),
     bankDetails: {
