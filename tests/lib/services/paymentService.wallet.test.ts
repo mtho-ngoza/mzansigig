@@ -471,7 +471,7 @@ describe('PaymentService - Wallet Integration', () => {
       await PaymentService.updateWithdrawalStatus('withdrawal-123', 'completed')
 
       // Wallet should NOT be debited since it was already debited when request was created
-      expect(WalletService.debitWallet).not.toHaveBeenCalled()
+      expect(WalletService.debitWalletAtomic).not.toHaveBeenCalled()
     })
 
     it('should refund wallet when withdrawal fails', async () => {
@@ -541,7 +541,7 @@ describe('PaymentService - Wallet Integration', () => {
 
       await PaymentService.updateWithdrawalStatus('withdrawal-123', 'processing')
 
-      expect(WalletService.debitWallet).not.toHaveBeenCalled()
+      expect(WalletService.debitWalletAtomic).not.toHaveBeenCalled()
     })
 
     it('should handle errors when withdrawal not found', async () => {

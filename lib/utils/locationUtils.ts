@@ -79,7 +79,6 @@ export function getNearestCity(coordinates: Coordinates) {
     }
   }
 
-  // Return in the same format as before for backwards compatibility
   return {
     city: {
       name: nearestLocation.name,
@@ -117,7 +116,7 @@ export function getCityCoordinates(locationName: string): Coordinates | null {
     return location.coordinates
   }
 
-  // Fallback to old SA_CITIES array for backwards compatibility
+  // Fallback to SA_CITIES array
   const city = SA_CITIES.find(c =>
     c.name.toLowerCase() === searchTerm
   )

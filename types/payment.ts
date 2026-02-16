@@ -42,7 +42,6 @@ export interface Payment {
 
   // Payment provider (tradesafe, ozow, yoco)
   provider?: string
-  // Legacy fields for backward compatibility with existing data
   paymentMethodId?: string
   paymentMethod?: PaymentMethod
 
