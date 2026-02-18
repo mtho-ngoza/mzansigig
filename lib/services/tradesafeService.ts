@@ -298,6 +298,12 @@ export class TradeSafeService {
         token(id: $id) {
           id
           name
+          bankAccount {
+            accountNumber
+            accountType
+            bank
+            bankName
+          }
         }
       }
     `
