@@ -16,8 +16,13 @@ import * as admin from 'firebase-admin'
  *
  * Actions:
  * - 'start': Worker starts delivery process (FUNDS_RECEIVED → INITIATED)
- * - 'complete': Worker marks delivery complete (triggers 24h auto-accept)
- * - 'accept': Employer accepts delivery (immediate payout)
+ * - 'complete': Worker marks delivery complete (triggers 24h auto-accept EMAIL)
+ * - 'accept': Employer accepts delivery (immediate payout, NO email)
+ *
+ * WARNING: 'complete' and 'accept' are MUTUALLY EXCLUSIVE paths:
+ * - Path A: start → complete (TradeSafe sends email, 24h countdown)
+ * - Path B: start → accept (immediate payout, no email - use for in-app approval)
+ * You CANNOT call 'accept' after 'complete' - TradeSafe will reject it.
  */
 export async function POST(request: NextRequest) {
   try {

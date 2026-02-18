@@ -496,6 +496,11 @@ export class TradeSafeService {
   /**
    * Complete delivery (triggers 24h auto-accept countdown)
    * Use this when worker confirms delivery is complete
+   *
+   * WARNING: completeDelivery and acceptDelivery are MUTUALLY EXCLUSIVE.
+   * If you call completeDelivery, you CANNOT call acceptDelivery afterwards.
+   * - completeDelivery: Sends email/SMS to buyer with 24h countdown
+   * - acceptDelivery: Immediate payout, no email
    */
   async completeDelivery(allocationId: string): Promise<Allocation> {
     const mutation = `
@@ -520,8 +525,11 @@ export class TradeSafeService {
 
   /**
    * Accept delivery (called when employer confirms work is done)
-   * Triggers immediate payout to seller
-   * Note: Cannot use if completeDelivery was already called
+   * Triggers immediate payout to seller - no email sent to buyer.
+   *
+   * WARNING: CANNOT use if completeDelivery was already called.
+   * For platform-initiated acceptance (buyer already approved in app),
+   * use: startDelivery() → acceptDelivery() (skips email)
    */
   async acceptDelivery(allocationId: string): Promise<Allocation> {
     const mutation = `

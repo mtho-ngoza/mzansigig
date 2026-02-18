@@ -258,17 +258,17 @@ export async function POST(request: NextRequest) {
         // Transaction must be in FUNDS_RECEIVED state before delivery flow can start
         // Note: Transaction and Allocation have separate state machines
         if (transaction?.state === 'FUNDS_RECEIVED') {
-          // TradeSafe requires full delivery flow sequence:
-          // 1. startDelivery - Worker starts delivering
-          // 2. completeDelivery - Worker marks delivery complete
-          // 3. acceptDelivery - Buyer accepts, triggers immediate payout
+          // TradeSafe delivery flow for immediate acceptance (no buyer email):
+          // 1. startDelivery - Transitions allocation to INITIATED
+          // 2. acceptDelivery - Immediate payout, skips the 24h email to buyer
+          //
+          // NOTE: completeDelivery and acceptDelivery are MUTUALLY EXCLUSIVE.
+          // If you call completeDelivery, you cannot call acceptDelivery.
+          // completeDelivery triggers a 24h countdown email to buyer.
           console.log('TradeSafe: Starting delivery flow for allocation:', allocationId)
 
           const startResult = await tradeSafe.startDelivery(allocationId)
           console.log('TradeSafe startDelivery result:', startResult)
-
-          const completeResult = await tradeSafe.completeDelivery(allocationId)
-          console.log('TradeSafe completeDelivery result:', completeResult)
 
           const acceptResult = await tradeSafe.acceptDelivery(allocationId)
           console.log('TradeSafe acceptDelivery result:', acceptResult)

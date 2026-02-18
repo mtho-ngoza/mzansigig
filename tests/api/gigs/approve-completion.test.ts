@@ -829,11 +829,15 @@ describe('/api/gigs/approve-completion logic', () => {
     describe('TradeSafe Allocation State Transitions', () => {
       /**
        * TradeSafe allocation states:
-       * CREATED → FUNDS_DEPOSITED → FUNDS_RECEIVED → INITIATED →
-       * IN_TRANSIT → DELIVERY_COMPLETE → ACCEPTED
+       * CREATED → FUNDS_DEPOSITED → FUNDS_RECEIVED → INITIATED → ACCEPTED
        *
-       * acceptDelivery() transitions allocation to ACCEPTED state,
-       * which triggers immediate payout to seller's bank account.
+       * IMPORTANT: completeDelivery() and acceptDelivery() are MUTUALLY EXCLUSIVE:
+       * - Path A: startDelivery → acceptDelivery (immediate payout, no email)
+       * - Path B: startDelivery → completeDelivery (24h countdown email to buyer)
+       *
+       * You CANNOT call acceptDelivery after completeDelivery.
+       * For platform-initiated acceptance (buyer already approved in app),
+       * use: startDelivery() → acceptDelivery()
        */
 
       type AllocationState =
@@ -846,12 +850,12 @@ describe('/api/gigs/approve-completion logic', () => {
         | 'ACCEPTED'
 
       const canAcceptDelivery = (state: AllocationState): boolean => {
-        // Can accept from these states (before auto-accept countdown)
+        // Can accept from these states ONLY if completeDelivery was NOT called
+        // DELIVERY_COMPLETE means completeDelivery was called, so acceptDelivery will fail
         const acceptableStates: AllocationState[] = [
           'FUNDS_RECEIVED',
           'INITIATED',
-          'IN_TRANSIT',
-          'DELIVERY_COMPLETE'
+          'IN_TRANSIT'
         ]
         return acceptableStates.includes(state)
       }
@@ -864,8 +868,9 @@ describe('/api/gigs/approve-completion logic', () => {
         expect(canAcceptDelivery('INITIATED')).toBe(true)
       })
 
-      it('should allow accept from DELIVERY_COMPLETE state', () => {
-        expect(canAcceptDelivery('DELIVERY_COMPLETE')).toBe(true)
+      it('should NOT allow accept from DELIVERY_COMPLETE state (mutually exclusive)', () => {
+        // completeDelivery and acceptDelivery are mutually exclusive
+        expect(canAcceptDelivery('DELIVERY_COMPLETE')).toBe(false)
       })
 
       it('should not allow accept from CREATED state', () => {
