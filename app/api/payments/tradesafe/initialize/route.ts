@@ -3,6 +3,7 @@ import { TradeSafeService } from '@/lib/services/tradesafeService'
 import { getFirebaseAdmin } from '@/lib/firebase-admin'
 import { verifyAuthToken } from '@/lib/auth/verifyToken'
 import { TRADESAFE_BANK_CODES } from '@/lib/constants/banks'
+import { normalizePhoneNumber } from '@/lib/utils/phoneUtils'
 import * as admin from 'firebase-admin'
 
 /**
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
         givenName: employerData.displayName?.split(' ')[0] || 'Employer',
         familyName: employerData.displayName?.split(' ').slice(1).join(' ') || '',
         email: employerData.email,
-        mobile: employerData.phone || '+27000000000'
+        mobile: normalizePhoneNumber(employerData.phone)
       })
       buyerToken = token.id
 
@@ -123,7 +124,7 @@ export async function POST(request: NextRequest) {
       givenName: workerData.displayName?.split(' ')[0] || workerData.firstName || 'Worker',
       familyName: workerData.displayName?.split(' ').slice(1).join(' ') || workerData.lastName || '',
       email: workerData.email,
-      mobile: workerData.phone || '+27000000000'
+      mobile: normalizePhoneNumber(workerData.phone)
     }
 
     // Include bank details (required - enforced at application time)

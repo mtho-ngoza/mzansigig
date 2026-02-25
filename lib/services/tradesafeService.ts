@@ -217,7 +217,14 @@ export class TradeSafeService {
     const result = await response.json()
 
     if (result.errors) {
-      console.error('TradeSafe GraphQL errors:', result.errors)
+      console.error('TradeSafe GraphQL errors:', JSON.stringify(result.errors, null, 2))
+      // Include more details in the error for debugging
+      const errorDetails = result.errors.map((e: { message?: string; extensions?: unknown; path?: string[] }) => ({
+        message: e.message,
+        extensions: e.extensions,
+        path: e.path
+      }))
+      console.error('TradeSafe GraphQL error details:', JSON.stringify(errorDetails, null, 2))
       throw new Error(`TradeSafe GraphQL error: ${result.errors[0]?.message || 'Unknown error'}`)
     }
 

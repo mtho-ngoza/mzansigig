@@ -3,6 +3,7 @@ import { getFirebaseAdmin } from '@/lib/firebase-admin'
 import * as admin from 'firebase-admin'
 import { TradeSafeService } from '@/lib/services/tradesafeService'
 import { TRADESAFE_BANK_CODES, SUPPORTED_BANKS } from '@/lib/constants/banks'
+import { normalizePhoneNumber } from '@/lib/utils/phoneUtils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -109,7 +110,7 @@ export async function POST(request: NextRequest) {
     const givenName = nameParts[0] || 'User'
     const familyName = nameParts.slice(1).join(' ') || 'User'
     const email = userData?.email
-    const mobile = userData?.phone || '+27000000000'
+    const mobile = normalizePhoneNumber(userData?.phone)
 
     // Validate required fields for TradeSafe
     if (!email) {
