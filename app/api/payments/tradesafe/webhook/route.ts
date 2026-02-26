@@ -108,6 +108,7 @@ export async function POST(request: NextRequest) {
 
 /**
  * Handle successful payment - update gig to in-progress
+ * Uses Firestore transaction for atomicity
  */
 async function handlePaymentSuccess(
   db: admin.firestore.Firestore,
@@ -122,32 +123,37 @@ async function handlePaymentSuccess(
     status: 'ESCROW_FUNDED'
   })
 
-  // Update payment intent status
-  await db.collection('paymentIntents').doc(paymentIntentId).update({
-    status: 'funded',
-    fundedAt: admin.firestore.FieldValue.serverTimestamp()
-  })
-
-  // Update gig status to in-progress
+  const paymentIntentRef = db.collection('paymentIntents').doc(paymentIntentId)
   const gigRef = db.collection('gigs').doc(gigId)
-  const gigDoc = await gigRef.get()
 
-  if (gigDoc.exists) {
-    await gigRef.update({
-      status: 'in-progress',
-      paymentStatus: 'funded',
-      escrowTransactionId: transactionId,
-      escrowAmount: amount,
-      fundedAt: admin.firestore.FieldValue.serverTimestamp(),
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  await db.runTransaction(async (transaction) => {
+    const gigDoc = await transaction.get(gigRef)
+
+    // Update payment intent status
+    transaction.update(paymentIntentRef, {
+      status: 'funded',
+      fundedAt: admin.firestore.FieldValue.serverTimestamp()
     })
 
-    console.log('TradeSafe: Gig updated to in-progress:', gigId)
-  }
+    // Update gig status to in-progress if it exists
+    if (gigDoc.exists) {
+      transaction.update(gigRef, {
+        status: 'in-progress',
+        paymentStatus: 'funded',
+        escrowTransactionId: transactionId,
+        escrowAmount: amount,
+        fundedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+    }
+  })
+
+  console.log('[PAYMENT_AUDIT] Gig updated to in-progress:', gigId)
 }
 
 /**
  * Handle transaction completed - funds released to worker
+ * Uses Firestore transaction for atomicity
  */
 async function handleTransactionCompleted(
   db: admin.firestore.Firestore,
@@ -156,30 +162,34 @@ async function handleTransactionCompleted(
   amount: number,
   transactionId: string
 ) {
-  console.log('TradeSafe: Processing transaction completed for gig:', gigId)
+  console.log('[PAYMENT_AUDIT] Processing transaction completed for gig:', gigId)
 
-  // Update gig status
   const gigRef = db.collection('gigs').doc(gigId)
-  await gigRef.update({
-    status: 'completed',
-    paymentStatus: 'released',
-    completedAt: admin.firestore.FieldValue.serverTimestamp(),
-    updatedAt: admin.firestore.FieldValue.serverTimestamp()
-  })
 
-  // Update payment intent
+  // Find the payment intent first (outside transaction for query)
   const paymentIntentQuery = await db.collection('paymentIntents')
     .where('transactionId', '==', transactionId)
     .where('provider', '==', 'tradesafe')
     .limit(1)
     .get()
 
-  if (!paymentIntentQuery.empty) {
-    await paymentIntentQuery.docs[0].ref.update({
+  await db.runTransaction(async (transaction) => {
+    // Update gig status
+    transaction.update(gigRef, {
       status: 'completed',
-      completedAt: admin.firestore.FieldValue.serverTimestamp()
+      paymentStatus: 'released',
+      completedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
     })
-  }
+
+    // Update payment intent if found
+    if (!paymentIntentQuery.empty) {
+      transaction.update(paymentIntentQuery.docs[0].ref, {
+        status: 'completed',
+        completedAt: admin.firestore.FieldValue.serverTimestamp()
+      })
+    }
+  })
 
   // Note: Wallet updates not needed - TradeSafe handles actual payouts
   // The worker receives funds directly to their bank account via TradeSafe
@@ -196,6 +206,7 @@ async function handleTransactionCompleted(
 
 /**
  * Handle transaction cancelled - refund processed
+ * Uses Firestore transaction for atomicity
  */
 async function handleTransactionCancelled(
   db: admin.firestore.Firestore,
@@ -203,29 +214,32 @@ async function handleTransactionCancelled(
   paymentIntentId: string,
   transactionId: string
 ) {
-  console.log('TradeSafe: Processing transaction cancellation for gig:', gigId)
+  console.log('[PAYMENT_AUDIT] Processing transaction cancellation for gig:', gigId)
 
-  // Update payment intent status
-  await db.collection('paymentIntents').doc(paymentIntentId).update({
-    status: 'cancelled',
-    cancelledAt: admin.firestore.FieldValue.serverTimestamp()
+  const paymentIntentRef = db.collection('paymentIntents').doc(paymentIntentId)
+  const gigRef = db.collection('gigs').doc(gigId)
+
+  await db.runTransaction(async (transaction) => {
+    const gigDoc = await transaction.get(gigRef)
+
+    // Update payment intent status
+    transaction.update(paymentIntentRef, {
+      status: 'cancelled',
+      cancelledAt: admin.firestore.FieldValue.serverTimestamp()
+    })
+
+    // Update gig status if it exists and was funded
+    if (gigDoc.exists) {
+      const gigData = gigDoc.data()
+      if (gigData?.paymentStatus === 'funded') {
+        transaction.update(gigRef, {
+          paymentStatus: 'refunded',
+          escrowTransactionId: null,
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        })
+      }
+    }
   })
 
-  // Update gig status
-  const gigRef = db.collection('gigs').doc(gigId)
-  const gigDoc = await gigRef.get()
-
-  if (gigDoc.exists) {
-    const gigData = gigDoc.data()
-    // Only revert status if it was funded
-    if (gigData?.paymentStatus === 'funded') {
-      await gigRef.update({
-        paymentStatus: 'refunded',
-        escrowTransactionId: null,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-      })
-    }
-  }
-
-  console.log('TradeSafe: Transaction cancelled, refund processed:', transactionId)
+  console.log('[PAYMENT_AUDIT] Transaction cancelled, refund processed:', transactionId)
 }

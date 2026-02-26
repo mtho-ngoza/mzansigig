@@ -36,10 +36,6 @@ export async function POST(request: NextRequest) {
     }
     const employerId = auth.userId
 
-    console.log('=== APPROVE COMPLETION API: Starting ===')
-    console.log('applicationId:', applicationId)
-    console.log('employerId:', employerId)
-
     // Get Firebase admin
     const app = getFirebaseAdmin()
     const db = app.firestore()
@@ -50,15 +46,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Application not found' }, { status: 404 })
     }
 
-    const application = appDoc.data()!
+    const application = appDoc.data()
+    if (!application) {
+      return NextResponse.json({ error: 'Application data not found' }, { status: 404 })
+    }
     const workerId = application.applicantId
-
-    console.log('Application found:', {
-      id: applicationId,
-      workerId,
-      status: application.status,
-      paymentStatus: application.paymentStatus
-    })
 
     // Verify application is in correct state
     if (application.status !== 'funded' && application.status !== 'in_progress') {
@@ -74,7 +66,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Gig not found' }, { status: 404 })
     }
 
-    const gig = gigDoc.data()!
+    const gig = gigDoc.data()
+    if (!gig) {
+      return NextResponse.json({ error: 'Gig data not found' }, { status: 404 })
+    }
 
     // Verify employer owns this gig
     if (gig.employerId !== employerId) {
@@ -83,12 +78,6 @@ export async function POST(request: NextRequest) {
         { status: 403 }
       )
     }
-
-    console.log('Gig found:', {
-      id: application.gigId,
-      escrowAmount: gig.escrowAmount,
-      employerId: gig.employerId
-    })
 
     // Calculate escrow amount
     const escrowAmount = gig.escrowAmount || application.agreedRate || application.proposedRate || 0
@@ -118,18 +107,6 @@ export async function POST(request: NextRequest) {
     const paymentIntent = paymentIntentQuery.empty ? null : paymentIntentQuery.docs[0].data()
     const allocationId = paymentIntent?.allocationId
 
-    console.log('Payment intent:', {
-      found: !paymentIntentQuery.empty,
-      allocationId,
-      transactionId: paymentIntent?.transactionId
-    })
-
-    console.log('Escrow release details:', {
-      escrowAmount,
-      workerId,
-      employerId
-    })
-
     // Run transaction with admin SDK (bypasses security rules)
     await db.runTransaction(async (transaction) => {
       // Read worker and employer docs first (Firestore requirement)
@@ -144,7 +121,10 @@ export async function POST(request: NextRequest) {
         throw new Error('Worker not found')
       }
 
-      const workerData = workerDoc.data()!
+      const workerData = workerDoc.data()
+      if (!workerData) {
+        throw new Error('Worker data not found')
+      }
       const currentPending = workerData.pendingBalance || 0
 
       if (escrowAmount > 0 && currentPending < escrowAmount) {
@@ -158,7 +138,6 @@ export async function POST(request: NextRequest) {
         paymentStatus: 'released',
         completedAt: admin.firestore.FieldValue.serverTimestamp()
       })
-      console.log('Application updated to completed')
 
       // Update gig
       const gigRef = db.collection('gigs').doc(application.gigId)
@@ -168,13 +147,11 @@ export async function POST(request: NextRequest) {
         completedAt: admin.firestore.FieldValue.serverTimestamp(),
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       })
-      console.log('Gig updated to completed')
 
       // Increment worker's completedGigs
       transaction.update(workerRef, {
         completedGigs: admin.firestore.FieldValue.increment(1)
       })
-      console.log('Worker completedGigs incremented')
 
       // Release escrow if there's an amount
       if (escrowAmount > 0) {
@@ -200,26 +177,17 @@ export async function POST(request: NextRequest) {
           totalEarnings: admin.firestore.FieldValue.increment(netAmount),
           updatedAt: admin.firestore.FieldValue.serverTimestamp()
         })
-        console.log('Worker wallet updated')
 
         // Update employer pending balance
         if (employerDoc.exists) {
-          const employerData = employerDoc.data()!
-          const employerPending = employerData.pendingBalance || 0
+          const employerData = employerDoc.data()
+          const employerPending = employerData?.pendingBalance || 0
           const newPending = Math.max(0, employerPending - escrowAmount)
-
-          console.log('Releasing employer escrow:', {
-            employerId,
-            currentPending: employerPending,
-            releaseAmount: escrowAmount,
-            newPending
-          })
 
           transaction.update(employerRef, {
             pendingBalance: newPending,
             updatedAt: admin.firestore.FieldValue.serverTimestamp()
           })
-          console.log('Employer pending balance updated')
         }
       }
     })
@@ -248,41 +216,14 @@ export async function POST(request: NextRequest) {
         const transaction = transactionId ? await tradeSafe.getTransaction(transactionId) : null
         const allocation = transaction?.allocations?.[0]
 
-        console.log('TradeSafe current state:', {
-          transactionId,
-          transactionState: transaction?.state,
-          allocationId,
-          allocationState: allocation?.state
-        })
-
         // Transaction must be in FUNDS_RECEIVED state before delivery flow can start
-        // Note: Transaction and Allocation have separate state machines
         if (transaction?.state === 'FUNDS_RECEIVED') {
-          // TradeSafe delivery flow for immediate acceptance (no buyer email):
+          // TradeSafe delivery flow for immediate acceptance:
           // 1. startDelivery - Transitions allocation to INITIATED
-          // 2. acceptDelivery - Immediate payout, skips the 24h email to buyer
-          //
-          // NOTE: completeDelivery and acceptDelivery are MUTUALLY EXCLUSIVE.
-          // If you call completeDelivery, you cannot call acceptDelivery.
-          // completeDelivery triggers a 24h countdown email to buyer.
-          console.log('TradeSafe: Starting delivery flow for allocation:', allocationId)
-
-          const startResult = await tradeSafe.startDelivery(allocationId)
-          console.log('TradeSafe startDelivery result:', startResult)
-
-          const acceptResult = await tradeSafe.acceptDelivery(allocationId)
-          console.log('TradeSafe acceptDelivery result:', acceptResult)
-
+          // 2. acceptDelivery - Immediate payout
+          await tradeSafe.startDelivery(allocationId)
+          await tradeSafe.acceptDelivery(allocationId)
           tradeSafePayoutTriggered = true
-        } else {
-          // Funds not yet fully received by TradeSafe
-          // This can happen in sandbox or when payment is still processing
-          console.log('TradeSafe: Transaction not ready for payout', {
-            transactionState: transaction?.state,
-            allocationState: allocation?.state,
-            requiredState: 'FUNDS_RECEIVED',
-            note: 'Worker will receive payout when funds are fully processed by TradeSafe'
-          })
         }
 
         // Update payment intent status
@@ -296,12 +237,9 @@ export async function POST(request: NextRequest) {
         // Log but don't fail - local records are already updated
         console.error('TradeSafe payout error (non-blocking):', tradeSafeError)
       }
-    } else {
-      console.log('No TradeSafe allocation ID - skipping direct payout')
     }
 
     // Create payment history records (outside transaction for simplicity)
-    console.log('=== APPROVE COMPLETION API: Creating payment history ===')
     const gigTitle = gig.title || `Gig ${application.gigId}`
     const platformCommission = Math.round(escrowAmount * (platformCommissionPercent / 100) * 100) / 100
     const netAmount = Math.round((escrowAmount - platformCommission) * 100) / 100
@@ -323,7 +261,6 @@ export async function POST(request: NextRequest) {
         description: `Earnings from: ${gigTitle} (released - R${escrowAmount.toFixed(2)} minus 10% fee)`,
         completedAt: admin.firestore.FieldValue.serverTimestamp()
       })
-      console.log('Updated existing payment history record to completed')
     } else {
       // Create new completed earnings record if pending not found
       await db.collection('paymentHistory').add({
@@ -336,7 +273,6 @@ export async function POST(request: NextRequest) {
         description: `Earnings from: ${gigTitle} (R${escrowAmount.toFixed(2)} minus 10% fee)`,
         createdAt: admin.firestore.FieldValue.serverTimestamp()
       })
-      console.log('Created new completed payment history record')
     }
 
     // Create platform fee record for tracking
@@ -350,7 +286,6 @@ export async function POST(request: NextRequest) {
       description: `Platform fee (10%) for: ${gigTitle}`,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     })
-    console.log('Created platform fee history record')
 
     console.log('[PAYMENT_AUDIT] Approve - COMPLETION SUCCESS:', {
       gigId: application.gigId,

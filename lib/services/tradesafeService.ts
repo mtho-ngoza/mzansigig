@@ -7,6 +7,23 @@
  * @see https://docs.tradesafe.co.za/
  */
 
+import { createHmac, timingSafeEqual } from 'crypto'
+
+// Environment-aware logging - only verbose in development
+const isDev = process.env.NODE_ENV === 'development'
+const log = {
+  info: (message: string, data?: unknown) => {
+    if (isDev) console.log(`[TradeSafe] ${message}`, data || '')
+  },
+  error: (message: string, data?: unknown) => {
+    console.error(`[TradeSafe] ${message}`, data || '')
+  },
+  audit: (message: string, data?: unknown) => {
+    // Audit logs always print for payment tracking
+    console.log(`[PAYMENT_AUDIT] ${message}`, data ? JSON.stringify(data) : '')
+  }
+}
+
 export interface TradeSafeConfig {
   clientId: string
   clientSecret: string
@@ -117,15 +134,9 @@ export class TradeSafeService {
     }
 
     // Debug logging for environment variable injection
-    console.log('TradeSafe config loaded:', {
+    log.info('Config loaded', {
       clientId: this.config.clientId ? `${this.config.clientId.substring(0, 8)}...` : 'NOT SET',
-      clientSecret: this.config.clientSecret ? `${this.config.clientSecret.substring(0, 8)}...` : 'NOT SET',
-      environment: this.config.environment,
-      envVars: {
-        TRADESAFE_CLIENT_ID: process.env.TRADESAFE_CLIENT_ID ? 'SET' : 'NOT SET',
-        TRADESAFE_CLIENT_SECRET: process.env.TRADESAFE_CLIENT_SECRET ? 'SET' : 'NOT SET',
-        TRADESAFE_ENVIRONMENT: process.env.TRADESAFE_ENVIRONMENT || 'NOT SET'
-      }
+      environment: this.config.environment
     })
 
     if (!this.config.clientId || !this.config.clientSecret) {
@@ -157,11 +168,7 @@ export class TradeSafeService {
       return this.accessToken
     }
 
-    console.log('TradeSafe: Authenticating...', {
-      authUrl: this.AUTH_URL,
-      clientId: this.config.clientId ? `${this.config.clientId.substring(0, 8)}...` : 'NOT SET',
-      clientSecretLength: this.config.clientSecret?.length || 0
-    })
+    log.info('Authenticating...')
 
     const response = await fetch(this.AUTH_URL, {
       method: 'POST',
@@ -177,11 +184,7 @@ export class TradeSafeService {
 
     if (!response.ok) {
       const error = await response.text()
-      console.error('TradeSafe auth error:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: error
-      })
+      log.error('Auth error', { status: response.status, statusText: response.statusText })
       throw new Error(`TradeSafe authentication failed: ${response.statusText}`)
     }
 
@@ -189,7 +192,7 @@ export class TradeSafeService {
     this.accessToken = data.access_token
     this.tokenExpiresAt = Date.now() + (data.expires_in * 1000)
 
-    console.log('TradeSafe: Authenticated successfully')
+    log.info('Authenticated successfully')
     return this.accessToken!
   }
 
@@ -210,21 +213,19 @@ export class TradeSafeService {
 
     if (!response.ok) {
       const error = await response.text()
-      console.error('TradeSafe GraphQL error:', error)
+      log.error('GraphQL error', error)
       throw new Error(`TradeSafe API error: ${response.statusText}`)
     }
 
     const result = await response.json()
 
     if (result.errors) {
-      console.error('TradeSafe GraphQL errors:', JSON.stringify(result.errors, null, 2))
-      // Include more details in the error for debugging
       const errorDetails = result.errors.map((e: { message?: string; extensions?: unknown; path?: string[] }) => ({
         message: e.message,
         extensions: e.extensions,
         path: e.path
       }))
-      console.error('TradeSafe GraphQL error details:', JSON.stringify(errorDetails, null, 2))
+      log.error('GraphQL errors', errorDetails)
       throw new Error(`TradeSafe GraphQL error: ${result.errors[0]?.message || 'Unknown error'}`)
     }
 
@@ -287,11 +288,11 @@ export class TradeSafeService {
       }
     }
 
-    console.log('[TRADESAFE] createToken request:', JSON.stringify(variables, null, 2))
+    log.info('createToken request', { email: input.email, hasBank: !!input.bankAccount })
 
     const data = await this.graphql<{ tokenCreate: TradeSafeToken }>(mutation, variables)
 
-    console.log('[TRADESAFE] createToken response:', data.tokenCreate)
+    log.info('createToken response', { id: data.tokenCreate.id, name: data.tokenCreate.name })
 
     return data.tokenCreate
   }
@@ -396,25 +397,19 @@ export class TradeSafeService {
       }
     }
 
-    console.log('=== TRADESAFE createTransaction: Sending to API ===')
-    console.log('Parties being sent:', JSON.stringify(parties, null, 2))
-    console.log('Full variables:', JSON.stringify(variables, null, 2))
-    console.log('Agent fee config:', {
-      agentToken: input.agentToken ? 'SET' : 'NOT SET',
-      agentFeePercent: input.agentFeePercent,
-      feeType: 'PERCENT',
-      feeAllocation: 'SELLER (fee comes from seller portion)'
+    log.info('createTransaction request', {
+      value: input.value,
+      reference: input.reference,
+      hasAgent: !!input.agentToken,
+      agentFeePercent: input.agentFeePercent
     })
 
     const data = await this.graphql<{ transactionCreate: Transaction }>(mutation, variables)
 
-    console.log('=== TRADESAFE createTransaction: Response ===')
-    console.log('Transaction created:', {
+    log.audit('Transaction created', {
       id: data.transactionCreate.id,
       state: data.transactionCreate.state,
-      inputValue: input.value,
-      allocationValue: data.transactionCreate.allocations?.[0]?.value,
-      parties: data.transactionCreate.parties
+      value: input.value
     })
 
     return data.transactionCreate
@@ -473,10 +468,7 @@ export class TradeSafeService {
 
     const data = await this.graphql<{ checkoutLink: string }>(mutation, variables)
 
-    console.log('TradeSafe checkout link generated:', {
-      transactionId: options.transactionId,
-      embed: options.embed
-    })
+    log.info('Checkout link generated', { transactionId: options.transactionId })
 
     return data.checkoutLink
   }
@@ -498,10 +490,7 @@ export class TradeSafeService {
 
     const data = await this.graphql<{ allocationStartDelivery: Allocation }>(mutation, { id: allocationId })
 
-    console.log('TradeSafe delivery started:', {
-      allocationId,
-      state: data.allocationStartDelivery.state
-    })
+    log.audit('Delivery started', { allocationId, state: data.allocationStartDelivery.state })
 
     return data.allocationStartDelivery
   }
@@ -528,10 +517,7 @@ export class TradeSafeService {
 
     const data = await this.graphql<{ allocationCompleteDelivery: Allocation }>(mutation, { id: allocationId })
 
-    console.log('TradeSafe delivery completed:', {
-      allocationId,
-      state: data.allocationCompleteDelivery.state
-    })
+    log.audit('Delivery completed', { allocationId, state: data.allocationCompleteDelivery.state })
 
     return data.allocationCompleteDelivery
   }
@@ -557,10 +543,7 @@ export class TradeSafeService {
 
     const data = await this.graphql<{ allocationAcceptDelivery: Allocation }>(mutation, { id: allocationId })
 
-    console.log('TradeSafe delivery accepted:', {
-      allocationId,
-      state: data.allocationAcceptDelivery.state
-    })
+    log.audit('Delivery accepted', { allocationId, state: data.allocationAcceptDelivery.state })
 
     return data.allocationAcceptDelivery
   }
@@ -583,24 +566,47 @@ export class TradeSafeService {
       comment: reason
     })
 
-    console.log('TradeSafe transaction cancelled:', {
-      transactionId,
-      state: data.transactionCancel.state,
-      reason
-    })
+    log.audit('Transaction cancelled', { transactionId, state: data.transactionCancel.state })
 
     return data.transactionCancel
   }
 
   /**
-   * Validate webhook signature
-   * TradeSafe sends webhooks for transaction state changes
+   * Validate webhook signature using HMAC-SHA256
+   * TradeSafe sends webhooks with x-tradesafe-signature header
    */
   validateWebhook(payload: string, signature: string): boolean {
-    // TradeSafe webhook validation
-    // TODO: Implement based on TradeSafe webhook documentation
-    console.log('TradeSafe webhook validation:', { signature: signature?.substring(0, 20) })
-    return true // Placeholder - implement actual validation
+    if (!signature) {
+      log.error('Webhook validation failed: No signature provided')
+      return false
+    }
+
+    try {
+      // Compute HMAC-SHA256 of the payload using client secret
+      const expectedSignature = createHmac('sha256', this.config.clientSecret)
+        .update(payload)
+        .digest('hex')
+
+      // Use timing-safe comparison to prevent timing attacks
+      const signatureBuffer = Buffer.from(signature, 'hex')
+      const expectedBuffer = Buffer.from(expectedSignature, 'hex')
+
+      if (signatureBuffer.length !== expectedBuffer.length) {
+        log.error('Webhook validation failed: Signature length mismatch')
+        return false
+      }
+
+      const isValid = timingSafeEqual(signatureBuffer, expectedBuffer)
+
+      if (!isValid) {
+        log.error('Webhook validation failed: Signature mismatch')
+      }
+
+      return isValid
+    } catch (error) {
+      log.error('Webhook validation error:', error)
+      return false
+    }
   }
 
   /**
@@ -621,7 +627,7 @@ export class TradeSafeService {
         state: data.transaction?.state || data.state
       }
     } catch {
-      console.error('Failed to parse TradeSafe webhook:', payload)
+      log.error('Failed to parse webhook payload')
       return null
     }
   }

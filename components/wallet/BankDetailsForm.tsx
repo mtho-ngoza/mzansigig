@@ -22,6 +22,7 @@ interface BankDetailsFormProps {
 export default function BankDetailsForm({ onSuccess }: BankDetailsFormProps) {
   const { user } = useAuth()
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -43,6 +44,7 @@ export default function BankDetailsForm({ onSuccess }: BankDetailsFormProps) {
 
     try {
       setIsLoading(true)
+      setLoadError(null)
       const firebaseUser = auth.currentUser
       if (!firebaseUser) return
       const token = await firebaseUser.getIdToken()
@@ -55,9 +57,11 @@ export default function BankDetailsForm({ onSuccess }: BankDetailsFormProps) {
         if (data.hasBankDetails) {
           setExistingDetails(data.bankDetails)
         }
+      } else {
+        setLoadError('Failed to load bank details. Please try again.')
       }
     } catch (err) {
-      console.error('Error loading bank details:', err)
+      setLoadError('Failed to load bank details. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -120,6 +124,21 @@ export default function BankDetailsForm({ onSuccess }: BankDetailsFormProps) {
           <div className="animate-pulse space-y-4">
             <div className="h-4 bg-gray-200 rounded w-1/2"></div>
             <div className="h-10 bg-gray-200 rounded"></div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">{loadError}</p>
+            <Button onClick={loadExistingDetails} variant="outline">
+              Try Again
+            </Button>
           </div>
         </CardContent>
       </Card>

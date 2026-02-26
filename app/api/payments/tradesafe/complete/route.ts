@@ -64,7 +64,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Gig not found' }, { status: 404 })
     }
 
-    const gigData = gigDoc.data()!
+    const gigData = gigDoc.data()
+    if (!gigData) {
+      return NextResponse.json({ error: 'Gig data not found' }, { status: 404 })
+    }
 
     // Verify user authorization
     const isEmployer = gigData.employerId === userId
@@ -140,17 +143,19 @@ export async function POST(request: NextRequest) {
       case 'accept':
         // Employer accepts delivery (immediate payout)
         result = await tradeSafe.acceptDelivery(allocationId)
-        await gigDoc.ref.update({
-          status: 'completed',
-          deliveryStatus: 'accepted',
-          deliveryAcceptedAt: admin.firestore.FieldValue.serverTimestamp(),
-          completedAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        })
-        // Update payment intent
-        await paymentIntent.ref.update({
-          status: 'releasing',
-          acceptedAt: admin.firestore.FieldValue.serverTimestamp()
+        // Use transaction for atomic updates
+        await db.runTransaction(async (transaction) => {
+          transaction.update(gigDoc.ref, {
+            status: 'completed',
+            deliveryStatus: 'accepted',
+            deliveryAcceptedAt: admin.firestore.FieldValue.serverTimestamp(),
+            completedAt: admin.firestore.FieldValue.serverTimestamp(),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          })
+          transaction.update(paymentIntent.ref, {
+            status: 'releasing',
+            acceptedAt: admin.firestore.FieldValue.serverTimestamp()
+          })
         })
         break
     }

@@ -184,21 +184,6 @@ export async function POST(request: NextRequest) {
     })
 
     // Create TradeSafe transaction
-    console.log('=== TRADESAFE INITIALIZE: Step 1 - Creating transaction ===')
-    console.log('Input to createTransaction:', {
-      title,
-      description: description || `Payment for gig: ${title}`,
-      value: amount,
-      buyerToken,
-      sellerToken,
-      agentToken: platformToken,
-      agentFeePercent: platformFee,
-      daysToDeliver: 7,
-      daysToInspect: 7,
-      reference: gigId,
-      gigId_we_are_sending: gigId
-    })
-
     const transaction = await tradeSafe.createTransaction({
       title: title,
       description: description || `Payment for gig: ${title}`,
@@ -212,22 +197,10 @@ export async function POST(request: NextRequest) {
       reference: gigId
     })
 
-    console.log('=== TRADESAFE INITIALIZE: Step 2 - Transaction created ===')
-    console.log('Full transaction response:', JSON.stringify(transaction, null, 2))
-    console.log('Key IDs:', {
-      transactionId: transaction.id,
-      our_gigId: gigId,
-      allocationId: transaction.allocations?.[0]?.id
-    })
-    console.log('NOTE: TradeSafe does NOT return reference in response. We use transactionId to lookup paymentIntent which has gigId.')
-
     // Generate checkout link
     const checkoutUrl = await tradeSafe.getCheckoutLink({
       transactionId: transaction.id
     })
-
-    console.log('=== TRADESAFE INITIALIZE: Step 3 - Checkout link generated ===')
-    console.log('Checkout URL:', checkoutUrl)
 
     // Store payment intent in database for tracking
     // Note: TradeSafe does NOT return our reference in the response, so we store our gigId

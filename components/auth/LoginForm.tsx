@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useCallback, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -23,31 +23,31 @@ export function LoginForm({ onForgotPassword }: LoginFormProps = {}) {
   const [showProfileCompletion, setShowProfileCompletion] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
 
-  // TODO: Error messages from failed login attempts are not displaying properly
-  // The setMessage call happens but state doesn't update - possibly related to
-  // React re-renders from AuthContext isLoading changes or StrictMode double-renders
+  // Track if a submission is in progress to prevent message clearing during re-renders
+  const isSubmittingRef = useRef(false)
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    const previousValue = formData[name as keyof LoginCredentials]
 
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData(prev => {
+      const previousValue = prev[name as keyof LoginCredentials]
+      if (value === previousValue) return prev
+      return { ...prev, [name]: value }
+    })
 
-    // Only clear messages if the value actually changed (user typed)
-    if (value !== previousValue) {
-      // Clear field-level errors
-      if (errors[name as keyof LoginCredentials]) {
-        setErrors(prev => ({ ...prev, [name]: '' }))
-      }
-
-      // Clear general error message when user starts typing
-      if (message) {
-        setMessage(null)
-      }
+    // Only clear messages if not currently submitting (prevents race conditions)
+    if (!isSubmittingRef.current) {
+      setErrors(prev => {
+        if (prev[name as keyof LoginCredentials]) {
+          return { ...prev, [name]: '' }
+        }
+        return prev
+      })
+      setMessage(null)
     }
-  }
+  }, [])
 
-  const validateForm = (): boolean => {
+  const validateForm = useCallback((): boolean => {
     const newErrors: Partial<LoginCredentials> = {}
 
     // Sanitize email by trimming whitespace
@@ -65,9 +65,9 @@ export function LoginForm({ onForgotPassword }: LoginFormProps = {}) {
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
-  }
+  }, [formData.email, formData.password])
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage(null)
 
@@ -75,22 +75,30 @@ export function LoginForm({ onForgotPassword }: LoginFormProps = {}) {
       return
     }
 
+    // Mark as submitting to prevent message clearing during re-renders
+    isSubmittingRef.current = true
+
     // Sanitize credentials before submission
     const sanitizedCredentials: LoginCredentials = {
       email: formData.email.trim(),
       password: formData.password
     }
 
-    const result = await login(sanitizedCredentials, rememberMe)
+    try {
+      const result = await login(sanitizedCredentials, rememberMe)
 
-    // Use setTimeout to ensure state update happens after any re-renders from AuthContext
-    setTimeout(() => {
+      // Set message after login completes
       setMessage({
         type: result.success ? 'success' : 'error',
         text: result.message
       })
-    }, 0)
-  }
+    } finally {
+      // Reset submitting flag after a brief delay to allow message to render
+      setTimeout(() => {
+        isSubmittingRef.current = false
+      }, 100)
+    }
+  }, [formData.email, formData.password, login, rememberMe, validateForm])
 
   const handleGoogleSignIn = async () => {
     setMessage(null)

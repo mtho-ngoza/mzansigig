@@ -18,6 +18,7 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
   const { user, refreshUser } = useAuth()
   const [trustScore, setTrustScore] = useState<number>(50)
   const [isLoading, setIsLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const [showDocumentFlow, setShowDocumentFlow] = useState<'basic' | 'enhanced' | 'premium' | null>(null)
   const [pendingDocuments, setPendingDocuments] = useState<VerificationDocument[]>([])
   const [rejectedDocuments, setRejectedDocuments] = useState<VerificationDocument[]>([])
@@ -32,10 +33,11 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
 
     try {
       setIsLoading(true)
+      setLoadError(null)
       const score = await SecurityService.calculateTrustScore(user.id)
       setTrustScore(score)
     } catch (error) {
-      console.error('Error loading trust score:', error)
+      setLoadError('Failed to load verification data. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -86,6 +88,21 @@ export default function VerificationCenter({ onBack }: VerificationCenterProps) 
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-red-600 mb-4">{loadError}</p>
+            <Button onClick={loadTrustScore} variant="outline">
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     )
   }
