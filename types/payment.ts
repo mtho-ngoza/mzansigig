@@ -139,6 +139,9 @@ export interface PaymentConfig {
   // Escrow auto-release (worker protection)
   escrowAutoReleaseDays: number // 7 days - auto-release if employer doesn't respond
 
+  // TradeSafe payout settings - how workers receive funds
+  payoutInterval: 'IMMEDIATE' | 'DAILY' | 'WEEKLY' | 'BIMONTHLY' | 'MONTHLY' | 'WALLET'
+
   // Configuration metadata
   isActive: boolean
   createdAt: Date

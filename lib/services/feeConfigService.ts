@@ -37,6 +37,9 @@ export const DEFAULT_FEE_CONFIG: Omit<PaymentConfig, 'id' | 'createdAt' | 'updat
   // Escrow auto-release (worker protection)
   escrowAutoReleaseDays: 7, // Auto-release if employer doesn't respond in 7 days
 
+  // TradeSafe payout settings
+  payoutInterval: 'IMMEDIATE', // Direct bank payout (R5 fee absorbed by platform)
+
   // Status
   isActive: true
 }
@@ -76,6 +79,7 @@ export class FeeConfigService {
         minimumGigAmount: data.minimumGigAmount ?? 100,
         maximumGigAmount: data.maximumGigAmount ?? 100000,
         escrowAutoReleaseDays: data.escrowAutoReleaseDays ?? 7,
+        payoutInterval: data.payoutInterval ?? 'IMMEDIATE',
         isActive: data.isActive ?? true,
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
@@ -168,6 +172,7 @@ export class FeeConfigService {
           minimumGigAmount: data.minimumGigAmount ?? 100,
           maximumGigAmount: data.maximumGigAmount ?? 100000,
           escrowAutoReleaseDays: data.escrowAutoReleaseDays ?? 7,
+          payoutInterval: data.payoutInterval ?? 'IMMEDIATE',
           isActive: data.isActive ?? false,
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),

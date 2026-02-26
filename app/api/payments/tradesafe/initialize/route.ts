@@ -112,6 +112,17 @@ export async function POST(request: NextRequest) {
       accountType: workerData.bankDetails?.accountType
     })
 
+    // Get fee config early - needed for payout interval setting
+    const feeConfigQuery = await db.collection('feeConfigs')
+      .where('isActive', '==', true)
+      .orderBy('createdAt', 'desc')
+      .limit(1)
+      .get()
+
+    const configData = feeConfigQuery.empty ? null : feeConfigQuery.docs[0].data()
+    const platformFee = configData?.platformCommissionPercent ?? 10
+    const payoutInterval = (configData?.payoutInterval ?? 'IMMEDIATE') as 'IMMEDIATE' | 'DAILY' | 'WEEKLY' | 'BIMONTHLY' | 'MONTHLY' | 'WALLET'
+
     // Always create new TradeSafe token with bank details for direct payout
     // This ensures the token has bank details attached (don't reuse old tokens)
     const tokenInput: {
@@ -126,7 +137,7 @@ export async function POST(request: NextRequest) {
       familyName: workerData.displayName?.split(' ').slice(1).join(' ') || workerData.lastName || '',
       email: workerData.email,
       mobile: normalizePhoneNumber(workerData.phone),
-      payoutInterval: 'IMMEDIATE' // Direct bank payout when delivery accepted
+      payoutInterval // From config
     }
 
     // Include bank details (required - enforced at application time)
@@ -160,18 +171,6 @@ export async function POST(request: NextRequest) {
     // Get platform token for agent fees
     const platformToken = await tradeSafe.getApiProfile()
 
-    // Get platform commission from feeConfigs (single source of truth)
-    // This becomes the TradeSafe agent fee - platform's revenue
-    const feeConfigQuery = await db.collection('feeConfigs')
-      .where('isActive', '==', true)
-      .orderBy('createdAt', 'desc')
-      .limit(1)
-      .get()
-
-    // Default to 10% if no config found
-    const configData = feeConfigQuery.empty ? null : feeConfigQuery.docs[0].data()
-    const platformFee = configData?.platformCommissionPercent ?? 10
-
     // Calculate expected amounts for audit
     const expectedCommission = Math.round(amount * (platformFee / 100) * 100) / 100
     const expectedWorkerEarnings = amount - expectedCommission
@@ -179,6 +178,7 @@ export async function POST(request: NextRequest) {
     console.log('[PAYMENT_AUDIT] Initialize - Fee config:', {
       source: feeConfigQuery.empty ? 'default' : feeConfigQuery.docs[0].id,
       platformCommissionPercent: platformFee,
+      payoutInterval,
       gigId,
       amount,
       expectedCommission,
