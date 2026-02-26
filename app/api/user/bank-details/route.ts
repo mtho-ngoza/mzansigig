@@ -129,7 +129,8 @@ export async function POST(request: NextRequest) {
         accountNumber,
         accountType: accountType as 'CHEQUE' | 'SAVINGS',
         bank: TRADESAFE_BANK_CODES[bankName]
-      }
+      },
+      payoutInterval: 'IMMEDIATE' as const // Direct bank payout when delivery accepted
     }
 
     console.log('[BANK_DETAILS] Creating TradeSafe token with:', {

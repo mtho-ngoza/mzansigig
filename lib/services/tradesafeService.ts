@@ -36,6 +36,8 @@ export interface TokenCreateInput {
     accountType: 'CHEQUE' | 'SAVINGS'
     bank: string
   }
+  // Payout settings: IMMEDIATE, DAILY, WEEKLY, BIMONTHLY, MONTHLY, WALLET
+  payoutInterval?: 'IMMEDIATE' | 'DAILY' | 'WEEKLY' | 'BIMONTHLY' | 'MONTHLY' | 'WALLET'
 }
 
 export interface TransactionCreateInput {
@@ -282,6 +284,11 @@ export class TradeSafeService {
             accountNumber: input.bankAccount.accountNumber,
             accountType: input.bankAccount.accountType,
             bank: input.bankAccount.bank
+          }
+        }),
+        ...(input.payoutInterval && {
+          payout: {
+            interval: input.payoutInterval
           }
         })
       }

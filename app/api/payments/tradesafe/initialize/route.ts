@@ -120,11 +120,13 @@ export async function POST(request: NextRequest) {
       email: string
       mobile: string
       bankAccount?: { accountNumber: string; accountType: 'CHEQUE' | 'SAVINGS'; bank: string }
+      payoutInterval?: 'IMMEDIATE' | 'DAILY' | 'WEEKLY' | 'BIMONTHLY' | 'MONTHLY' | 'WALLET'
     } = {
       givenName: workerData.displayName?.split(' ')[0] || workerData.firstName || 'Worker',
       familyName: workerData.displayName?.split(' ').slice(1).join(' ') || workerData.lastName || '',
       email: workerData.email,
-      mobile: normalizePhoneNumber(workerData.phone)
+      mobile: normalizePhoneNumber(workerData.phone),
+      payoutInterval: 'IMMEDIATE' // Direct bank payout when delivery accepted
     }
 
     // Include bank details (required - enforced at application time)
